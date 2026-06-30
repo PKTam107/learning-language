@@ -66,7 +66,7 @@ src/
 ## Tiến độ
 
 - [x] **Feature 1** — Skeleton + auth email (login/signup/signout) + điều hướng có gác session
-- [ ] Feature 2 — Danh sách bộ thẻ + CRUD
+- [x] **Feature 2** — Danh sách bộ thẻ + tạo/sửa/xóa (pull-to-refresh, FAB, empty state)
 - [ ] Feature 3 — Card trong bộ thẻ
 - [ ] Feature 4 — Study mode (lật thẻ + đánh giá)
 - [ ] Feature 5 — Lookup / tạo thẻ (cần API route nhận Bearer token)
