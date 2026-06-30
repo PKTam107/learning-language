@@ -35,6 +35,19 @@ npm run ios        # mở thẳng trên iOS simulator (cần macOS)
 
 > Yêu cầu **Node ≥ 18.18**. Nếu dùng máy thật, cài app **Expo Go** rồi quét mã QR.
 
+### Tra cứu & thêm từ (Feature 5)
+Chức năng tra từ gọi API route của **web app** (`/api/lookup`), nên cần web chạy song song:
+```bash
+# terminal khác, ở thư mục gốc repo:
+npm run dev          # web ở http://localhost:3000
+```
+- `EXPO_PUBLIC_API_BASE_URL` trong `mobile/.env` trỏ tới web (mặc định `http://localhost:3000`).
+- **Trên emulator Android**, để emulator gọi được web trong WSL, forward thêm cổng 3000:
+  ```bash
+  adb reverse tcp:3000 tcp:3000
+  ```
+- **Trên điện thoại thật**, đổi `EXPO_PUBLIC_API_BASE_URL` thành IP LAN của máy chạy web (vd `http://192.168.1.x:3000`).
+
 ## Cấu trúc
 
 ```
@@ -69,5 +82,5 @@ src/
 - [x] **Feature 2** — Danh sách bộ thẻ + tạo/sửa/xóa (pull-to-refresh, FAB, empty state)
 - [x] **Feature 3** — Danh sách card trong bộ thẻ + xóa (header tên deck, số từ)
 - [x] **Feature 4** — Study mode: lật thẻ (animation), đánh giá, audio US/UK, thanh tiến độ
-- [ ] Feature 5 — Lookup / tạo thẻ (cần API route nhận Bearer token)
+- [x] **Feature 5** — Tra cứu & thêm từ (QuickCreator gọi `/api/lookup` qua Bearer token)
 - [ ] Feature 6 — Google OAuth, dashboard thống kê
