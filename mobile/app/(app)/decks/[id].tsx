@@ -7,14 +7,21 @@ import {
   Text,
   View,
 } from "react-native";
-import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
+import {
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
 import type { Card, Deck } from "@/types";
 import { fetchCards, fetchDeck, deleteCard } from "@/lib/cards";
 import { CardRow } from "@/components/card/CardRow";
+import { Button } from "@/components/ui/Button";
 import { colors, spacing } from "@/lib/theme";
 
 export default function DeckDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const [deck, setDeck] = useState<Deck | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,6 +110,13 @@ export default function DeckDetailScreen() {
             )}
             <Text style={styles.count}>{cards.length} từ</Text>
             {!!error && <Text style={styles.error}>{error}</Text>}
+            {cards.length > 0 && (
+              <Button
+                title="Học ngay"
+                onPress={() => router.push(`/study/${deck.id}`)}
+                style={styles.studyBtn}
+              />
+            )}
           </View>
         }
         ListEmptyComponent={
@@ -138,6 +152,7 @@ const styles = StyleSheet.create({
   desc: { marginTop: 2, fontSize: 14, color: colors.textMuted },
   count: { marginTop: spacing.xs, fontSize: 14, color: colors.textSubtle },
   error: { marginTop: spacing.sm, color: colors.danger, fontSize: 14 },
+  studyBtn: { marginTop: spacing.md },
   sep: { height: spacing.md },
   empty: {
     flex: 1,
