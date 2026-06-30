@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"\\\\\\\\\\\\\\\\wsl.localhost\\\\\\\\Ubuntu\\\\\\\\home\\\\\\\\tampk117\\\\\\\\workspace\\\\\\\\personal\\\\\\\\learning-language\")",
+      "Bash(ls -la)",
+      "Read(///wsl.localhost/Ubuntu/home/tampk117/workspace/personal/**)",
+      "Bash(npm run *)",
+      "Bash(curl -s \"https://api.mymemory.translated.net/get?q=transient&langpair=en|vi\")",
+      "Bash(wsl.exe *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://api.dictionaryapi.dev/api/v2/entries/en/life\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://api.dictionaryapi.dev/api/v2/entries/en/meaning%20of%20life\")",
+      "Bash(curl -s \"https://api.mymemory.translated.net/get?q=meaning%20of%20life&langpair=en|vi\")"
+    ]
+  }
+}
