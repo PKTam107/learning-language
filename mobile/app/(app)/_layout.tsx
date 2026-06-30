@@ -40,6 +40,7 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen name="decks/[id]" options={{ title: "Bộ thẻ" }} />
+      <Stack.Screen name="study/[deckId]" options={{ title: "Học" }} />
     </Stack>
   );
 }

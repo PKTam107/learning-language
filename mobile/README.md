@@ -68,6 +68,6 @@ src/
 - [x] **Feature 1** — Skeleton + auth email (login/signup/signout) + điều hướng có gác session
 - [x] **Feature 2** — Danh sách bộ thẻ + tạo/sửa/xóa (pull-to-refresh, FAB, empty state)
 - [x] **Feature 3** — Danh sách card trong bộ thẻ + xóa (header tên deck, số từ)
-- [ ] Feature 4 — Study mode (lật thẻ + đánh giá)
+- [x] **Feature 4** — Study mode: lật thẻ (animation), đánh giá, audio US/UK, thanh tiến độ
 - [ ] Feature 5 — Lookup / tạo thẻ (cần API route nhận Bearer token)
 - [ ] Feature 6 — Google OAuth, dashboard thống kê
