@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "LinguaCards",
+    "slug": "linguacards",
+    "scheme": "linguacards",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#eef2ff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.linguacards.app"
+    },
+    "android": {
+      "package": "com.linguacards.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#eef2ff",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset"
+    ]
+  }
+}
