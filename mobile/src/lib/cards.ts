@@ -1,5 +1,43 @@
 import { supabase } from "@/lib/supabase";
-import type { Card, CardStatus, CardWithProgress, Deck } from "@/types";
+import type {
+  Card,
+  CardStatus,
+  CardWithProgress,
+  Deck,
+  DraftCard,
+} from "@/types";
+
+/** Lưu DraftCard thành card trong deck. */
+export async function saveCard(
+  deckId: string,
+  draft: DraftCard
+): Promise<Card> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  const { data, error } = await supabase
+    .from("cards")
+    .insert({
+      user_id: user.id,
+      deck_id: deckId,
+      term: draft.term,
+      phonetic: draft.phonetic ?? null,
+      audio_us: draft.audioUs ?? null,
+      audio_uk: draft.audioUk ?? null,
+      part_of_speech: draft.partOfSpeech ?? null,
+      meaning_vi: draft.meaningVi ?? null,
+      definitions: draft.definitions,
+      examples: draft.examples,
+      source_language: draft.sourceLanguage,
+      target_language: draft.targetLanguage,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Card;
+}
 
 /** Lấy thông tin 1 deck theo id (null nếu không có / không thuộc user). */
 export async function fetchDeck(deckId: string): Promise<Deck | null> {

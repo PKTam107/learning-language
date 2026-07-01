@@ -30,6 +30,10 @@ interface TranslationProvider {
 
 ## 3. Route handlers (server)
 
+> Các route handler này phục vụ **cả web lẫn mobile**. Web xác thực bằng cookie cùng
+> origin; app mobile gửi `Authorization: Bearer <access_token>` của session Supabase
+> (xem [06-mobile.md](./06-mobile.md)).
+
 ### `POST /api/lookup`
 Request:
 ```json

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { getRequestUser } from "@/lib/supabase/getUser";
 import { buildDraftCard } from "@/lib/lookup";
 
 const BodySchema = z.object({
@@ -10,11 +10,8 @@ const BodySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  // Yêu cầu đăng nhập (tránh lạm dụng API key)
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Yêu cầu đăng nhập (tránh lạm dụng API key) — cookie (web) hoặc Bearer (mobile)
+  const user = await getRequestUser(request);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

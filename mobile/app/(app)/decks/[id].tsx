@@ -17,6 +17,7 @@ import type { Card, Deck } from "@/types";
 import { fetchCards, fetchDeck, deleteCard } from "@/lib/cards";
 import { CardRow } from "@/components/card/CardRow";
 import { Button } from "@/components/ui/Button";
+import { QuickCreator } from "@/components/QuickCreator";
 import { colors, spacing } from "@/lib/theme";
 
 export default function DeckDetailScreen() {
@@ -123,8 +124,7 @@ export default function DeckDetailScreen() {
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Chưa có từ nào.</Text>
             <Text style={styles.emptyText}>
-              Tính năng tra cứu &amp; thêm từ sẽ có ở bản cập nhật tới. Từ tạo
-              trên web sẽ hiển thị ở đây.
+              Bấm nút ＋ góc dưới phải để tra và thêm từ.
             </Text>
           </View>
         }
@@ -132,6 +132,8 @@ export default function DeckDetailScreen() {
           <CardRow card={item} onDelete={handleDelete} />
         )}
       />
+
+      <QuickCreator deckId={deck.id} onSaved={load} />
     </View>
   );
 }
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   notFound: { color: colors.textMuted, fontSize: 16 },
-  list: { padding: spacing.lg, flexGrow: 1 },
+  list: { padding: spacing.lg, paddingBottom: 96, flexGrow: 1 },
   header: { marginBottom: spacing.md },
   title: { fontSize: 22, fontWeight: "700", color: colors.text },
   desc: { marginTop: 2, fontSize: 14, color: colors.textMuted },
