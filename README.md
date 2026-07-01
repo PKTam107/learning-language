@@ -20,6 +20,7 @@ Xem thư mục [`docs/`](./docs):
 - [03 — Database Schema](./docs/03-database-schema.md)
 - [04 — API Integration](./docs/04-api-integration.md)
 - [05 — Roadmap](./docs/05-roadmap.md)
+- [06 — Mobile App](./docs/06-mobile.md)
 
 ## Bắt đầu
 
@@ -50,6 +51,13 @@ cp .env.example .env.local
 npm run dev
 ```
 Mở http://localhost:3000
+
+## Mobile app 📱
+
+Có app di động (**Expo / React Native**) dùng **chung Supabase và chính các route
+handler** của web app — web + mobile là hai client của cùng một backend. Xem
+[docs/06-mobile.md](./docs/06-mobile.md) (tầng hệ thống) và
+[`mobile/README.md`](./mobile/README.md) (setup, chạy).
 
 ## Luồng sử dụng
 
