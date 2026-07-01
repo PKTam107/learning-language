@@ -3,6 +3,10 @@
 App di động (Expo / React Native) cho LinguaCards. Dùng **chung Supabase** với
 web app — cùng database, cùng RLS, cùng tài khoản.
 
+> 📐 Mobile khớp vào kiến trúc hệ thống thế nào (dùng chung backend + route handler
+> với web): xem [`../docs/06-mobile.md`](../docs/06-mobile.md). Doc dưới đây là phần
+> setup & cấu trúc của riêng package mobile.
+
 ## Tech stack
 
 - **Expo SDK 52 + expo-router v4** — file-based routing trong `app/`

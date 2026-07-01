@@ -11,19 +11,23 @@
 | Translate/AI | **OpenAI / Gemini** (qua provider abstraction) | Dịch nghĩa + ví dụ sang tiếng Việt |
 | Validation | **Zod** | Validate payload API & dữ liệu provider |
 | State (client) | React hooks + SWR (tùy chọn) | Đơn giản cho MVP |
+| Mobile client | **Expo SDK 52 + React Native** (expo-router) | Dùng chung Supabase + route handler với web; xem [06-mobile.md](./06-mobile.md) |
 
 ## 2. Sơ đồ thành phần
 
 ```
-                    ┌─────────────────────────────────────────────┐
-                    │                Browser (Client)             │
-                    │  Next.js Pages/Components (App Router)       │
-                    │  - Dashboard / Decks / Study / QuickCreator │
-                    │  - Supabase browser client (auth + data)    │
-                    └───────────────┬─────────────────┬───────────┘
-                                    │ RLS-protected   │ fetch
-                                    │ direct queries  │ /api/*
-                                    ▼                 ▼
+        ┌───────────────────────────┐        ┌───────────────────────────┐
+        │   Browser (Web client)    │        │  Mobile (Expo/RN client)  │
+        │  Next.js App Router        │        │  expo-router screens       │
+        │  Dashboard/Decks/Study/... │        │  Decks/Study/QuickCreator  │
+        │  Supabase browser client   │        │  Supabase client (Async-   │
+        │                            │        │  Storage)                  │
+        └──────┬───────────────┬─────┘        └────┬───────────────┬───────┘
+      RLS trực │       fetch    │ /api/*   RLS trực │       fetch    │ /api/*
+      tiếp     │      (cookie)  │          tiếp     │  (Bearer token)│
+               │                └───────────┬───────┘                │
+               └──────────────┐             │             ┌──────────┘
+                              ▼             ▼             ▼
         ┌───────────────────────────────┐   ┌──────────────────────────────┐
         │        Supabase                │   │  Next.js Route Handlers       │
         │  - Postgres (decks, cards,     │   │  (server-only, giữ API key)   │
@@ -40,6 +44,7 @@
 **Nguyên tắc truy cập dữ liệu:**
 - Dữ liệu người dùng (decks/cards/progress): client query **trực tiếp** Supabase, bảo vệ bằng **RLS** theo `auth.uid()`.
 - Gọi API bên ngoài (dictionary, AI): **bắt buộc qua route handler** server để không lộ key. Route handler cũng ghi/đọc `dictionary_cache`.
+- **Hai client** (web + mobile) dùng chung cả Supabase lẫn route handler. Web xác thực route handler bằng cookie cùng origin; mobile bằng header `Authorization: Bearer <access_token>`. Xem [06-mobile.md](./06-mobile.md).
 
 ## 3. Cấu trúc thư mục
 
@@ -83,7 +88,12 @@ learning-language/
 ├── tsconfig.json
 ├── tailwind.config.ts
 ├── postcss.config.js
-└── next.config.js
+├── next.config.js
+└── mobile/                    # App Expo/React Native (client thứ 2, xem 06-mobile.md)
+    ├── app/                   # expo-router (mỗi file = 1 route)
+    ├── src/                   # lib/supabase, lib/api (gọi /api/lookup), components, contexts
+    ├── docs/chay-app.md       # hướng dẫn chạy (emulator WSL2, điện thoại thật, APK)
+    └── app.json
 ```
 
 ## 4. Luồng chính
