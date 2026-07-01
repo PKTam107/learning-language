@@ -64,8 +64,9 @@ export ANDROID_HOME="$HOME/.android-sdk-wsl"
    export PATH="$HOME/.local/bin:$PATH"
    adb devices                      # phải thấy: emulator-5554   device
    adb reverse tcp:8081 tcp:8081    # Metro
-   adb reverse tcp:3000 tcp:3000    # web API (cho tra từ - Feature 5)
    ```
+   > Tra từ (gọi web API) **không** dùng `adb reverse` mà đi qua `10.0.2.2` — xem
+   > [mục "Tra từ"](#tra-từ-feature-5--chạy-web-song-song) bên dưới.
 
 4. **Khởi động app:**
    ```bash
@@ -144,8 +145,25 @@ Chức năng tra & thêm từ gọi API route của **web app**, nên cần web 
 # terminal khác, ở thư mục gốc repo:
 npm run dev                        # web ở http://localhost:3000
 ```
-- Emulator: đã `adb reverse tcp:3000 tcp:3000` ở bước 1.2 là gọi được.
+
+- **Emulator** gọi web qua `EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:3000` trong
+  `mobile/.env` (`10.0.2.2` = alias trỏ về máy host từ trong emulator).
+- ⚠️ **Bẫy WSL2 + IPv6 (đã từng gây `network request failed`):** `next dev` mặc định
+  bind IPv6 (`::`), nhưng WSL2 chỉ "bắc cầu" port **IPv4** sang Windows. Hệ quả: emulator
+  gọi `10.0.2.2:3000` bị *Connection refused* → app báo lỗi mạng, mà log web **không**
+  thấy request nào. Vì vậy script `dev` (ở [`package.json`](../../package.json) gốc) đã
+  đổi thành **`next dev -H 0.0.0.0`** để ép bind IPv4.
+  Kiểm tra nhanh: `ss -4tln | grep 3000` **phải có** một dòng (nếu rỗng = vẫn IPv6-only).
+- Test đường mạng không cần app (kỳ vọng `401 Unauthorized` = thông):
+  ```bash
+  adb shell '(printf "GET / HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n"; sleep 5) \
+    | toybox nc 10.0.2.2 3000' | head -1     # mong đợi: HTTP/1.1 200 OK
+  ```
 - Provider dịch mặc định `mymemory` (free, không cần key) → nghĩa VI vẫn ra.
+
+> **Vì sao không dùng `adb reverse tcp:3000`?** Trong setup này `adb reverse` mở được
+> kết nối TCP nhưng **không chuyển payload** (kết nối lên nhưng dữ liệu rớt), nên `10.0.2.2`
+> + web bind IPv4 là cách chạy ổn định.
 
 ---
 
@@ -158,5 +176,6 @@ npm run dev                        # web ở http://localhost:3000
 | `adb: command not found` | Chưa `export PATH="$HOME/.local/bin:$PATH"` (wrapper ở mục 1.1a). |
 | Bấm `a` báo lỗi cài Expo Go | Cài Expo Go qua Play Store trong emulator trước (mục 1.2 bước 2). |
 | App trắng / không tải bundle | Chạy lại `adb reverse tcp:8081 tcp:8081`, rồi `r` để reload. |
-| Tra từ báo lỗi mạng | Chưa chạy `npm run dev` hoặc chưa `adb reverse tcp:3000 tcp:3000`. |
+| Tra từ báo `network request failed` (log web không thấy request) | Web bind IPv6-only → WSL2 không forward sang Windows. Đảm bảo script là `next dev -H 0.0.0.0`, restart `npm run dev`, kiểm tra `ss -4tln \| grep 3000` phải có dòng. Và `mobile/.env` = `http://10.0.2.2:3000`. |
+| Tra từ báo lỗi mạng (lý do khác) | Chưa chạy `npm run dev` ở repo gốc. |
 | `Not logged in` khi build | Chạy `npx eas-cli@latest login` trước các lệnh eas khác. |
