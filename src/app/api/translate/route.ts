@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { getRequestUser } from "@/lib/supabase/getUser";
 import { getTranslationProvider } from "@/lib/ai";
 
 const BodySchema = z.object({
@@ -10,10 +10,7 @@ const BodySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getRequestUser(request);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

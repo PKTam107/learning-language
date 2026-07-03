@@ -34,6 +34,18 @@
 - [ ] Dictionary provider theo từng ngôn ngữ nguồn.
 - [ ] i18n giao diện.
 
+## Mobile app (Expo / React Native)
+
+Client thứ 2, dùng chung backend với web (chi tiết: [06-mobile.md](./06-mobile.md)).
+
+- [x] Feature 1 — Skeleton + auth email + điều hướng gác session.
+- [x] Feature 2 — Danh sách bộ thẻ + CRUD.
+- [x] Feature 3 — Danh sách card trong bộ thẻ + xóa.
+- [x] Feature 4 — Study mode: lật thẻ, đánh giá, audio US/UK.
+- [x] Feature 5 — Tra cứu & thêm từ (QuickCreator → `/api/lookup` qua Bearer token).
+- [ ] Feature 6 — Google OAuth, dashboard thống kê.
+- [ ] Build APK/EAS phát hành, đồng bộ Spaced Repetition khi web có (Milestone 3).
+
 ## Backlog / ý tưởng
 - Chia sẻ deck công khai, marketplace deck.
 - Import/export (CSV, Anki .apkg).
