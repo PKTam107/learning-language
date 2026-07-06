@@ -1,4 +1,4 @@
-import type { CardStatus, DeckStats } from "@/types";
+import type { CardStatus, CardWithProgress, DeckStats } from "@/types";
 
 /** Thứ tự hiển thị: chưa học → chưa thuộc → đang thuộc → đã thuộc. */
 export const STATUS_ORDER: CardStatus[] = ["new", "hard", "good", "easy"];
@@ -41,11 +41,27 @@ export function emptyByStatus(): Record<CardStatus, number> {
   return { new: 0, hard: 0, good: 0, easy: 0 };
 }
 
-/** Gộp danh sách trạng thái (mỗi thẻ 1 giá trị) thành DeckStats. */
-export function statsFromStatuses(statuses: CardStatus[]): DeckStats {
+/** Thẻ đến hạn ôn: chưa học (không có next_due_at) hoặc đã tới hạn. */
+export function isDue(
+  nextDueAt: string | null | undefined,
+  nowMs: number = Date.now()
+): boolean {
+  if (!nextDueAt) return true;
+  return new Date(nextDueAt).getTime() <= nowMs;
+}
+
+/** Tính DeckStats (byStatus + due) từ danh sách thẻ kèm progress. */
+export function computeStats(
+  cards: CardWithProgress[],
+  nowMs: number = Date.now()
+): DeckStats {
   const byStatus = emptyByStatus();
-  for (const s of statuses) byStatus[s]++;
-  return { total: statuses.length, byStatus };
+  let due = 0;
+  for (const c of cards) {
+    byStatus[c.progress?.status ?? "new"]++;
+    if (isDue(c.progress?.next_due_at, nowMs)) due++;
+  }
+  return { total: cards.length, byStatus, due };
 }
 
 /** % đã thuộc (easy) để hiển thị nhanh. */

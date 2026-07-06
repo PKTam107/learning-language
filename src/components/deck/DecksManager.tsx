@@ -47,12 +47,14 @@ export function DecksManager({ showStats }: DecksManagerProps) {
   const agg = useMemo<DeckStats>(() => {
     const byStatus = emptyByStatus();
     let total = 0;
+    let due = 0;
     for (const d of decks) {
       if (!d.stats) continue;
       total += d.stats.total;
+      due += d.stats.due;
       for (const s of STATUS_ORDER) byStatus[s] += d.stats.byStatus[s];
     }
-    return { total, byStatus };
+    return { total, byStatus, due };
   }, [decks]);
 
   if (loading) {
@@ -67,10 +69,11 @@ export function DecksManager({ showStats }: DecksManagerProps) {
     <div>
       {showStats && (
         <div className="mb-6">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Stat label="Bộ thẻ" value={decks.length} />
             <Stat label="Tổng số từ" value={agg.total} />
             <Stat label="Đã thuộc" value={agg.byStatus.easy} />
+            <Stat label="Ôn hôm nay" value={agg.due} accent={agg.due > 0} />
           </div>
           {agg.total > 0 && (
             <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
@@ -125,11 +128,25 @@ export function DecksManager({ showStats }: DecksManagerProps) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  accent?: boolean;
+}) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
+      <p
+        className={`mt-1 text-2xl font-bold ${
+          accent ? "text-amber-600" : "text-slate-900"
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }

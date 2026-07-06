@@ -4,12 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { CardStatus, CardWithProgress } from "@/types";
 import { fetchCardsWithProgress, recordProgress } from "@/lib/db/cards";
-import { STATUS_META } from "@/lib/status";
+import { STATUS_META, isDue } from "@/lib/status";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { FlashcardFlip } from "./FlashcardFlip";
 
-type Mode = "all" | "weak";
+type Mode = "all" | "weak" | "due";
 type Phase = "setup" | "studying" | "done";
 /** Trạng thái người dùng gán khi đánh giá (3 nút). */
 type Assessed = "hard" | "good" | "easy";
@@ -45,6 +45,7 @@ export function StudySession({ deckId }: { deckId: string }) {
   const [all, setAll] = useState<CardWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase>("setup");
+  const [inited, setInited] = useState(false);
 
   // Tùy chọn phiên học
   const [mode, setMode] = useState<Mode>("all");
@@ -70,9 +71,25 @@ export function StudySession({ deckId }: { deckId: string }) {
   }, [load]);
 
   const weakCount = useMemo(() => all.filter(isWeak).length, [all]);
+  const dueCount = useMemo(
+    () => all.filter((c) => isDue(c.progress?.next_due_at)).length,
+    [all]
+  );
+
+  // Mặc định chọn "Ôn hôm nay" khi có thẻ đến hạn (khuyến nghị spaced repetition).
+  useEffect(() => {
+    if (inited || all.length === 0) return;
+    setInited(true);
+    if (all.some((c) => isDue(c.progress?.next_due_at))) setMode("due");
+  }, [all, inited]);
 
   function start() {
-    const pool = mode === "weak" ? all.filter(isWeak) : all;
+    const pool =
+      mode === "weak"
+        ? all.filter(isWeak)
+        : mode === "due"
+          ? all.filter((c) => isDue(c.progress?.next_due_at))
+          : all;
     let list = shuffle ? shuffleArr(pool) : orderCards(pool);
     if (limit > 0) list = list.slice(0, limit);
     setQueue(list);
@@ -169,6 +186,14 @@ export function StudySession({ deckId }: { deckId: string }) {
 
         <div className="space-y-2">
           <ModeOption
+            label="Ôn hôm nay"
+            desc="Thẻ đến hạn ôn (spaced repetition)"
+            count={dueCount}
+            active={mode === "due"}
+            onClick={() => setMode("due")}
+            disabled={dueCount === 0}
+          />
+          <ModeOption
             label="Ôn tất cả"
             desc="Toàn bộ từ trong bộ thẻ"
             count={all.length}
@@ -216,7 +241,10 @@ export function StudySession({ deckId }: { deckId: string }) {
             size="lg"
             className="flex-1"
             onClick={start}
-            disabled={mode === "weak" && weakCount === 0}
+            disabled={
+              (mode === "weak" && weakCount === 0) ||
+              (mode === "due" && dueCount === 0)
+            }
           >
             Bắt đầu
           </Button>

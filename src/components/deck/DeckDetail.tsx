@@ -12,7 +12,7 @@ import {
   cardToDraft,
 } from "@/lib/db/cards";
 import { fetchDecks } from "@/lib/db/decks";
-import { STATUS_META, STATUS_ORDER, masteredPercent, statsFromStatuses } from "@/lib/status";
+import { STATUS_META, STATUS_ORDER, computeStats, masteredPercent } from "@/lib/status";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
@@ -60,10 +60,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
     load();
   }, [load]);
 
-  const stats = useMemo(
-    () => statsFromStatuses(cards.map(statusOf)),
-    [cards]
-  );
+  const stats = useMemo(() => computeStats(cards), [cards]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -170,6 +167,9 @@ export function DeckDetail({ deckId }: { deckId: string }) {
           <p className="mt-1 text-sm text-slate-400">
             {cards.length} từ
             {cards.length > 0 && ` · ${masteredPercent(stats)}% đã thuộc`}
+            {stats.due > 0 && (
+              <span className="text-amber-600"> · {stats.due} cần ôn</span>
+            )}
           </p>
         </div>
         {cards.length > 0 && (
