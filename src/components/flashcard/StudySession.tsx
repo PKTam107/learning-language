@@ -285,31 +285,26 @@ export function StudySession({ deckId }: { deckId: string }) {
       <div className="mt-6">
         {flipped ? (
           <div className="grid grid-cols-3 gap-3">
-            <Button variant="danger" size="lg" onClick={() => assess("hard")}>
+            <Button
+              size="lg"
+              className="bg-red-500 text-white hover:bg-red-600"
+              onClick={() => assess("hard")}
+            >
               Chưa thuộc
-              <span className="ml-1 hidden text-xs opacity-70 sm:inline">
-                (1)
-              </span>
             </Button>
             <Button
               size="lg"
-              className="bg-amber-500 hover:bg-amber-600"
+              className="bg-amber-500 text-white hover:bg-amber-600"
               onClick={() => assess("good")}
             >
               Tạm nhớ
-              <span className="ml-1 hidden text-xs opacity-70 sm:inline">
-                (2)
-              </span>
             </Button>
             <Button
               size="lg"
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 text-white hover:bg-green-700"
               onClick={() => assess("easy")}
             >
               Đã thuộc
-              <span className="ml-1 hidden text-xs opacity-70 sm:inline">
-                (3)
-              </span>
             </Button>
           </div>
         ) : (
