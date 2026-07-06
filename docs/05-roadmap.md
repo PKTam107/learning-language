@@ -17,9 +17,12 @@
 - [ ] Test luồng: login → tạo deck → lookup từ → lưu → study.
 - [ ] Hoàn thiện edge case: từ không tìm thấy, mất mạng, AI lỗi.
 
+> Hiện trạng thực tế + kế hoạch chi tiết (P1–P4): xem [07-current-state.md](./07-current-state.md).
+
 ## Milestone 2 — Hoàn thiện trải nghiệm
-- [ ] Di chuyển card giữa deck (bulk).
-- [ ] Tìm kiếm / lọc card trong deck.
+- [x] Sửa thẻ đã lưu + xem chi tiết card (P1).
+- [x] Di chuyển card giữa deck (P1; bulk vẫn để sau).
+- [x] Tìm kiếm / lọc card trong deck (P1).
 - [ ] Thống kê dashboard chi tiết (streak, số từ theo trạng thái).
 - [ ] Phím tắt đầy đủ + animation lật thẻ mượt.
 - [ ] PWA (cài lên màn hình điện thoại, offline cơ bản).

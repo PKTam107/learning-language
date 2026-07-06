@@ -37,6 +37,43 @@ export async function saveCard(
   return data as Card;
 }
 
+/** Cập nhật 1 card đã lưu từ DraftCard (dùng khi sửa thẻ). */
+export async function updateCard(
+  id: string,
+  draft: DraftCard
+): Promise<void> {
+  const { error } = await supabase()
+    .from("cards")
+    .update({
+      term: draft.term,
+      phonetic: draft.phonetic ?? null,
+      audio_us: draft.audioUs ?? null,
+      audio_uk: draft.audioUk ?? null,
+      part_of_speech: draft.partOfSpeech ?? null,
+      meaning_vi: draft.meaningVi ?? null,
+      definitions: draft.definitions,
+      examples: draft.examples,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** Chuyển Card (snake_case DB) → DraftCard (camelCase) để tái dùng DraftEditor. */
+export function cardToDraft(card: Card): DraftCard {
+  return {
+    term: card.term,
+    phonetic: card.phonetic ?? undefined,
+    audioUs: card.audio_us ?? undefined,
+    audioUk: card.audio_uk ?? undefined,
+    partOfSpeech: card.part_of_speech ?? undefined,
+    meaningVi: card.meaning_vi ?? undefined,
+    definitions: card.definitions ?? [],
+    examples: card.examples ?? [],
+    sourceLanguage: card.source_language,
+    targetLanguage: card.target_language,
+  };
+}
+
 export async function fetchCards(deckId: string): Promise<Card[]> {
   const { data, error } = await supabase()
     .from("cards")
