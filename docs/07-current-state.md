@@ -82,9 +82,9 @@ Nguồn sự thật nhãn/màu: [src/lib/status.ts](../src/lib/status.ts).
 - [ ] Deck card (list) + Dashboard: mini bar + số "đã thuộc / tổng"; stat tổng hợp toàn tài khoản.
 - [ ] `fetchDecksWithStats()` — đếm theo status (2 query cho cả list, không N+1).
 
-**P2.2 — Học đa năng**
-- [ ] Màn chọn chế độ trước phiên: Ôn tất cả / Chỉ từ chưa thuộc (new+hard) / giới hạn số thẻ / xáo trộn.
-- [ ] Tóm tắt sau phiên (chuyển bao nhiêu từ sang mỗi nhóm).
+**P2.2 — Học đa năng** ✅
+- [x] Màn chọn chế độ trước phiên: Ôn tất cả / Chỉ từ chưa thuộc (new+hard) / giới hạn số thẻ / xáo trộn.
+- [x] Tóm tắt sau phiên (đếm số từ đánh giá theo mỗi nhóm).
 
 **P2.3 — Spaced Repetition (SM-2)**
 - [ ] Dùng `next_due_at`, `ease_factor` (đã có cột): đánh giá → tính lịch ôn lại.
