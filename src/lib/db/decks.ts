@@ -1,7 +1,8 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import type { Deck } from "@/types";
+import type { CardStatus, Deck, DeckStats } from "@/types";
+import { emptyByStatus } from "@/lib/status";
 
 const supabase = () => createClient();
 
@@ -17,6 +18,40 @@ export async function fetchDecks(): Promise<Deck[]> {
     ...d,
     card_count: d.cards?.[0]?.count ?? 0,
   }));
+}
+
+/**
+ * Danh sách deck kèm thống kê trạng thái, chỉ 2 query (không N+1):
+ * 1 query decks + 1 query toàn bộ cards (RLS đã giới hạn theo user) kèm status.
+ */
+export async function fetchDecksWithStats(): Promise<Deck[]> {
+  const sb = supabase();
+  const [decksRes, cardsRes] = await Promise.all([
+    sb.from("decks").select("*").order("created_at", { ascending: false }),
+    sb.from("cards").select("deck_id, card_progress(status)"),
+  ]);
+  if (decksRes.error) throw decksRes.error;
+  if (cardsRes.error) throw cardsRes.error;
+
+  const statsByDeck = new Map<string, DeckStats>();
+  for (const c of (cardsRes.data ?? []) as any[]) {
+    const status = (c.card_progress?.[0]?.status ?? "new") as CardStatus;
+    let s = statsByDeck.get(c.deck_id);
+    if (!s) {
+      s = { total: 0, byStatus: emptyByStatus() };
+      statsByDeck.set(c.deck_id, s);
+    }
+    s.total++;
+    s.byStatus[status]++;
+  }
+
+  return (decksRes.data ?? []).map((d: any) => {
+    const stats = statsByDeck.get(d.id) ?? {
+      total: 0,
+      byStatus: emptyByStatus(),
+    };
+    return { ...d, card_count: stats.total, stats } as Deck;
+  });
 }
 
 export async function createDeck(input: {

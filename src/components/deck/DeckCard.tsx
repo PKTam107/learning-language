@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Deck } from "@/types";
+import { StatusBar } from "@/components/status/StatusBar";
 
 interface DeckCardProps {
   deck: Deck;
@@ -41,9 +42,16 @@ export function DeckCard({ deck, onEdit, onDelete }: DeckCardProps) {
         </div>
       </div>
 
+      {deck.stats && deck.stats.total > 0 && (
+        <StatusBar stats={deck.stats} showLegend={false} className="mt-4" />
+      )}
+
       <div className="mt-4 flex items-center justify-between">
         <span className="text-sm text-slate-500">
           {deck.card_count ?? 0} từ
+          {deck.stats && deck.stats.total > 0 && (
+            <> · {deck.stats.byStatus.easy} đã thuộc</>
+          )}
         </span>
         <Link
           href={`/study/${deck.id}`}

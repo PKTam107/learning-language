@@ -33,6 +33,12 @@ export interface DraftCard {
   notFound?: boolean;
 }
 
+/** Thống kê số thẻ theo trạng thái học trong 1 deck. */
+export interface DeckStats {
+  total: number;
+  byStatus: Record<CardStatus, number>;
+}
+
 export interface Deck {
   id: string;
   user_id: string;
@@ -44,6 +50,8 @@ export interface Deck {
   updated_at: string;
   /** Tổng số card (join/đếm khi cần). */
   card_count?: number;
+  /** Thống kê trạng thái (khi lấy qua fetchDecksWithStats). */
+  stats?: DeckStats;
 }
 
 export interface Card {

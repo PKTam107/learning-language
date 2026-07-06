@@ -2,16 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { Card, Deck, DraftCard } from "@/types";
+import type { Card, CardStatus, CardWithProgress, Deck, DraftCard } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import {
-  fetchCards,
+  fetchCardsWithProgress,
   deleteCard,
   updateCard,
   moveCard,
   cardToDraft,
 } from "@/lib/db/cards";
 import { fetchDecks } from "@/lib/db/decks";
+import { STATUS_META, STATUS_ORDER, masteredPercent, statsFromStatuses } from "@/lib/status";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
@@ -19,15 +20,20 @@ import { Modal } from "@/components/ui/Modal";
 import { AudioButton } from "@/components/flashcard/AudioButton";
 import { CardDetail } from "@/components/flashcard/CardDetail";
 import { DraftEditor } from "@/components/flashcard/DraftEditor";
+import { StatusBar } from "@/components/status/StatusBar";
+import { StatusDot } from "@/components/status/StatusDot";
 import { QuickCreator } from "@/components/QuickCreator";
+
+const statusOf = (c: CardWithProgress): CardStatus => c.progress?.status ?? "new";
 
 type Mode = "detail" | "edit" | "move";
 
 export function DeckDetail({ deckId }: { deckId: string }) {
   const [deck, setDeck] = useState<Deck | null>(null);
-  const [cards, setCards] = useState<Card[]>([]);
+  const [cards, setCards] = useState<CardWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<CardStatus | "all">("all");
 
   // Modal đang mở cho 1 card cụ thể
   const [active, setActive] = useState<{ card: Card; mode: Mode } | null>(null);
@@ -43,7 +49,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
     const supabase = createClient();
     const [{ data: deckData }, cardData] = await Promise.all([
       supabase.from("decks").select("*").eq("id", deckId).maybeSingle(),
-      fetchCards(deckId),
+      fetchCardsWithProgress(deckId),
     ]);
     setDeck(deckData as Deck | null);
     setCards(cardData);
@@ -54,16 +60,23 @@ export function DeckDetail({ deckId }: { deckId: string }) {
     load();
   }, [load]);
 
+  const stats = useMemo(
+    () => statsFromStatuses(cards.map(statusOf)),
+    [cards]
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return cards;
-    return cards.filter(
-      (c) =>
+    return cards.filter((c) => {
+      if (statusFilter !== "all" && statusOf(c) !== statusFilter) return false;
+      if (!q) return true;
+      return (
         c.term.toLowerCase().includes(q) ||
         (c.meaning_vi ?? "").toLowerCase().includes(q) ||
         (c.phonetic ?? "").toLowerCase().includes(q)
-    );
-  }, [cards, query]);
+      );
+    });
+  }, [cards, query, statusFilter]);
 
   function close() {
     setActive(null);
@@ -154,7 +167,10 @@ export function DeckDetail({ deckId }: { deckId: string }) {
           {deck.description && (
             <p className="text-sm text-slate-500">{deck.description}</p>
           )}
-          <p className="mt-1 text-sm text-slate-400">{cards.length} từ</p>
+          <p className="mt-1 text-sm text-slate-400">
+            {cards.length} từ
+            {cards.length > 0 && ` · ${masteredPercent(stats)}% đã thuộc`}
+          </p>
         </div>
         {cards.length > 0 && (
           <Link href={`/study/${deck.id}`}>
@@ -163,15 +179,39 @@ export function DeckDetail({ deckId }: { deckId: string }) {
         )}
       </div>
 
-      {/* Ô tìm kiếm — chỉ hiện khi có card */}
+      {/* Thanh trạng thái + tìm kiếm + lọc — chỉ hiện khi có card */}
       {cards.length > 0 && (
-        <div className="mb-4">
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm theo từ, nghĩa hoặc phiên âm..."
-          />
-        </div>
+        <>
+          <StatusBar stats={stats} className="mb-4" />
+
+          <div className="mb-3">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Tìm theo từ, nghĩa hoặc phiên âm..."
+            />
+          </div>
+
+          <div className="mb-4 flex flex-wrap gap-2">
+            <FilterChip
+              active={statusFilter === "all"}
+              onClick={() => setStatusFilter("all")}
+            >
+              Tất cả {cards.length}
+            </FilterChip>
+            {STATUS_ORDER.map((s) => (
+              <FilterChip
+                key={s}
+                active={statusFilter === s}
+                onClick={() => setStatusFilter(s)}
+                disabled={stats.byStatus[s] === 0}
+              >
+                <span className={`h-2 w-2 rounded-full ${STATUS_META[s].dot}`} />
+                {STATUS_META[s].label} {stats.byStatus[s]}
+              </FilterChip>
+            ))}
+          </div>
+        </>
       )}
 
       {cards.length === 0 ? (
@@ -180,7 +220,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 py-12 text-center text-slate-500">
-          Không có từ nào khớp “{query}”.
+          Không có từ nào khớp bộ lọc hiện tại.
         </div>
       ) : (
         <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -195,6 +235,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
                 aria-label={`Xem chi tiết ${card.term}`}
               >
                 <div className="flex items-center gap-2">
+                  <StatusDot status={statusOf(card)} />
                   <span className="font-semibold">{card.term}</span>
                   {card.phonetic && (
                     <span className="text-sm text-slate-400">
@@ -303,6 +344,32 @@ export function DeckDetail({ deckId }: { deckId: string }) {
 
       <QuickCreator defaultDeckId={deckId} onSaved={load} />
     </div>
+  );
+}
+
+function FilterChip({
+  children,
+  active,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors disabled:opacity-40 ${
+        active
+          ? "border-brand bg-brand-light text-brand-dark"
+          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
