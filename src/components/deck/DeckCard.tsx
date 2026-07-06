@@ -52,6 +52,9 @@ export function DeckCard({ deck, onEdit, onDelete }: DeckCardProps) {
           {deck.stats && deck.stats.total > 0 && (
             <> · {deck.stats.byStatus.easy} đã thuộc</>
           )}
+          {deck.stats && deck.stats.due > 0 && (
+            <span className="text-amber-600"> · {deck.stats.due} cần ôn</span>
+          )}
         </span>
         <Link
           href={`/study/${deck.id}`}

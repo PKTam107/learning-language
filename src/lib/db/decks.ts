@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import type { CardStatus, Deck, DeckStats } from "@/types";
-import { emptyByStatus } from "@/lib/status";
+import { emptyByStatus, isDue } from "@/lib/status";
 
 const supabase = () => createClient();
 
@@ -28,27 +28,31 @@ export async function fetchDecksWithStats(): Promise<Deck[]> {
   const sb = supabase();
   const [decksRes, cardsRes] = await Promise.all([
     sb.from("decks").select("*").order("created_at", { ascending: false }),
-    sb.from("cards").select("deck_id, card_progress(status)"),
+    sb.from("cards").select("deck_id, card_progress(status, next_due_at)"),
   ]);
   if (decksRes.error) throw decksRes.error;
   if (cardsRes.error) throw cardsRes.error;
 
+  const now = Date.now();
   const statsByDeck = new Map<string, DeckStats>();
   for (const c of (cardsRes.data ?? []) as any[]) {
-    const status = (c.card_progress?.[0]?.status ?? "new") as CardStatus;
+    const progress = c.card_progress?.[0];
+    const status = (progress?.status ?? "new") as CardStatus;
     let s = statsByDeck.get(c.deck_id);
     if (!s) {
-      s = { total: 0, byStatus: emptyByStatus() };
+      s = { total: 0, byStatus: emptyByStatus(), due: 0 };
       statsByDeck.set(c.deck_id, s);
     }
     s.total++;
     s.byStatus[status]++;
+    if (isDue(progress?.next_due_at, now)) s.due++;
   }
 
   return (decksRes.data ?? []).map((d: any) => {
     const stats = statsByDeck.get(d.id) ?? {
       total: 0,
       byStatus: emptyByStatus(),
+      due: 0,
     };
     return { ...d, card_count: stats.total, stats } as Deck;
   });

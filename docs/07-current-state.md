@@ -86,9 +86,14 @@ Nguồn sự thật nhãn/màu: [src/lib/status.ts](../src/lib/status.ts).
 - [x] Màn chọn chế độ trước phiên: Ôn tất cả / Chỉ từ chưa thuộc (new+hard) / giới hạn số thẻ / xáo trộn.
 - [x] Tóm tắt sau phiên (đếm số từ đánh giá theo mỗi nhóm).
 
-**P2.3 — Spaced Repetition (SM-2)**
-- [ ] Dùng `next_due_at`, `ease_factor` (đã có cột): đánh giá → tính lịch ôn lại.
-- [ ] Hàng đợi **"Ôn hôm nay"** (`next_due_at <= now()`) + dashboard "cần ôn N từ" + streak.
+**P2.3 — Spaced Repetition** ✅ (trừ streak)
+- [x] SM-2 rút gọn trong `recordProgress`: đánh giá → tính `next_due_at` + cập nhật
+  `ease_factor` (hard: ôn lại 1 ngày & giảm ease; good: khoảng × ease; easy: × ease × 1.3).
+- [x] Chế độ **"Ôn hôm nay"** (thẻ đến hạn / chưa học) trong màn chọn chế độ; mặc định
+  chọn khi có thẻ đến hạn.
+- [x] Deck detail + deck card + dashboard hiện **số thẻ cần ôn** (`due`).
+- [ ] **Streak** (chuỗi ngày học liên tục): cần bảng lịch sử ôn (`review_log`) vì
+  `last_reviewed_at` chỉ lưu lần cuối mỗi thẻ → **để lại P4** (kèm migration).
 
 ### P3 — Đa ngôn ngữ (mở khóa kiến trúc DB có sẵn)
 - [ ] Dùng `profiles.default_source/target_language`; chọn ngôn ngữ khi tạo deck (bỏ hardcode).

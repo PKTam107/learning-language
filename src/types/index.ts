@@ -37,6 +37,8 @@ export interface DraftCard {
 export interface DeckStats {
   total: number;
   byStatus: Record<CardStatus, number>;
+  /** Số thẻ đến hạn ôn (chưa học hoặc next_due_at <= hiện tại). */
+  due: number;
 }
 
 export interface Deck {
