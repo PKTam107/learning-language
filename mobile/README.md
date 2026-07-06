@@ -77,4 +77,6 @@ src/
 - [x] **Feature 3** — Danh sách card trong bộ thẻ + xóa (header tên deck, số từ)
 - [x] **Feature 4** — Study mode: lật thẻ (animation), đánh giá, audio US/UK, thanh tiến độ
 - [x] **Feature 5** — Tra cứu & thêm từ (QuickCreator gọi `/api/lookup` qua Bearer token)
-- [ ] Feature 6 — Google OAuth, dashboard thống kê
+- [x] **P2 parity** — trạng thái học (bar/chấm/lọc) + chế độ học (Ôn hôm nay/chưa thuộc/giới hạn/xáo trộn) + spaced repetition SM-2 + thống kê "cần ôn". Ngang web.
+- [ ] Feature 6 — Google OAuth, dashboard thống kê nâng cao
+- [ ] Parity P1 — sửa / chuyển / xem chi tiết thẻ (web đã có)

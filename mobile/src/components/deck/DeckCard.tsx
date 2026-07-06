@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Deck } from "@/types";
+import { StatusBar } from "@/components/status/StatusBar";
 import { colors, radius, spacing } from "@/lib/theme";
 
 interface Props {
@@ -46,7 +47,19 @@ export function DeckCard({ deck, onPress, onEdit, onDelete }: Props) {
         </View>
       </View>
 
-      <Text style={styles.count}>{deck.card_count ?? 0} từ</Text>
+      {!!deck.stats && deck.stats.total > 0 && (
+        <StatusBar stats={deck.stats} showLegend={false} />
+      )}
+
+      <Text style={styles.count}>
+        {deck.card_count ?? 0} từ
+        {!!deck.stats && deck.stats.total > 0 && (
+          <Text> · {deck.stats.byStatus.easy} đã thuộc</Text>
+        )}
+        {!!deck.stats && deck.stats.due > 0 && (
+          <Text style={styles.due}> · {deck.stats.due} cần ôn</Text>
+        )}
+      </Text>
     </Pressable>
   );
 }
@@ -69,4 +82,5 @@ const styles = StyleSheet.create({
   iconBtn: { padding: 4 },
   icon: { fontSize: 16 },
   count: { fontSize: 14, color: colors.textMuted },
+  due: { color: "#d97706" }, // amber-600
 });
