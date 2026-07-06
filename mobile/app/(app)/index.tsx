@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,10 +10,12 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import type { Deck } from "@/types";
-import { fetchDecks, deleteDeck } from "@/lib/decks";
+import type { Deck, DeckStats } from "@/types";
+import { fetchDecksWithStats, deleteDeck } from "@/lib/decks";
+import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
 import { DeckCard } from "@/components/deck/DeckCard";
 import { DeckForm } from "@/components/deck/DeckForm";
+import { StatusBar } from "@/components/status/StatusBar";
 import { colors, radius, spacing } from "@/lib/theme";
 
 export default function DecksScreen() {
@@ -28,7 +30,7 @@ export default function DecksScreen() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      setDecks(await fetchDecks());
+      setDecks(await fetchDecksWithStats());
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -43,6 +45,19 @@ export default function DecksScreen() {
       load();
     }, [load])
   );
+
+  const agg = useMemo<DeckStats>(() => {
+    const byStatus = emptyByStatus();
+    let total = 0;
+    let due = 0;
+    for (const d of decks) {
+      if (!d.stats) continue;
+      total += d.stats.total;
+      due += d.stats.due;
+      for (const s of STATUS_ORDER) byStatus[s] += d.stats.byStatus[s];
+    }
+    return { total, byStatus, due };
+  }, [decks]);
 
   function handleDelete(deck: Deck) {
     Alert.alert(
@@ -94,6 +109,19 @@ export default function DecksScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.heading}>Bộ từ vựng của bạn</Text>
+            {agg.total > 0 && (
+              <View style={styles.statsCard}>
+                <View style={styles.statsRow}>
+                  <Stat label="Bộ thẻ" value={decks.length} />
+                  <Stat label="Tổng từ" value={agg.total} />
+                  <Stat label="Đã thuộc" value={agg.byStatus.easy} />
+                  <Stat label="Cần ôn" value={agg.due} accent={agg.due > 0} />
+                </View>
+                <View style={styles.statsBar}>
+                  <StatusBar stats={agg} />
+                </View>
+              </View>
+            )}
             {!!error && <Text style={styles.error}>{error}</Text>}
           </View>
         }
@@ -139,8 +167,40 @@ export default function DecksScreen() {
   );
 }
 
+function Stat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent?: boolean;
+}) {
+  return (
+    <View style={styles.stat}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, accent && styles.statAccent]}>{value}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
+  statsCard: {
+    marginTop: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    gap: spacing.md,
+  },
+  statsRow: { flexDirection: "row", justifyContent: "space-between" },
+  statsBar: {},
+  stat: { alignItems: "center", flex: 1 },
+  statLabel: { fontSize: 11, color: colors.textSubtle, textTransform: "uppercase" },
+  statValue: { marginTop: 2, fontSize: 20, fontWeight: "700", color: colors.text },
+  statAccent: { color: "#d97706" },
   center: {
     flex: 1,
     alignItems: "center",

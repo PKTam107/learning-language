@@ -82,7 +82,27 @@ export async function fetchCardsWithProgress(
   }));
 }
 
-/** Ghi nhận đánh giá thuộc bài (upsert theo user+card). */
+const DAY_MS = 86_400_000;
+const MIN_EASE = 1.3;
+
+/** Lịch ôn kiểu SM-2 rút gọn (đồng bộ với web src/lib/db/cards.ts). */
+function computeSchedule(
+  status: CardStatus,
+  prevEase: number,
+  prevIntervalDays: number
+): { ease: number; intervalDays: number } {
+  if (status === "hard") {
+    return { ease: Math.max(MIN_EASE, prevEase - 0.2), intervalDays: 1 };
+  }
+  if (status === "easy") {
+    const base = prevIntervalDays < 1 ? 3 : prevIntervalDays * prevEase * 1.3;
+    return { ease: prevEase + 0.15, intervalDays: Math.round(base) };
+  }
+  const base = prevIntervalDays < 1 ? 1 : prevIntervalDays * prevEase;
+  return { ease: prevEase, intervalDays: Math.round(base) };
+}
+
+/** Ghi nhận đánh giá + tính lịch ôn lại (spaced repetition). */
 export async function recordProgress(
   cardId: string,
   status: CardStatus
@@ -92,13 +112,33 @@ export async function recordProgress(
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Chưa đăng nhập");
 
-  // Lấy review_count hiện tại để +1
   const { data: existing } = await supabase
     .from("card_progress")
-    .select("review_count")
+    .select("review_count, ease_factor, last_reviewed_at, next_due_at")
     .eq("user_id", user.id)
     .eq("card_id", cardId)
     .maybeSingle();
+
+  const prevEase = existing?.ease_factor ?? 2.5;
+  let prevIntervalDays = 0;
+  if (existing?.last_reviewed_at && existing?.next_due_at) {
+    prevIntervalDays = Math.max(
+      0,
+      Math.round(
+        (new Date(existing.next_due_at).getTime() -
+          new Date(existing.last_reviewed_at).getTime()) /
+          DAY_MS
+      )
+    );
+  }
+
+  const { ease, intervalDays } = computeSchedule(
+    status,
+    prevEase,
+    prevIntervalDays
+  );
+  const now = new Date();
+  const nextDue = new Date(now.getTime() + intervalDays * DAY_MS);
 
   const { error } = await supabase.from("card_progress").upsert(
     {
@@ -106,7 +146,9 @@ export async function recordProgress(
       card_id: cardId,
       status,
       review_count: (existing?.review_count ?? 0) + 1,
-      last_reviewed_at: new Date().toISOString(),
+      last_reviewed_at: now.toISOString(),
+      next_due_at: nextDue.toISOString(),
+      ease_factor: ease,
     },
     { onConflict: "user_id,card_id" }
   );

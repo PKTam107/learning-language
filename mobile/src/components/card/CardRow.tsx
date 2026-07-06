@@ -1,17 +1,20 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import type { Card } from "@/types";
+import type { Card, CardStatus } from "@/types";
+import { StatusDot } from "@/components/status/StatusDot";
 import { colors, radius, spacing } from "@/lib/theme";
 
 interface Props {
   card: Card;
+  status?: CardStatus;
   onDelete: (card: Card) => void;
 }
 
-export function CardRow({ card, onDelete }: Props) {
+export function CardRow({ card, status, onDelete }: Props) {
   return (
     <View style={styles.row}>
       <View style={styles.info}>
         <View style={styles.termLine}>
+          {status && <StatusDot status={status} />}
           <Text style={styles.term}>{card.term}</Text>
           {!!card.phonetic && (
             <Text style={styles.phonetic}>{card.phonetic}</Text>
