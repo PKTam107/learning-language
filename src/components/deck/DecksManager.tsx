@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { Deck } from "@/types";
-import { fetchDecks, deleteDeck } from "@/lib/db/decks";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Deck, DeckStats } from "@/types";
+import { fetchDecksWithStats, deleteDeck } from "@/lib/db/decks";
+import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
+import { StatusBar } from "@/components/status/StatusBar";
 import { DeckCard } from "./DeckCard";
 import { DeckForm } from "./DeckForm";
 
@@ -21,7 +23,7 @@ export function DecksManager({ showStats }: DecksManagerProps) {
 
   const load = useCallback(async () => {
     try {
-      setDecks(await fetchDecks());
+      setDecks(await fetchDecksWithStats());
     } finally {
       setLoading(false);
     }
@@ -42,7 +44,16 @@ export function DecksManager({ showStats }: DecksManagerProps) {
     load();
   }
 
-  const totalCards = decks.reduce((s, d) => s + (d.card_count ?? 0), 0);
+  const agg = useMemo<DeckStats>(() => {
+    const byStatus = emptyByStatus();
+    let total = 0;
+    for (const d of decks) {
+      if (!d.stats) continue;
+      total += d.stats.total;
+      for (const s of STATUS_ORDER) byStatus[s] += d.stats.byStatus[s];
+    }
+    return { total, byStatus };
+  }, [decks]);
 
   if (loading) {
     return (
@@ -55,10 +66,17 @@ export function DecksManager({ showStats }: DecksManagerProps) {
   return (
     <div>
       {showStats && (
-        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <Stat label="Bộ thẻ" value={decks.length} />
-          <Stat label="Tổng số từ" value={totalCards} />
-          <Stat label="Ngôn ngữ" value="EN → VI" />
+        <div className="mb-6">
+          <div className="grid grid-cols-3 gap-4">
+            <Stat label="Bộ thẻ" value={decks.length} />
+            <Stat label="Tổng số từ" value={agg.total} />
+            <Stat label="Đã thuộc" value={agg.byStatus.easy} />
+          </div>
+          {agg.total > 0 && (
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+              <StatusBar stats={agg} />
+            </div>
+          )}
         </div>
       )}
 

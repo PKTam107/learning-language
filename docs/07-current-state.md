@@ -63,10 +63,32 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
 - [x] Tìm/lọc card trong deck.
 - [x] Xem chi tiết card (definitions/examples/audio UK).
 
-### P2 — Học hiệu quả (Spaced Repetition thật) — *khác biệt sản phẩm*
-- [ ] Cài **SM-2** dùng `next_due_at`, `ease_factor` (đã có cột).
-- [ ] Hàng đợi **"hôm nay cần ôn N từ"** (query `next_due_at <= now()`).
-- [ ] **Dashboard thống kê thật**: streak, số từ theo status, số ôn hôm nay.
+### P2 — Trạng thái học dùng được & học đa năng — *khác biệt sản phẩm*
+
+**Mô hình trạng thái (thống nhất mọi nơi):**
+
+| DB | Nhãn | Màu | Ý nghĩa |
+|---|---|---|---|
+| `new` | Chưa học | ⚪ xám | Chưa ôn lần nào |
+| `hard` | Chưa thuộc | 🔴 đỏ | Đánh giá "khó" |
+| `good` | Đang thuộc | 🟡 vàng | "tạm nhớ" |
+| `easy` | Đã thuộc | 🟢 xanh | "đã thuộc" |
+
+Nguồn sự thật nhãn/màu: [src/lib/status.ts](../src/lib/status.ts).
+
+**P2.1 — Hiển thị trạng thái** (nền tảng UX, không đụng logic)
+- [ ] `StatusBar` (thanh tiến độ theo màu + chú thích số) + `StatusDot` (chấm màu mỗi thẻ).
+- [ ] Deck detail: header % đã thuộc + breakdown; **lọc theo trạng thái** (kết hợp ô tìm P1); chấm màu mỗi hàng.
+- [ ] Deck card (list) + Dashboard: mini bar + số "đã thuộc / tổng"; stat tổng hợp toàn tài khoản.
+- [ ] `fetchDecksWithStats()` — đếm theo status (2 query cho cả list, không N+1).
+
+**P2.2 — Học đa năng**
+- [ ] Màn chọn chế độ trước phiên: Ôn tất cả / Chỉ từ chưa thuộc (new+hard) / giới hạn số thẻ / xáo trộn.
+- [ ] Tóm tắt sau phiên (chuyển bao nhiêu từ sang mỗi nhóm).
+
+**P2.3 — Spaced Repetition (SM-2)**
+- [ ] Dùng `next_due_at`, `ease_factor` (đã có cột): đánh giá → tính lịch ôn lại.
+- [ ] Hàng đợi **"Ôn hôm nay"** (`next_due_at <= now()`) + dashboard "cần ôn N từ" + streak.
 
 ### P3 — Đa ngôn ngữ (mở khóa kiến trúc DB có sẵn)
 - [ ] Dùng `profiles.default_source/target_language`; chọn ngôn ngữ khi tạo deck (bỏ hardcode).
