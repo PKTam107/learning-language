@@ -15,8 +15,16 @@ import {
   useLocalSearchParams,
   useRouter,
 } from "expo-router";
-import type { CardStatus, CardWithProgress, Deck } from "@/types";
-import { fetchCardsWithProgress, fetchDeck, deleteCard } from "@/lib/cards";
+import type { Card, CardStatus, CardWithProgress, Deck } from "@/types";
+import {
+  fetchCardsWithProgress,
+  fetchDeck,
+  deleteCard,
+  deleteCards,
+  moveCards,
+  resetProgress,
+} from "@/lib/cards";
+import { fetchDecks } from "@/lib/decks";
 import {
   STATUS_META,
   STATUS_ORDER,
@@ -26,6 +34,7 @@ import {
 import { CardRow } from "@/components/card/CardRow";
 import { StatusBar } from "@/components/status/StatusBar";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { QuickCreator } from "@/components/QuickCreator";
 import { colors, radius, spacing } from "@/lib/theme";
 
@@ -41,6 +50,13 @@ export default function DeckDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<CardStatus | "all">("all");
+
+  // Chọn nhiều thẻ (hành động hàng loạt)
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
+  const [decks, setDecks] = useState<Deck[]>([]);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -99,6 +115,110 @@ export default function DeckDetailScreen() {
     ]);
   }
 
+  // ----- Chọn nhiều thẻ -----
+  function toggleSelectMode() {
+    setSelectMode((v) => !v);
+    setSelected(new Set());
+  }
+
+  function toggleSelect(card: Card) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(card.id)) next.delete(card.id);
+      else next.add(card.id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelected((prev) =>
+      prev.size === filtered.length
+        ? new Set()
+        : new Set(filtered.map((c) => c.id))
+    );
+  }
+
+  function handleBulkDelete() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    Alert.alert("Xóa thẻ", `Xóa ${ids.length} từ đã chọn?`, [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Xóa",
+        style: "destructive",
+        onPress: async () => {
+          setBulkBusy(true);
+          try {
+            await deleteCards(ids);
+            setSelected(new Set());
+            await load();
+          } catch (e) {
+            Alert.alert("Lỗi", (e as Error).message);
+          } finally {
+            setBulkBusy(false);
+          }
+        },
+      },
+    ]);
+  }
+
+  function handleBulkReset() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    Alert.alert("Reset tiến độ", `Reset ${ids.length} từ về "chưa học"?`, [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Reset",
+        style: "destructive",
+        onPress: async () => {
+          setBulkBusy(true);
+          try {
+            await resetProgress(ids);
+            setSelected(new Set());
+            await load();
+          } catch (e) {
+            Alert.alert("Lỗi", (e as Error).message);
+          } finally {
+            setBulkBusy(false);
+          }
+        },
+      },
+    ]);
+  }
+
+  async function openBulkMove() {
+    if (selected.size === 0) return;
+    try {
+      const all = await fetchDecks();
+      setDecks(all.filter((d) => d.id !== id));
+    } catch {
+      setDecks([]);
+    }
+    setBulkMoveOpen(true);
+  }
+
+  async function doBulkMove(targetDeckId: string) {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      const { moved, skipped } = await moveCards(ids, targetDeckId);
+      setBulkMoveOpen(false);
+      setSelected(new Set());
+      await load();
+      if (skipped > 0) {
+        Alert.alert(
+          "Đã chuyển",
+          `Đã chuyển ${moved} từ. Bỏ qua ${skipped} từ vì trùng ở bộ thẻ đích.`
+        );
+      }
+    } catch (e) {
+      Alert.alert("Lỗi", (e as Error).message);
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -137,11 +257,65 @@ export default function DeckDetailScreen() {
               <StatusBar stats={stats} />
             </View>
 
-            <Button
-              title="Học ngay"
-              onPress={() => router.push(`/study/${deck.id}`)}
-              style={styles.studyBtn}
-            />
+            <View style={styles.headerBtns}>
+              <Button
+                title="Học ngay"
+                onPress={() => router.push(`/study/${deck.id}`)}
+                style={styles.flexBtn}
+              />
+              <Button
+                title={selectMode ? "Xong" : "Chọn"}
+                variant="secondary"
+                onPress={toggleSelectMode}
+                style={styles.flexBtn}
+              />
+            </View>
+
+            {selectMode && (
+              <View style={styles.bulkBar}>
+                <Pressable onPress={toggleSelectAll}>
+                  <Text style={styles.bulkLink}>
+                    {selected.size === filtered.length && filtered.length > 0
+                      ? "Bỏ chọn tất cả"
+                      : "Chọn tất cả"}
+                  </Text>
+                </Pressable>
+                <Text style={styles.bulkCount}>Đã chọn {selected.size}</Text>
+                <View style={styles.bulkActions}>
+                  <Pressable
+                    onPress={openBulkMove}
+                    disabled={selected.size === 0 || bulkBusy}
+                    style={[
+                      styles.bulkBtn,
+                      (selected.size === 0 || bulkBusy) && styles.bulkBtnDim,
+                    ]}
+                  >
+                    <Text style={styles.bulkBtnText}>Chuyển</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleBulkReset}
+                    disabled={selected.size === 0 || bulkBusy}
+                    style={[
+                      styles.bulkBtn,
+                      (selected.size === 0 || bulkBusy) && styles.bulkBtnDim,
+                    ]}
+                  >
+                    <Text style={styles.bulkBtnText}>Reset</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleBulkDelete}
+                    disabled={selected.size === 0 || bulkBusy}
+                    style={[
+                      styles.bulkBtn,
+                      styles.bulkBtnDanger,
+                      (selected.size === 0 || bulkBusy) && styles.bulkBtnDim,
+                    ]}
+                  >
+                    <Text style={styles.bulkBtnDangerText}>Xóa</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
 
             <TextInput
               value={query}
@@ -199,11 +373,49 @@ export default function DeckDetailScreen() {
           )
         }
         renderItem={({ item }) => (
-          <CardRow card={item} status={statusOf(item)} onDelete={handleDelete} />
+          <CardRow
+            card={item}
+            status={statusOf(item)}
+            onDelete={handleDelete}
+            selectMode={selectMode}
+            selected={selected.has(item.id)}
+            onToggleSelect={toggleSelect}
+          />
         )}
       />
 
-      <QuickCreator deckId={deck.id} onSaved={load} />
+      <Modal
+        open={bulkMoveOpen}
+        onClose={() => setBulkMoveOpen(false)}
+        title={`Chuyển ${selected.size} thẻ sang bộ khác`}
+      >
+        {decks.length === 0 ? (
+          <Text style={styles.emptyText}>
+            Bạn chưa có bộ thẻ nào khác để chuyển tới.
+          </Text>
+        ) : (
+          <View style={styles.moveList}>
+            {decks.map((d) => (
+              <Pressable
+                key={d.id}
+                onPress={() => doBulkMove(d.id)}
+                disabled={bulkBusy}
+                style={({ pressed }) => [
+                  styles.moveItem,
+                  pressed && styles.moveItemPressed,
+                ]}
+              >
+                <Text style={styles.moveItemText}>{d.name}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+        <Text style={styles.moveHint}>
+          Những từ đã tồn tại (trùng) ở bộ thẻ đích sẽ được bỏ qua.
+        </Text>
+      </Modal>
+
+      {!selectMode && <QuickCreator deckId={deck.id} onSaved={load} />}
     </View>
   );
 }
@@ -260,7 +472,46 @@ const styles = StyleSheet.create({
   due: { color: "#d97706" }, // amber-600
   error: { color: colors.danger, fontSize: 14 },
   barWrap: { marginTop: spacing.sm },
-  studyBtn: { marginTop: spacing.md },
+  headerBtns: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+  flexBtn: { flex: 1 },
+  bulkBar: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.brand,
+    backgroundColor: colors.brandLight,
+    gap: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  bulkLink: { color: colors.brandDark, fontWeight: "600", fontSize: 13 },
+  bulkCount: { color: colors.textMuted, fontSize: 13 },
+  bulkActions: { flexDirection: "row", gap: spacing.sm, marginLeft: "auto" },
+  bulkBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  bulkBtnDim: { opacity: 0.4 },
+  bulkBtnText: { color: colors.text, fontSize: 13, fontWeight: "600" },
+  bulkBtnDanger: { backgroundColor: colors.danger, borderColor: colors.danger },
+  bulkBtnDangerText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+  moveList: { gap: spacing.sm },
+  moveItem: {
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  moveItemPressed: { borderColor: colors.brand, backgroundColor: colors.brandLight },
+  moveItemText: { fontSize: 15, color: colors.text, fontWeight: "600" },
+  moveHint: { fontSize: 12, color: colors.textSubtle, marginTop: spacing.sm },
   search: {
     marginTop: spacing.md,
     borderWidth: 1,

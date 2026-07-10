@@ -106,6 +106,8 @@ export async function buildDraftCard(
   const draft: DraftCard = {
     term,
     phonetic: result.phonetic,
+    phoneticUk: result.phoneticUk,
+    phoneticUs: result.phoneticUs,
     audioUs: result.audioUs,
     audioUk: result.audioUk,
     partOfSpeech: result.partOfSpeech,

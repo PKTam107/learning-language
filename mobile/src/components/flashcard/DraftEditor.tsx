@@ -31,6 +31,25 @@ export function DraftEditor({ draft, onChange }: Props) {
         </Text>
       )}
 
+      <View style={styles.row}>
+        <Field label="Phiên âm UK" style={styles.flex}>
+          <Input
+            value={draft.phoneticUk ?? ""}
+            onChangeText={(t) => set({ phoneticUk: t })}
+            placeholder="/…/"
+            autoCapitalize="none"
+          />
+        </Field>
+        <Field label="Phiên âm US" style={styles.flex}>
+          <Input
+            value={draft.phoneticUs ?? ""}
+            onChangeText={(t) => set({ phoneticUs: t })}
+            placeholder="/…/"
+            autoCapitalize="none"
+          />
+        </Field>
+      </View>
+
       <Field label="Từ loại">
         <Input
           value={draft.partOfSpeech ?? ""}
@@ -83,13 +102,31 @@ export function DraftEditor({ draft, onChange }: Props) {
           </View>
         </Field>
       )}
+
+      <Field label="Ghi chú của bạn (tùy chọn)">
+        <Input
+          value={draft.note ?? ""}
+          onChangeText={(t) => set({ note: t })}
+          placeholder="Mẹo nhớ, ngữ cảnh dùng, collocation..."
+          multiline
+          style={styles.noteInput}
+        />
+      </Field>
     </View>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+  style,
+}: {
+  label: string;
+  children: React.ReactNode;
+  style?: object;
+}) {
   return (
-    <View style={styles.field}>
+    <View style={[styles.field, style]}>
       <Text style={styles.label}>{label}</Text>
       {children}
     </View>
@@ -98,6 +135,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const styles = StyleSheet.create({
   wrap: { gap: spacing.md },
+  row: { flexDirection: "row", gap: spacing.sm },
+  flex: { flex: 1 },
+  noteInput: { minHeight: 64, textAlignVertical: "top" },
   termLine: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },
   term: { fontSize: 24, fontWeight: "700", color: colors.text },
   phonetic: { fontSize: 15, color: colors.textMuted },

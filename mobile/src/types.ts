@@ -18,10 +18,13 @@ export interface Example {
 export interface DraftCard {
   term: string;
   phonetic?: string;
+  phoneticUk?: string;
+  phoneticUs?: string;
   audioUs?: string;
   audioUk?: string;
   partOfSpeech?: string;
   meaningVi?: string;
+  note?: string;
   definitions: Definition[];
   examples: Example[];
   sourceLanguage: LanguageCode;
@@ -58,10 +61,13 @@ export interface Card {
   deck_id: string;
   term: string;
   phonetic: string | null;
+  phonetic_uk: string | null;
+  phonetic_us: string | null;
   audio_us: string | null;
   audio_uk: string | null;
   part_of_speech: string | null;
   meaning_vi: string | null;
+  note: string | null;
   definitions: Definition[];
   examples: Example[];
   source_language: LanguageCode;
