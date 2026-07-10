@@ -7,14 +7,30 @@ interface Props {
   card: Card;
   status?: CardStatus;
   onDelete: (card: Card) => void;
+  /** Chế độ chọn nhiều thẻ. */
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (card: Card) => void;
 }
 
-export function CardRow({ card, status, onDelete }: Props) {
-  return (
-    <View style={styles.row}>
+export function CardRow({
+  card,
+  status,
+  onDelete,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
+}: Props) {
+  const content = (
+    <View style={[styles.row, selectMode && selected && styles.rowSelected]}>
+      {selectMode && (
+        <View style={[styles.checkbox, selected && styles.checkboxOn]}>
+          {selected && <Text style={styles.checkmark}>✓</Text>}
+        </View>
+      )}
       <View style={styles.info}>
         <View style={styles.termLine}>
-          {status && <StatusDot status={status} />}
+          {!selectMode && status && <StatusDot status={status} />}
           <Text style={styles.term}>{card.term}</Text>
           {!!card.phonetic && (
             <Text style={styles.phonetic}>{card.phonetic}</Text>
@@ -27,16 +43,25 @@ export function CardRow({ card, status, onDelete }: Props) {
           {card.meaning_vi || "—"}
         </Text>
       </View>
-      <Pressable
-        onPress={() => onDelete(card)}
-        hitSlop={8}
-        style={styles.iconBtn}
-        accessibilityLabel="Xóa từ"
-      >
-        <Text style={styles.icon}>🗑️</Text>
-      </Pressable>
+      {!selectMode && (
+        <Pressable
+          onPress={() => onDelete(card)}
+          hitSlop={8}
+          style={styles.iconBtn}
+          accessibilityLabel="Xóa từ"
+        >
+          <Text style={styles.icon}>🗑️</Text>
+        </Pressable>
+      )}
     </View>
   );
+
+  if (selectMode) {
+    return (
+      <Pressable onPress={() => onToggleSelect?.(card)}>{content}</Pressable>
+    );
+  }
+  return content;
 }
 
 const styles = StyleSheet.create({
@@ -50,6 +75,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  rowSelected: { borderColor: colors.brand, backgroundColor: colors.brandLight },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxOn: { borderColor: colors.brand, backgroundColor: colors.brand },
+  checkmark: { color: "#fff", fontSize: 14, fontWeight: "700" },
   info: { flex: 1, minWidth: 0 },
   termLine: { flexDirection: "row", alignItems: "baseline", gap: spacing.sm },
   term: { fontSize: 16, fontWeight: "700", color: colors.text },

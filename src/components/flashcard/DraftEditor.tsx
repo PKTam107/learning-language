@@ -25,6 +25,23 @@ export function DraftEditor({ draft, onChange }: DraftEditorProps) {
         <AudioButton url={draft.audioUk} label="UK" />
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Phiên âm UK">
+          <Input
+            value={draft.phoneticUk ?? ""}
+            onChange={(e) => set({ phoneticUk: e.target.value })}
+            placeholder="/…/"
+          />
+        </Field>
+        <Field label="Phiên âm US">
+          <Input
+            value={draft.phoneticUs ?? ""}
+            onChange={(e) => set({ phoneticUs: e.target.value })}
+            placeholder="/…/"
+          />
+        </Field>
+      </div>
+
       {draft.translationSkipped && (
         <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">
           Chưa cấu hình AI dịch (hoặc dịch lỗi) — nghĩa đang để tiếng Anh, bạn có
@@ -88,12 +105,12 @@ export function DraftEditor({ draft, onChange }: DraftEditorProps) {
         </Field>
       )}
 
-      <Field label="Ghi chú nghĩa mở rộng (tùy chọn)">
+      <Field label="Ghi chú của bạn (tùy chọn)">
         <Textarea
           rows={2}
-          value={draft.definitions.map((d) => d.definitionVi || d.definition).join("; ")}
-          readOnly
-          className="bg-slate-50 text-slate-500"
+          value={draft.note ?? ""}
+          onChange={(e) => set({ note: e.target.value })}
+          placeholder="Mẹo nhớ, ngữ cảnh dùng, collocation..."
         />
       </Field>
     </div>

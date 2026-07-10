@@ -4,6 +4,8 @@ import type { Definition, Example, LanguageCode } from "@/types";
 export interface DictionaryResult {
   term: string;
   phonetic?: string;
+  phoneticUk?: string;
+  phoneticUs?: string;
   audioUs?: string;
   audioUk?: string;
   partOfSpeech?: string;

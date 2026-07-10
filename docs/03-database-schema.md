@@ -1,6 +1,8 @@
 # Database Schema — LinguaCards (Supabase / Postgres)
 
-Migration thực thi: [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql)
+Migration thực thi:
+- [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) — schema gốc + RLS.
+- [`supabase/migrations/0002_card_fields_and_dedup.sql`](../supabase/migrations/0002_card_fields_and_dedup.sql) — thêm `phonetic_uk`, `phonetic_us`, `note` cho `cards` và unique index chống trùng từ trong deck.
 
 ## 1. Sơ đồ quan hệ
 
@@ -56,17 +58,24 @@ Flashcard. Các trường rich (phonetics, definitions, examples) lưu dạng JS
 | user_id | uuid FK→auth.users | owner (tiện cho RLS) |
 | deck_id | uuid FK→decks ON DELETE CASCADE | thuộc deck nào |
 | term | text NOT NULL | từ/cụm tiếng Anh |
-| phonetic | text | IPA chính, vd `/rɪˈzɪl.jənt/` |
+| phonetic | text | IPA chung / fallback, vd `/rɪˈzɪl.jənt/` |
+| phonetic_uk | text | IPA giọng Anh (nếu tách được) |
+| phonetic_us | text | IPA giọng Mỹ (nếu tách được) |
 | audio_us | text | URL audio US |
 | audio_uk | text | URL audio UK |
 | part_of_speech | text | từ loại chính (noun/verb/...) |
 | meaning_vi | text | nghĩa tiếng Việt đã chọn/sửa |
-| definitions | jsonb | mảng `{ partOfSpeech, definition, definitionVi }` |
-| examples | jsonb | mảng `{ text, textVi }` |
+| note | text | ghi chú cá nhân của người dùng |
+| definitions | jsonb | mảng `{ partOfSpeech, definition, definitionVi }` (nhiều nghĩa) |
+| examples | jsonb | mảng `{ text, textVi }` (nhiều ví dụ) |
 | source_language | text | default `'en'` |
 | target_language | text | default `'vi'` |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+
+**Chống trùng:** unique index `cards_deck_term_norm_idx` trên `(deck_id, lower(btrim(term)))`
+— không cho trùng từ trong cùng deck (chuẩn hóa bỏ khoảng trắng đầu/cuối + không phân biệt
+hoa/thường); cùng một từ vẫn được phép ở nhiều deck.
 
 ### `card_progress`
 Trạng thái thuộc bài (đặt nền cho SRS sau này). 1 dòng / (user, card).
@@ -114,5 +123,6 @@ Chi tiết policy nằm trong file migration.
 ## 5. Index gợi ý
 
 - `cards(deck_id)`, `cards(user_id)`.
+- `cards(deck_id, lower(btrim(term)))` UNIQUE — chống trùng từ trong deck.
 - `card_progress(user_id, card_id)` (đã có qua UNIQUE).
 - `dictionary_cache(term, source_language, target_language)` (đã có qua UNIQUE).

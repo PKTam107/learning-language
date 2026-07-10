@@ -27,6 +27,12 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
           {card.phonetic && (
             <p className="text-lg text-slate-500">{card.phonetic}</p>
           )}
+          {(card.phonetic_uk || card.phonetic_us) && (
+            <div className="flex gap-x-4 text-sm text-slate-400">
+              {card.phonetic_uk && <span>UK {card.phonetic_uk}</span>}
+              {card.phonetic_us && <span>US {card.phonetic_us}</span>}
+            </div>
+          )}
           <div className="flex gap-2">
             <AudioButton url={card.audio_us} label="US" />
             <AudioButton url={card.audio_uk} label="UK" />
@@ -49,6 +55,12 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
           {card.meaning_vi && (
             <p className="text-lg font-medium text-brand-dark">
               {card.meaning_vi}
+            </p>
+          )}
+
+          {card.note && (
+            <p className="rounded-md bg-amber-50 px-2 py-1 text-sm text-amber-900">
+              📝 {card.note}
             </p>
           )}
 

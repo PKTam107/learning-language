@@ -21,8 +21,34 @@ export function CardDetail({ card }: { card: Card }) {
         <AudioButton url={card.audio_uk} label="UK" />
       </div>
 
+      {(card.phonetic_uk || card.phonetic_us) && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+          {card.phonetic_uk && (
+            <span>
+              <span className="font-medium text-slate-400">UK</span>{" "}
+              {card.phonetic_uk}
+            </span>
+          )}
+          {card.phonetic_us && (
+            <span>
+              <span className="font-medium text-slate-400">US</span>{" "}
+              {card.phonetic_us}
+            </span>
+          )}
+        </div>
+      )}
+
       {card.meaning_vi && (
         <p className="text-lg font-medium text-brand-dark">{card.meaning_vi}</p>
+      )}
+
+      {card.note && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <span className="mb-0.5 block text-xs font-medium uppercase tracking-wide text-amber-600">
+            Ghi chú
+          </span>
+          {card.note}
+        </div>
       )}
 
       {card.definitions?.length > 0 && (

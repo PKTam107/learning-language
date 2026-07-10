@@ -51,8 +51,10 @@ export class DictionaryApiDevProvider implements DictionaryProvider {
 }
 
 function parseEntries(term: string, entries: ApiEntry[]): DictionaryResult {
-  // Phonetic: lấy text đầu tiên có giá trị
+  // Phonetic: lấy text đầu tiên có giá trị; đồng thời tách IPA UK/US theo audio locale.
   let phonetic: string | undefined;
+  let phoneticUk: string | undefined;
+  let phoneticUs: string | undefined;
   let audioUs: string | undefined;
   let audioUk: string | undefined;
 
@@ -62,8 +64,14 @@ function parseEntries(term: string, entries: ApiEntry[]): DictionaryResult {
       if (!phonetic && p.text) phonetic = p.text;
       if (p.audio) {
         const lower = p.audio.toLowerCase();
-        if (!audioUs && lower.includes("-us")) audioUs = ensureHttps(p.audio);
-        if (!audioUk && lower.includes("-uk")) audioUk = ensureHttps(p.audio);
+        if (!audioUs && lower.includes("-us")) {
+          audioUs = ensureHttps(p.audio);
+          if (!phoneticUs && p.text) phoneticUs = p.text;
+        }
+        if (!audioUk && lower.includes("-uk")) {
+          audioUk = ensureHttps(p.audio);
+          if (!phoneticUk && p.text) phoneticUk = p.text;
+        }
       }
     }
   }
@@ -99,6 +107,8 @@ function parseEntries(term: string, entries: ApiEntry[]): DictionaryResult {
   return {
     term,
     phonetic,
+    phoneticUk,
+    phoneticUs,
     audioUs,
     audioUk,
     partOfSpeech: primaryPartOfSpeech,

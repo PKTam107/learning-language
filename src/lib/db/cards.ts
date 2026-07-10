@@ -5,7 +5,36 @@ import type { Card, CardStatus, CardWithProgress, DraftCard } from "@/types";
 
 const supabase = () => createClient();
 
-/** Lưu DraftCard thành card trong deck. */
+/** Chuẩn hóa từ để so trùng: bỏ khoảng trắng đầu/cuối, gộp khoảng trắng giữa, hạ thường. */
+export function normalizeTerm(term: string): string {
+  return term.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+/** Postgres unique_violation → thông báo trùng thân thiện. */
+function isUniqueViolation(err: unknown): boolean {
+  return (err as { code?: string })?.code === "23505";
+}
+
+/**
+ * Ném lỗi nếu deck đã có từ trùng (theo chuẩn hóa). Bỏ qua chính card đang sửa (excludeId).
+ * Cùng một từ vẫn được phép ở deck khác.
+ */
+async function assertNoDuplicate(
+  deckId: string,
+  term: string,
+  excludeId?: string
+): Promise<void> {
+  const normalized = normalizeTerm(term);
+  let q = supabase().from("cards").select("id, term").eq("deck_id", deckId);
+  if (excludeId) q = q.neq("id", excludeId);
+  const { data, error } = await q;
+  if (error) throw error;
+  if ((data ?? []).some((c) => normalizeTerm(c.term) === normalized)) {
+    throw new Error(`Từ “${term.trim()}” đã có trong bộ thẻ này.`);
+  }
+}
+
+/** Lưu DraftCard thành card trong deck. Chặn trùng từ trong cùng deck. */
 export async function saveCard(
   deckId: string,
   draft: DraftCard
@@ -15,17 +44,24 @@ export async function saveCard(
   } = await supabase().auth.getUser();
   if (!user) throw new Error("Chưa đăng nhập");
 
+  const term = draft.term.trim();
+  if (!term) throw new Error("Từ không được để trống");
+  await assertNoDuplicate(deckId, term);
+
   const { data, error } = await supabase()
     .from("cards")
     .insert({
       user_id: user.id,
       deck_id: deckId,
-      term: draft.term,
+      term,
       phonetic: draft.phonetic ?? null,
+      phonetic_uk: draft.phoneticUk ?? null,
+      phonetic_us: draft.phoneticUs ?? null,
       audio_us: draft.audioUs ?? null,
       audio_uk: draft.audioUk ?? null,
       part_of_speech: draft.partOfSpeech ?? null,
       meaning_vi: draft.meaningVi ?? null,
+      note: draft.note ?? null,
       definitions: draft.definitions,
       examples: draft.examples,
       source_language: draft.sourceLanguage,
@@ -33,29 +69,45 @@ export async function saveCard(
     })
     .select()
     .single();
-  if (error) throw error;
+  if (error) {
+    if (isUniqueViolation(error))
+      throw new Error(`Từ “${term}” đã có trong bộ thẻ này.`);
+    throw error;
+  }
   return data as Card;
 }
 
 /** Cập nhật 1 card đã lưu từ DraftCard (dùng khi sửa thẻ). */
 export async function updateCard(
   id: string,
+  deckId: string,
   draft: DraftCard
 ): Promise<void> {
+  const term = draft.term.trim();
+  if (!term) throw new Error("Từ không được để trống");
+  await assertNoDuplicate(deckId, term, id);
+
   const { error } = await supabase()
     .from("cards")
     .update({
-      term: draft.term,
+      term,
       phonetic: draft.phonetic ?? null,
+      phonetic_uk: draft.phoneticUk ?? null,
+      phonetic_us: draft.phoneticUs ?? null,
       audio_us: draft.audioUs ?? null,
       audio_uk: draft.audioUk ?? null,
       part_of_speech: draft.partOfSpeech ?? null,
       meaning_vi: draft.meaningVi ?? null,
+      note: draft.note ?? null,
       definitions: draft.definitions,
       examples: draft.examples,
     })
     .eq("id", id);
-  if (error) throw error;
+  if (error) {
+    if (isUniqueViolation(error))
+      throw new Error(`Từ “${term}” đã có trong bộ thẻ này.`);
+    throw error;
+  }
 }
 
 /** Chuyển Card (snake_case DB) → DraftCard (camelCase) để tái dùng DraftEditor. */
@@ -63,10 +115,13 @@ export function cardToDraft(card: Card): DraftCard {
   return {
     term: card.term,
     phonetic: card.phonetic ?? undefined,
+    phoneticUk: card.phonetic_uk ?? undefined,
+    phoneticUs: card.phonetic_us ?? undefined,
     audioUs: card.audio_us ?? undefined,
     audioUk: card.audio_uk ?? undefined,
     partOfSpeech: card.part_of_speech ?? undefined,
     meaningVi: card.meaning_vi ?? undefined,
+    note: card.note ?? undefined,
     definitions: card.definitions ?? [],
     examples: card.examples ?? [],
     sourceLanguage: card.source_language,
@@ -110,6 +165,65 @@ export async function moveCard(id: string, deckId: string): Promise<void> {
     .from("cards")
     .update({ deck_id: deckId })
     .eq("id", id);
+  if (error) throw error;
+}
+
+// ---------- Hành động hàng loạt ----------
+
+/** Xóa nhiều thẻ theo id. */
+export async function deleteCards(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const { error } = await supabase().from("cards").delete().in("id", ids);
+  if (error) throw error;
+}
+
+/**
+ * Chuyển nhiều thẻ sang deck khác. Bỏ qua thẻ có từ trùng (chuẩn hóa) đã tồn tại
+ * ở deck đích để không vi phạm unique — trả về số thẻ bị bỏ qua.
+ */
+export async function moveCards(
+  ids: string[],
+  targetDeckId: string
+): Promise<{ moved: number; skipped: number }> {
+  if (ids.length === 0) return { moved: 0, skipped: 0 };
+
+  const sb = supabase();
+  const [{ data: moving, error: e1 }, { data: existing, error: e2 }] =
+    await Promise.all([
+      sb.from("cards").select("id, term").in("id", ids),
+      sb.from("cards").select("term").eq("deck_id", targetDeckId),
+    ]);
+  if (e1) throw e1;
+  if (e2) throw e2;
+
+  const taken = new Set((existing ?? []).map((c) => normalizeTerm(c.term)));
+  const okIds = (moving ?? [])
+    .filter((c) => !taken.has(normalizeTerm(c.term)))
+    .map((c) => c.id);
+  const skipped = ids.length - okIds.length;
+
+  if (okIds.length > 0) {
+    const { error } = await sb
+      .from("cards")
+      .update({ deck_id: targetDeckId })
+      .in("id", okIds);
+    if (error) throw error;
+  }
+  return { moved: okIds.length, skipped };
+}
+
+/** Reset tiến độ nhiều thẻ về "chưa học" (xóa dòng card_progress tương ứng). */
+export async function resetProgress(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const {
+    data: { user },
+  } = await supabase().auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+  const { error } = await supabase()
+    .from("card_progress")
+    .delete()
+    .eq("user_id", user.id)
+    .in("card_id", ids);
   if (error) throw error;
 }
 

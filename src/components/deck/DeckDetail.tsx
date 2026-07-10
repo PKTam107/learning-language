@@ -10,6 +10,9 @@ import {
   updateCard,
   moveCard,
   cardToDraft,
+  deleteCards,
+  moveCards,
+  resetProgress,
 } from "@/lib/db/cards";
 import { fetchDecks } from "@/lib/db/decks";
 import { STATUS_META, STATUS_ORDER, computeStats, masteredPercent } from "@/lib/status";
@@ -44,6 +47,12 @@ export function DeckDetail({ deckId }: { deckId: string }) {
   // Cho mode "move"
   const [decks, setDecks] = useState<Deck[]>([]);
   const [moveTarget, setMoveTarget] = useState("");
+
+  // Chọn nhiều thẻ (hành động hàng loạt)
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -109,7 +118,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
     setBusy(true);
     setError(null);
     try {
-      await updateCard(active.card.id, draft);
+      await updateCard(active.card.id, deckId, draft);
       close();
       load();
     } catch (e) {
@@ -138,6 +147,99 @@ export function DeckDetail({ deckId }: { deckId: string }) {
     if (!confirm(`Xóa từ "${card.term}"?`)) return;
     await deleteCard(card.id);
     load();
+  }
+
+  // ----- Chọn nhiều thẻ -----
+  function toggleSelectMode() {
+    setSelectMode((v) => !v);
+    setSelected(new Set());
+  }
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelected((prev) =>
+      prev.size === filtered.length
+        ? new Set()
+        : new Set(filtered.map((c) => c.id))
+    );
+  }
+
+  const selectedIds = () => Array.from(selected);
+
+  async function handleBulkDelete() {
+    const ids = selectedIds();
+    if (ids.length === 0) return;
+    if (!confirm(`Xóa ${ids.length} từ đã chọn?`)) return;
+    setBulkBusy(true);
+    try {
+      await deleteCards(ids);
+      setSelected(new Set());
+      await load();
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  async function handleBulkReset() {
+    const ids = selectedIds();
+    if (ids.length === 0) return;
+    if (!confirm(`Reset tiến độ ${ids.length} từ về "chưa học"?`)) return;
+    setBulkBusy(true);
+    try {
+      await resetProgress(ids);
+      setSelected(new Set());
+      await load();
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  async function openBulkMove() {
+    if (selected.size === 0) return;
+    setError(null);
+    setBulkMoveOpen(true);
+    try {
+      const all = await fetchDecks();
+      setDecks(all);
+      const firstOther = all.find((d) => d.id !== deckId);
+      setMoveTarget(firstOther?.id ?? "");
+    } catch {
+      setDecks([]);
+    }
+  }
+
+  async function handleBulkMove() {
+    const ids = selectedIds();
+    if (ids.length === 0 || !moveTarget) return;
+    setBulkBusy(true);
+    setError(null);
+    try {
+      const { moved, skipped } = await moveCards(ids, moveTarget);
+      setBulkMoveOpen(false);
+      setSelected(new Set());
+      await load();
+      if (skipped > 0) {
+        alert(
+          `Đã chuyển ${moved} từ. Bỏ qua ${skipped} từ vì đã tồn tại (trùng) ở bộ thẻ đích.`
+        );
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   if (loading) {
@@ -173,9 +275,14 @@ export function DeckDetail({ deckId }: { deckId: string }) {
           </p>
         </div>
         {cards.length > 0 && (
-          <Link href={`/study/${deck.id}`}>
-            <Button size="lg">Học ngay</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={toggleSelectMode}>
+              {selectMode ? "Xong" : "Chọn"}
+            </Button>
+            <Link href={`/study/${deck.id}`}>
+              <Button size="lg">Học ngay</Button>
+            </Link>
+          </div>
         )}
       </div>
 
@@ -214,6 +321,44 @@ export function DeckDetail({ deckId }: { deckId: string }) {
         </>
       )}
 
+      {selectMode && cards.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand/30 bg-brand-light/50 px-3 py-2">
+          <button
+            onClick={toggleSelectAll}
+            className="text-sm font-medium text-brand-dark hover:underline"
+          >
+            {selected.size === filtered.length && filtered.length > 0
+              ? "Bỏ chọn tất cả"
+              : "Chọn tất cả"}
+          </button>
+          <span className="text-sm text-slate-500">Đã chọn {selected.size}</span>
+          <div className="ml-auto flex gap-2">
+            <Button
+              variant="ghost"
+              onClick={openBulkMove}
+              disabled={selected.size === 0 || bulkBusy}
+            >
+              Chuyển
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleBulkReset}
+              disabled={selected.size === 0 || bulkBusy}
+            >
+              Reset tiến độ
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleBulkDelete}
+              disabled={selected.size === 0 || bulkBusy}
+            >
+              {bulkBusy && <Spinner />}
+              Xóa
+            </Button>
+          </div>
+        </div>
+      )}
+
       {cards.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 py-16 text-center text-slate-500">
           Chưa có từ nào. Bấm nút <strong>+</strong> góc dưới phải để thêm.
@@ -229,8 +374,19 @@ export function DeckDetail({ deckId }: { deckId: string }) {
               key={card.id}
               className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50"
             >
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  checked={selected.has(card.id)}
+                  onChange={() => toggleSelect(card.id)}
+                  className="h-4 w-4 shrink-0 accent-brand"
+                  aria-label={`Chọn ${card.term}`}
+                />
+              )}
               <button
-                onClick={() => openDetail(card)}
+                onClick={() =>
+                  selectMode ? toggleSelect(card.id) : openDetail(card)
+                }
                 className="min-w-0 flex-1 text-left"
                 aria-label={`Xem chi tiết ${card.term}`}
               >
@@ -253,22 +409,24 @@ export function DeckDetail({ deckId }: { deckId: string }) {
                 </p>
               </button>
 
-              <div className="flex shrink-0 items-center gap-0.5">
-                <AudioButton url={card.audio_us} label="US" />
-                <IconBtn label="Sửa từ" onClick={() => openEdit(card)}>
-                  ✏️
-                </IconBtn>
-                <IconBtn label="Chuyển bộ thẻ" onClick={() => openMove(card)}>
-                  ↔️
-                </IconBtn>
-                <IconBtn
-                  label="Xóa từ"
-                  onClick={() => handleDelete(card)}
-                  danger
-                >
-                  🗑️
-                </IconBtn>
-              </div>
+              {!selectMode && (
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <AudioButton url={card.audio_us} label="US" />
+                  <IconBtn label="Sửa từ" onClick={() => openEdit(card)}>
+                    ✏️
+                  </IconBtn>
+                  <IconBtn label="Chuyển bộ thẻ" onClick={() => openMove(card)}>
+                    ↔️
+                  </IconBtn>
+                  <IconBtn
+                    label="Xóa từ"
+                    onClick={() => handleDelete(card)}
+                    danger
+                  >
+                    🗑️
+                  </IconBtn>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -340,6 +498,51 @@ export function DeckDetail({ deckId }: { deckId: string }) {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={bulkMoveOpen}
+        onClose={() => setBulkMoveOpen(false)}
+        title="Chuyển nhiều thẻ"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Chuyển <strong>{selected.size}</strong> từ đã chọn sang bộ thẻ:
+          </p>
+          {otherDecks.length === 0 ? (
+            <p className="text-sm text-amber-600">
+              Bạn chưa có bộ thẻ nào khác để chuyển tới.
+            </p>
+          ) : (
+            <select
+              value={moveTarget}
+              onChange={(e) => setMoveTarget(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            >
+              {otherDecks.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <p className="text-xs text-slate-400">
+            Những từ đã tồn tại (trùng) ở bộ thẻ đích sẽ được bỏ qua.
+          </p>
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setBulkMoveOpen(false)}>
+              Hủy
+            </Button>
+            <Button
+              onClick={handleBulkMove}
+              disabled={bulkBusy || !moveTarget || otherDecks.length === 0}
+            >
+              {bulkBusy && <Spinner />}
+              Chuyển
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       <QuickCreator defaultDeckId={deckId} onSaved={load} />

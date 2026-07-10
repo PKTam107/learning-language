@@ -54,7 +54,22 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
           {!!card.phonetic && (
             <Text style={styles.phonetic}>{card.phonetic}</Text>
           )}
-          <View style={styles.audioRow}>
+          {(!!card.phonetic_uk || !!card.phonetic_us) && (
+            <View style={styles.ipaRow}>
+              {!!card.phonetic_uk && (
+                <Text style={styles.ipa}>UK {card.phonetic_uk}</Text>
+              )}
+              {!!card.phonetic_us && (
+                <Text style={styles.ipa}>US {card.phonetic_us}</Text>
+              )}
+            </View>
+          )}
+          {/* Giành quyền xử lý chạm để nút âm thanh không kích hoạt lật thẻ của Pressable cha. */}
+          <View
+            style={styles.audioRow}
+            onStartShouldSetResponder={() => true}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
             <AudioButton url={card.audio_us} label="US" />
             <AudioButton url={card.audio_uk} label="UK" />
           </View>
@@ -82,6 +97,8 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
             {!!card.meaning_vi && (
               <Text style={styles.meaning}>{card.meaning_vi}</Text>
             )}
+
+            {!!card.note && <Text style={styles.note}>📝 {card.note}</Text>}
 
             {card.definitions?.length > 0 && (
               <View style={styles.defs}>
@@ -136,6 +153,8 @@ const styles = StyleSheet.create({
   backContent: { gap: spacing.md, paddingBottom: spacing.sm },
   term: { fontSize: 40, fontWeight: "700", color: colors.text, textAlign: "center" },
   phonetic: { fontSize: 18, color: colors.textMuted },
+  ipaRow: { flexDirection: "row", gap: spacing.md },
+  ipa: { fontSize: 13, color: colors.textSubtle },
   audioRow: { flexDirection: "row", gap: spacing.sm },
   hint: { position: "absolute", bottom: spacing.lg, fontSize: 12, color: colors.textSubtle },
   termLine: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
@@ -150,6 +169,13 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   meaning: { fontSize: 18, fontWeight: "600", color: colors.brandDark },
+  note: {
+    fontSize: 14,
+    color: "#92400e",
+    backgroundColor: "#fffbeb",
+    padding: spacing.sm,
+    borderRadius: radius.md,
+  },
   defs: { gap: 4 },
   def: { fontSize: 14, color: colors.textMuted, lineHeight: 20 },
   examples: {
