@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Deck, DeckStats } from "@/types";
 import { fetchDecksWithStats, deleteDeck } from "@/lib/db/decks";
+import { exportAccountBackup } from "@/lib/export";
 import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -20,6 +21,18 @@ export function DecksManager({ showStats }: DecksManagerProps) {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Deck | null>(null);
+  const [backupBusy, setBackupBusy] = useState(false);
+
+  async function handleBackup() {
+    setBackupBusy(true);
+    try {
+      await exportAccountBackup();
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBackupBusy(false);
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -85,14 +98,25 @@ export function DecksManager({ showStats }: DecksManagerProps) {
 
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold">Bộ từ vựng của bạn</h2>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
-          + Tạo bộ thẻ
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={handleBackup}
+            disabled={backupBusy}
+            title="Tải toàn bộ dữ liệu (bộ thẻ, từ, tiến độ) ra file JSON"
+          >
+            {backupBusy && <Spinner />}
+            💾 Sao lưu tài khoản
+          </Button>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
+            + Tạo bộ thẻ
+          </Button>
+        </div>
       </div>
 
       {decks.length === 0 ? (

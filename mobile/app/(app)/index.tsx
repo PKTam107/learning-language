@@ -12,10 +12,12 @@ import {
 import { useFocusEffect, useRouter } from "expo-router";
 import type { Deck, DeckStats } from "@/types";
 import { fetchDecksWithStats, deleteDeck } from "@/lib/decks";
+import { exportAccountBackup } from "@/lib/export";
 import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
 import { DeckCard } from "@/components/deck/DeckCard";
 import { DeckForm } from "@/components/deck/DeckForm";
 import { StatusBar } from "@/components/status/StatusBar";
+import { Button } from "@/components/ui/Button";
 import { colors, radius, spacing } from "@/lib/theme";
 
 export default function DecksScreen() {
@@ -26,6 +28,18 @@ export default function DecksScreen() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Deck | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [backupBusy, setBackupBusy] = useState(false);
+
+  async function handleBackup() {
+    setBackupBusy(true);
+    try {
+      await exportAccountBackup();
+    } catch (e) {
+      Alert.alert("Lỗi sao lưu", (e as Error).message);
+    } finally {
+      setBackupBusy(false);
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -122,6 +136,15 @@ export default function DecksScreen() {
                 </View>
               </View>
             )}
+            {decks.length > 0 && (
+              <Button
+                title="💾 Sao lưu tài khoản (JSON)"
+                variant="ghost"
+                onPress={handleBackup}
+                loading={backupBusy}
+                style={styles.backupBtn}
+              />
+            )}
             {!!error && <Text style={styles.error}>{error}</Text>}
           </View>
         }
@@ -209,6 +232,7 @@ const styles = StyleSheet.create({
   },
   list: { padding: spacing.lg, paddingBottom: 96, flexGrow: 1 },
   header: { marginBottom: spacing.md },
+  backupBtn: { marginTop: spacing.sm },
   heading: { fontSize: 20, fontWeight: "700", color: colors.text },
   error: { marginTop: spacing.sm, color: colors.danger, fontSize: 14 },
   empty: {
