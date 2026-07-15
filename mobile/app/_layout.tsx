@@ -3,7 +3,11 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { configureNotificationHandler } from "@/lib/notifications";
 import { colors } from "@/lib/theme";
+
+// Hiển thị thông báo cả khi app đang mở (đăng ký 1 lần).
+configureNotificationHandler();
 
 export default function RootLayout() {
   return (

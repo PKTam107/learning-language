@@ -31,7 +31,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-notifications",
+        {
+          "color": "#6366f1"
+        }
+      ]
     ],
     "extra": {
       "router": {

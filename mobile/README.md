@@ -81,6 +81,7 @@ src/
 - [x] **Feature 5** — Tra cứu & thêm từ (QuickCreator gọi `/api/lookup` qua Bearer token)
 - [x] **P2 parity** — trạng thái học (bar/chấm/lọc) + chế độ học (Ôn hôm nay/chưa thuộc/giới hạn/xáo trộn) + spaced repetition SM-2 + thống kê "cần ôn". Ngang web.
 - [x] **Feature 6** — Google OAuth (nút "Tiếp tục với Google" ở màn login)
+- [x] **Thông báo** — nhắc ôn cục bộ (expo-notifications): giờ nhắc, nhiều lần/ngày, cuối tuần
 - [ ] Parity P1 — sửa / chuyển / xem chi tiết thẻ (web đã có)
 
 ## Google OAuth (đăng nhập bằng Google)
@@ -97,3 +98,18 @@ về app qua deep link `linguacards://auth/callback` → đổi `code` lấy ses
 
 **Lưu ý:** OAuth cần native module mới → phải **build lại APK** (`eas build`), không
 chạy được bằng bản Expo Go cũ. Deep link chỉ hoạt động trên dev build / bản standalone.
+
+## Thông báo nhắc ôn (local scheduled)
+
+Màn **Nhắc ôn** (icon 🔔 ở header trang chủ) cho cấu hình:
+- Bật/tắt nhắc ôn.
+- Nhiều **mốc giờ/ngày** (HH:MM), thêm/xoá tuỳ ý.
+- Bật/tắt **nhắc cuối tuần** (tắt → chỉ T2–T6).
+
+Cơ chế: `expo-notifications` lên lịch cục bộ (DAILY / WEEKLY trigger), không cần server.
+Nội dung `"Bạn có N từ cần ôn. Review ngay?"` với N = tổng số thẻ đến hạn, được cập nhật
+mỗi khi mở app / học xong (nội dung local notification là tĩnh nên N có thể chênh nhẹ).
+Nút **"Gửi thử ngay"** giúp kiểm tra nhanh trên máy.
+
+**Lưu ý:** cần **build lại APK** (`eas build`) vì có native module mới; Android sẽ hỏi
+quyền thông báo lần đầu bật.
