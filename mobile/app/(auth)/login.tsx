@@ -7,21 +7,39 @@ import {
   Text,
   View,
 } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { colors, radius, spacing } from "@/lib/theme";
 
+// Hoàn tất phiên auth còn treo (nếu app bị mở lại giữa chừng OAuth).
+WebBrowser.maybeCompleteAuthSession();
+
 type Mode = "signin" | "signup";
 
 export default function LoginScreen() {
-  const { signInWithPassword, signUpWithPassword } = useAuth();
+  const { signInWithPassword, signUpWithPassword, signInWithGoogle } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+
+  async function handleGoogle() {
+    setError(null);
+    setInfo(null);
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
 
   async function handleSubmit() {
     setError(null);
@@ -63,6 +81,21 @@ export default function LoginScreen() {
           <Text style={styles.subtitle}>
             Đăng nhập để đồng bộ bộ thẻ của bạn
           </Text>
+
+          <Button
+            title="🔓 Tiếp tục với Google"
+            variant="secondary"
+            onPress={handleGoogle}
+            loading={googleLoading}
+            disabled={loading}
+            style={styles.googleBtn}
+          />
+
+          <View style={styles.divider}>
+            <View style={styles.line} />
+            <Text style={styles.dividerText}>hoặc dùng email</Text>
+            <View style={styles.line} />
+          </View>
 
           <View style={styles.form}>
             <Input
@@ -136,7 +169,16 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 14,
   },
-  form: { marginTop: spacing.xl, gap: spacing.md },
+  googleBtn: { marginTop: spacing.xl },
+  divider: {
+    marginVertical: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  line: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { color: colors.textSubtle, fontSize: 12 },
+  form: { gap: spacing.md },
   error: { marginTop: spacing.md, color: colors.danger, fontSize: 14 },
   info: { marginTop: spacing.md, color: colors.success, fontSize: 14 },
   switch: {

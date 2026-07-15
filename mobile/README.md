@@ -50,7 +50,7 @@ app/                  # expo-router (mỗi file = 1 route)
   index.tsx           # cổng điều hướng (chờ session → (app) hoặc (auth))
   (auth)/             # nhóm route chưa đăng nhập
     _layout.tsx       # đã login thì redirect vào (app)
-    login.tsx         # đăng nhập / đăng ký bằng email
+    login.tsx         # đăng nhập / đăng ký bằng email + Google OAuth
   (app)/              # nhóm route đã đăng nhập (có gác session)
     _layout.tsx       # chưa login thì redirect ra login
     index.tsx         # trang chủ (placeholder — Bộ thẻ sẽ thêm sau)
@@ -69,6 +69,8 @@ src/
 | `npm start` | Dev server (Metro) + QR |
 | `npm run android` / `ios` | Mở trên emulator/simulator |
 | `npm run typecheck` | Kiểm tra TypeScript |
+| `npx eas-cli@latest build -p android --profile preview` | Build APK trên cloud → ra link tải + QR |
+| `npx eas-cli@latest build:list -p android --limit 5` | Lấy lại link các build APK gần nhất |
 
 ## Tiến độ
 
@@ -78,5 +80,20 @@ src/
 - [x] **Feature 4** — Study mode: lật thẻ (animation), đánh giá, audio US/UK, thanh tiến độ
 - [x] **Feature 5** — Tra cứu & thêm từ (QuickCreator gọi `/api/lookup` qua Bearer token)
 - [x] **P2 parity** — trạng thái học (bar/chấm/lọc) + chế độ học (Ôn hôm nay/chưa thuộc/giới hạn/xáo trộn) + spaced repetition SM-2 + thống kê "cần ôn". Ngang web.
-- [ ] Feature 6 — Google OAuth, dashboard thống kê nâng cao
+- [x] **Feature 6** — Google OAuth (nút "Tiếp tục với Google" ở màn login)
 - [ ] Parity P1 — sửa / chuyển / xem chi tiết thẻ (web đã có)
+
+## Google OAuth (đăng nhập bằng Google)
+
+Nút **"Tiếp tục với Google"** ở màn login dùng `expo-web-browser` +
+`expo-auth-session` (PKCE): mở trình duyệt hệ thống → Google xác thực → redirect
+về app qua deep link `linguacards://auth/callback` → đổi `code` lấy session.
+
+**Cấu hình một lần (bắt buộc, làm trên Supabase dashboard):**
+1. Authentication → Providers → Google: đã bật sẵn cho web (dùng chung, không cần
+   tạo OAuth client mới cho mobile).
+2. Authentication → URL Configuration → **Redirect URLs**: thêm
+   `linguacards://auth/callback`.
+
+**Lưu ý:** OAuth cần native module mới → phải **build lại APK** (`eas build`), không
+chạy được bằng bản Expo Go cũ. Deep link chỉ hoạt động trên dev build / bản standalone.

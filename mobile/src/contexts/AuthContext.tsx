@@ -7,6 +7,9 @@ import {
   type ReactNode,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
+import { getQueryParams } from "expo-auth-session/build/QueryParams";
 import { supabase } from "@/lib/supabase";
 
 interface AuthContextValue {
@@ -16,6 +19,7 @@ interface AuthContextValue {
   initializing: boolean;
   signInWithPassword: (email: string, password: string) => Promise<void>;
   signUpWithPassword: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -61,6 +65,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signUpWithPassword(email, password) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
+      },
+      async signInWithGoogle() {
+        // Deep link quay lại app sau khi Google xác thực xong.
+        // Phải khớp Redirect URL đã khai báo trong Supabase dashboard.
+        const redirectTo = makeRedirectUri({
+          scheme: "linguacards",
+          path: "auth/callback",
+        });
+
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo, skipBrowserRedirect: true },
+        });
+        if (error) throw error;
+        if (!data?.url) throw new Error("Không tạo được URL đăng nhập Google.");
+
+        // Mở trình duyệt hệ thống; trả về khi redirect về scheme của app.
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          redirectTo
+        );
+        if (result.type !== "success") {
+          // Người dùng đóng/hủy — không coi là lỗi.
+          if (result.type === "cancel" || result.type === "dismiss") return;
+          throw new Error("Đăng nhập Google không hoàn tất.");
+        }
+
+        // PKCE: URL trả về mang ?code=... → đổi lấy session.
+        const { params, errorCode } = getQueryParams(result.url);
+        if (errorCode) throw new Error(errorCode);
+        const code = params.code;
+        if (!code) throw new Error("Thiếu authorization code từ Google.");
+
+        const { error: exchangeError } =
+          await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) throw exchangeError;
+        // onAuthStateChange cập nhật session → (auth)/_layout redirect vào app.
       },
       async signOut() {
         const { error } = await supabase.auth.signOut();
