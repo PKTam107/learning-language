@@ -23,8 +23,10 @@ import {
   deleteCards,
   moveCards,
   resetProgress,
+  importCards,
 } from "@/lib/cards";
 import { fetchDecks } from "@/lib/decks";
+import { pickAndParseXlsx } from "@/lib/import/xlsx";
 import {
   STATUS_META,
   STATUS_ORDER,
@@ -57,6 +59,7 @@ export default function DeckDetailScreen() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]);
+  const [importing, setImporting] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -113,6 +116,31 @@ export default function DeckDetailScreen() {
         },
       },
     ]);
+  }
+
+  async function handleImport() {
+    if (!deck) return;
+    setImporting(true);
+    try {
+      const drafts = await pickAndParseXlsx();
+      if (!drafts) return; // người dùng hủy chọn
+      if (drafts.length === 0) {
+        Alert.alert("Nhập Excel", "Không đọc được từ nào trong file.");
+        return;
+      }
+      const { inserted, skipped } = await importCards(deck.id, drafts);
+      await load();
+      Alert.alert(
+        "Nhập Excel",
+        `Đã thêm ${inserted} từ${
+          skipped > 0 ? ` · bỏ qua ${skipped} từ trùng` : ""
+        }.`
+      );
+    } catch (e) {
+      Alert.alert("Lỗi", (e as Error).message);
+    } finally {
+      setImporting(false);
+    }
   }
 
   // ----- Chọn nhiều thẻ -----
@@ -250,6 +278,16 @@ export default function DeckDetailScreen() {
           )}
         </Text>
         {!!error && <Text style={styles.error}>{error}</Text>}
+
+        <View style={styles.headerBtns}>
+          <Button
+            title="⬆️ Nhập Excel"
+            variant="secondary"
+            onPress={handleImport}
+            loading={importing}
+            style={styles.flexBtn}
+          />
+        </View>
 
         {cards.length > 0 && (
           <>
