@@ -13,6 +13,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import type { Deck, DeckStats } from "@/types";
 import { fetchDecksWithStats, deleteDeck } from "@/lib/decks";
 import { exportAccountBackup } from "@/lib/export";
+import { refreshReminders } from "@/lib/notifications";
 import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
 import { DeckCard } from "@/components/deck/DeckCard";
 import { DeckForm } from "@/components/deck/DeckForm";
@@ -45,6 +46,8 @@ export default function DecksScreen() {
     try {
       setError(null);
       setDecks(await fetchDecksWithStats());
+      // Cập nhật lại lịch nhắc với số từ cần ôn mới nhất (nếu đang bật).
+      void refreshReminders().catch(() => {});
     } catch (e) {
       setError((e as Error).message);
     } finally {
