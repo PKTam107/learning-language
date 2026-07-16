@@ -16,6 +16,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * Supabase client cho React Native.
  * - Lưu session vào AsyncStorage để giữ đăng nhập giữa các lần mở app.
  * - detectSessionInUrl=false vì mobile không dùng URL callback như web.
+ * - flowType="pkce": bắt buộc cho OAuth trên native — server trả về `code`,
+ *   app đổi code lấy session bằng exchangeCodeForSession (xem AuthContext).
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -23,5 +25,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    flowType: "pkce",
   },
 });
