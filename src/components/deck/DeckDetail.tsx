@@ -27,6 +27,7 @@ import { StatusBar } from "@/components/status/StatusBar";
 import { StatusDot } from "@/components/status/StatusDot";
 import { QuickCreator } from "@/components/QuickCreator";
 import { ImportButton } from "@/components/deck/ImportButton";
+import { ExportMenu } from "@/components/deck/ExportMenu";
 
 const statusOf = (c: CardWithProgress): CardStatus => c.progress?.status ?? "new";
 
@@ -279,6 +280,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
           <ImportButton deckId={deck.id} onImported={load} />
           {cards.length > 0 && (
             <>
+              <ExportMenu cards={cards} baseName={deck.name} />
               <Button variant="ghost" onClick={toggleSelectMode}>
                 {selectMode ? "Xong" : "Chọn"}
               </Button>

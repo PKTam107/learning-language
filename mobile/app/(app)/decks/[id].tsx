@@ -27,6 +27,7 @@ import {
 } from "@/lib/cards";
 import { fetchDecks } from "@/lib/decks";
 import { pickAndParseXlsx } from "@/lib/import/xlsx";
+import { exportCards, type ExportFormat } from "@/lib/export";
 import {
   STATUS_META,
   STATUS_ORDER,
@@ -141,6 +142,23 @@ export default function DeckDetailScreen() {
     } finally {
       setImporting(false);
     }
+  }
+
+  function handleExport() {
+    if (!deck || cards.length === 0) return;
+    const run = async (format: ExportFormat) => {
+      try {
+        await exportCards(cards, format, deck.name);
+      } catch (e) {
+        Alert.alert("Lỗi", (e as Error).message);
+      }
+    };
+    Alert.alert("Xuất bộ thẻ", "Chọn định dạng", [
+      { text: "CSV", onPress: () => run("csv") },
+      { text: "Excel", onPress: () => run("xlsx") },
+      { text: "JSON", onPress: () => run("json") },
+      { text: "Hủy", style: "cancel" },
+    ]);
   }
 
   // ----- Chọn nhiều thẻ -----
@@ -305,6 +323,15 @@ export default function DeckDetailScreen() {
                 title={selectMode ? "Xong" : "Chọn"}
                 variant="secondary"
                 onPress={toggleSelectMode}
+                style={styles.flexBtn}
+              />
+            </View>
+
+            <View style={styles.headerBtns}>
+              <Button
+                title="⬇️ Xuất (CSV/Excel/JSON)"
+                variant="ghost"
+                onPress={handleExport}
                 style={styles.flexBtn}
               />
             </View>
