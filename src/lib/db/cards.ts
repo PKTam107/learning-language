@@ -129,6 +129,61 @@ export function cardToDraft(card: Card): DraftCard {
   };
 }
 
+/**
+ * Nhập hàng loạt DraftCard vào deck (dùng cho import Excel).
+ * Bỏ qua từ trùng (chuẩn hóa) — cả trùng với từ đã có lẫn trùng trong chính lô nhập.
+ * Trả về số đã thêm / số bị bỏ qua.
+ */
+export async function importCards(
+  deckId: string,
+  drafts: DraftCard[]
+): Promise<{ inserted: number; skipped: number }> {
+  const {
+    data: { user },
+  } = await supabase().auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+  if (drafts.length === 0) return { inserted: 0, skipped: 0 };
+
+  const { data: existing, error: exErr } = await supabase()
+    .from("cards")
+    .select("term")
+    .eq("deck_id", deckId);
+  if (exErr) throw exErr;
+
+  const taken = new Set((existing ?? []).map((c) => normalizeTerm(c.term)));
+  const rows: Record<string, unknown>[] = [];
+  for (const d of drafts) {
+    const term = d.term.trim();
+    if (!term) continue;
+    const norm = normalizeTerm(term);
+    if (taken.has(norm)) continue; // trùng (đã có hoặc lặp trong lô) → bỏ qua
+    taken.add(norm);
+    rows.push({
+      user_id: user.id,
+      deck_id: deckId,
+      term,
+      phonetic: d.phonetic ?? null,
+      phonetic_uk: d.phoneticUk ?? null,
+      phonetic_us: d.phoneticUs ?? null,
+      audio_us: d.audioUs ?? null,
+      audio_uk: d.audioUk ?? null,
+      part_of_speech: d.partOfSpeech ?? null,
+      meaning_vi: d.meaningVi ?? null,
+      note: d.note ?? null,
+      definitions: d.definitions ?? [],
+      examples: d.examples ?? [],
+      source_language: d.sourceLanguage ?? "en",
+      target_language: d.targetLanguage ?? "vi",
+    });
+  }
+
+  if (rows.length > 0) {
+    const { error } = await supabase().from("cards").insert(rows);
+    if (error) throw error;
+  }
+  return { inserted: rows.length, skipped: drafts.length - rows.length };
+}
+
 export async function fetchCards(deckId: string): Promise<Card[]> {
   const { data, error } = await supabase()
     .from("cards")
