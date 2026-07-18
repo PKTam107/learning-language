@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Deck, DraftCard } from "@/types";
 import { Modal } from "@/components/ui/Modal";
+import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
@@ -114,9 +115,9 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
               Lưu vào bộ thẻ
             </label>
             {decks.length === 0 ? (
-              <p className="text-sm text-amber-600">
+              <Alert variant="warning">
                 Bạn chưa có bộ thẻ nào. Hãy tạo một bộ thẻ trước.
-              </p>
+              </Alert>
             ) : (
               <select
                 value={deckId}
@@ -151,7 +152,7 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
             </Button>
           </form>
 
-          {error && <p className="text-sm text-amber-600">{error}</p>}
+          {error && <Alert variant="warning">{error}</Alert>}
 
           {draft && (
             <>
