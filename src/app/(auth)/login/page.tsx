@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
@@ -104,8 +105,16 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-        {info && <p className="mt-3 text-sm text-green-600">{info}</p>}
+        {(error || info) && (
+          <div className="mt-4 space-y-2">
+            {error && (
+              <Alert variant="error" title="Đăng nhập không thành công">
+                {error}
+              </Alert>
+            )}
+            {info && <Alert variant="success">{info}</Alert>}
+          </div>
+        )}
 
         <button
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
