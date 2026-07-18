@@ -61,6 +61,21 @@ handler** của web app — web + mobile là hai client của cùng một backen
 [docs/06-mobile.md](./docs/06-mobile.md) (tầng hệ thống) và
 [`mobile/README.md`](./mobile/README.md) (setup, chạy).
 
+### Build lại link APK để cài app
+
+Build APK chạy trên cloud Expo (~10–15 phút), xong sẽ in **link tải `.apk` + QR**.
+Project đã cấu hình sẵn (`projectId`, env trên cloud, keystore), nên chỉ cần:
+
+```bash
+cd mobile
+npx eas-cli@latest build -p android --profile preview
+```
+
+Mở link trên điện thoại → tải → cài (cho phép *Cài từ nguồn không xác định* nếu được hỏi).
+
+Muốn **lấy lại link build cũ** (không build lại): `npx eas-cli@latest build:list -p android --limit 5`.
+Chi tiết (đăng nhập, tạo env, keystore, tra từ): xem [`mobile/docs/chay-app.md §3`](./mobile/docs/chay-app.md#3-build-apk-cài-điện-thoại-thật).
+
 ## Luồng sử dụng
 
 1. Đăng nhập (Google hoặc email).
