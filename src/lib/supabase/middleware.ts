@@ -37,9 +37,9 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Route công khai (không cần login)
+  // Route công khai (không cần login). `/` KHÔNG công khai — cổng gốc tự
+  // điều hướng theo trạng thái đăng nhập (xem src/app/page.tsx).
   const isPublic =
-    pathname === "/" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api"); // API tự kiểm tra auth riêng
