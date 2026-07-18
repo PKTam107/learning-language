@@ -26,6 +26,8 @@ import { DraftEditor } from "@/components/flashcard/DraftEditor";
 import { StatusBar } from "@/components/status/StatusBar";
 import { StatusDot } from "@/components/status/StatusDot";
 import { QuickCreator } from "@/components/QuickCreator";
+import { ImportButton } from "@/components/deck/ImportButton";
+import { ExportMenu } from "@/components/deck/ExportMenu";
 
 const statusOf = (c: CardWithProgress): CardStatus => c.progress?.status ?? "new";
 
@@ -274,16 +276,20 @@ export function DeckDetail({ deckId }: { deckId: string }) {
             )}
           </p>
         </div>
-        {cards.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={toggleSelectMode}>
-              {selectMode ? "Xong" : "Chọn"}
-            </Button>
-            <Link href={`/study/${deck.id}`}>
-              <Button size="lg">Học ngay</Button>
-            </Link>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <ImportButton deckId={deck.id} onImported={load} />
+          {cards.length > 0 && (
+            <>
+              <ExportMenu cards={cards} baseName={deck.name} />
+              <Button variant="ghost" onClick={toggleSelectMode}>
+                {selectMode ? "Xong" : "Chọn"}
+              </Button>
+              <Link href={`/study/${deck.id}`}>
+                <Button size="lg">Học ngay</Button>
+              </Link>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Thanh trạng thái + tìm kiếm + lọc — chỉ hiện khi có card */}

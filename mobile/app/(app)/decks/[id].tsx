@@ -23,8 +23,11 @@ import {
   deleteCards,
   moveCards,
   resetProgress,
+  importCards,
 } from "@/lib/cards";
 import { fetchDecks } from "@/lib/decks";
+import { pickAndParseXlsx } from "@/lib/import/xlsx";
+import { exportCards, type ExportFormat } from "@/lib/export";
 import {
   STATUS_META,
   STATUS_ORDER,
@@ -57,6 +60,7 @@ export default function DeckDetailScreen() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]);
+  const [importing, setImporting] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -112,6 +116,48 @@ export default function DeckDetailScreen() {
           }
         },
       },
+    ]);
+  }
+
+  async function handleImport() {
+    if (!deck) return;
+    setImporting(true);
+    try {
+      const drafts = await pickAndParseXlsx();
+      if (!drafts) return; // người dùng hủy chọn
+      if (drafts.length === 0) {
+        Alert.alert("Nhập Excel", "Không đọc được từ nào trong file.");
+        return;
+      }
+      const { inserted, skipped } = await importCards(deck.id, drafts);
+      await load();
+      Alert.alert(
+        "Nhập Excel",
+        `Đã thêm ${inserted} từ${
+          skipped > 0 ? ` · bỏ qua ${skipped} từ trùng` : ""
+        }.`
+      );
+    } catch (e) {
+      Alert.alert("Lỗi", (e as Error).message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function handleExport() {
+    if (!deck || cards.length === 0) return;
+    const run = async (format: ExportFormat) => {
+      try {
+        await exportCards(cards, format, deck.name);
+      } catch (e) {
+        Alert.alert("Lỗi", (e as Error).message);
+      }
+    };
+    Alert.alert("Xuất bộ thẻ", "Chọn định dạng", [
+      { text: "CSV", onPress: () => run("csv") },
+      { text: "Excel", onPress: () => run("xlsx") },
+      { text: "JSON", onPress: () => run("json") },
+      { text: "Hủy", style: "cancel" },
     ]);
   }
 
@@ -251,6 +297,16 @@ export default function DeckDetailScreen() {
         </Text>
         {!!error && <Text style={styles.error}>{error}</Text>}
 
+        <View style={styles.headerBtns}>
+          <Button
+            title="⬆️ Nhập Excel"
+            variant="secondary"
+            onPress={handleImport}
+            loading={importing}
+            style={styles.flexBtn}
+          />
+        </View>
+
         {cards.length > 0 && (
           <>
             <View style={styles.barWrap}>
@@ -267,6 +323,15 @@ export default function DeckDetailScreen() {
                 title={selectMode ? "Xong" : "Chọn"}
                 variant="secondary"
                 onPress={toggleSelectMode}
+                style={styles.flexBtn}
+              />
+            </View>
+
+            <View style={styles.headerBtns}>
+              <Button
+                title="⬇️ Xuất (CSV/Excel/JSON)"
+                variant="ghost"
+                onPress={handleExport}
                 style={styles.flexBtn}
               />
             </View>
