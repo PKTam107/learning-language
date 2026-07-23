@@ -65,15 +65,13 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
               )}
             </View>
           )}
-          {/* Giành quyền xử lý chạm để nút âm thanh không kích hoạt lật thẻ của Pressable cha. */}
-          <View
-            style={styles.audioRow}
-            onStartShouldSetResponder={() => true}
-            onTouchEnd={(e) => e.stopPropagation()}
-          >
+          {/* Pressable bọc (onPress rỗng) để chạm vùng audio KHÔNG lật thẻ:
+              nút con tự phát âm; chạm khoảng trống giữa 2 nút bị nuốt tại đây.
+              Pressable con luôn thắng Pressable cha nên cha (onFlip) không chạy. */}
+          <Pressable style={styles.audioRow} onPress={() => {}}>
             <AudioButton url={card.audio_us} text={card.term} label="US" />
             <AudioButton url={card.audio_uk} text={card.term} label="UK" />
-          </View>
+          </Pressable>
           <Text style={styles.hint}>Chạm để lật</Text>
         </Animated.View>
 
