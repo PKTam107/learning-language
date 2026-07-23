@@ -36,6 +36,7 @@ import {
   masteredPercent,
 } from "@/lib/status";
 import { CardRow } from "@/components/card/CardRow";
+import { CardDetail } from "@/components/flashcard/CardDetail";
 import { StatusBar } from "@/components/status/StatusBar";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -62,6 +63,7 @@ export default function DeckDetailScreen() {
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [importing, setImporting] = useState(false);
+  const [detailCard, setDetailCard] = useState<CardWithProgress | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -445,6 +447,7 @@ export default function DeckDetailScreen() {
             card={item}
             status={statusOf(item)}
             onDelete={handleDelete}
+            onPress={() => setDetailCard(item)}
             selectMode={selectMode}
             selected={selected.has(item.id)}
             onToggleSelect={toggleSelect}
@@ -481,6 +484,10 @@ export default function DeckDetailScreen() {
         <Text style={styles.moveHint}>
           Những từ đã tồn tại (trùng) ở bộ thẻ đích sẽ được bỏ qua.
         </Text>
+      </Modal>
+
+      <Modal open={!!detailCard} onClose={() => setDetailCard(null)}>
+        {detailCard && <CardDetail card={detailCard} />}
       </Modal>
 
       {!selectMode && <QuickCreator deckId={deck.id} onSaved={load} />}
