@@ -5,6 +5,7 @@ import {
   Text,
   type PressableProps,
 } from "react-native";
+import type { ReactNode } from "react";
 import { colors, radius } from "@/lib/theme";
 
 type Variant = "primary" | "secondary" | "ghost";
@@ -13,12 +14,15 @@ interface Props extends PressableProps {
   title: string;
   variant?: Variant;
   loading?: boolean;
+  /** Icon tùy chọn, hiển thị trước tiêu đề. */
+  icon?: ReactNode;
 }
 
 export function Button({
   title,
   variant = "primary",
   loading = false,
+  icon,
   disabled,
   style,
   ...rest
@@ -42,6 +46,7 @@ export function Button({
           color={variant === "primary" ? "#fff" : colors.brand}
         />
       )}
+      {!loading && icon}
       <Text style={[styles.text, variant !== "primary" && styles.textDark]}>
         {title}
       </Text>

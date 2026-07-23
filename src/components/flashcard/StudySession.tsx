@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ArrowLeft, PartyPopper } from "lucide-react";
 import type { CardStatus, CardWithProgress } from "@/types";
 import { fetchCardsWithProgress, recordProgress } from "@/lib/db/cards";
 import { STATUS_META, isDue } from "@/lib/status";
@@ -169,9 +170,10 @@ export function StudySession({ deckId }: { deckId: string }) {
         <p>Bộ thẻ này chưa có từ nào để học.</p>
         <Link
           href={`/decks/${deckId}`}
-          className="mt-3 inline-block text-brand hover:underline"
+          className="mt-3 inline-flex items-center gap-1 text-brand hover:underline"
         >
-          ← Quay lại thêm từ
+          <ArrowLeft size={16} />
+          Quay lại thêm từ
         </Link>
       </div>
     );
@@ -263,7 +265,10 @@ export function StudySession({ deckId }: { deckId: string }) {
     const reviewed = counts.hard + counts.good + counts.easy;
     return (
       <div className="mx-auto max-w-md py-10 text-center">
-        <p className="text-2xl font-bold">🎉 Hoàn thành phiên học!</p>
+        <p className="flex items-center justify-center gap-2 text-2xl font-bold">
+          <PartyPopper className="h-6 w-6 text-brand" />
+          Hoàn thành phiên học!
+        </p>
         <p className="mt-2 text-slate-500">Bạn đã ôn {reviewed} từ.</p>
 
         <div className="mx-auto mt-6 max-w-xs space-y-2 text-left">

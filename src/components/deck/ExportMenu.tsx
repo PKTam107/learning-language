@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Card } from "@/types";
 import { exportCards, type ExportFormat } from "@/lib/export";
 import { Button } from "@/components/ui/Button";
+import { Download } from "lucide-react";
 
 interface Props {
   /** Danh sách thẻ sẽ xuất. */
@@ -49,7 +50,8 @@ export function ExportMenu({ cards, baseName, label = "Xuất" }: Props) {
         onClick={() => setOpen((v) => !v)}
         disabled={cards.length === 0}
       >
-        ⬇️ {label}
+        <Download size={16} />
+        {label}
       </Button>
       {open && (
         <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg">

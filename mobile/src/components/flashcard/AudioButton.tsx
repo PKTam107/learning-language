@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { Audio } from "expo-av";
 import { colors, radius } from "@/lib/theme";
+import { Volume2 } from "lucide-react-native";
 
 interface Props {
   url?: string | null;
@@ -42,7 +43,8 @@ export function AudioButton({ url, label }: Props) {
       style={({ pressed }) => [styles.btn, pressed && styles.pressed]}
       accessibilityLabel={`Nghe phát âm ${label ?? ""}`}
     >
-      <Text style={styles.text}>🔊 {label}</Text>
+      <Volume2 size={14} color={colors.brandDark} />
+      {!!label && <Text style={styles.text}>{label}</Text>}
     </Pressable>
   );
 }
@@ -51,6 +53,7 @@ const styles = StyleSheet.create({
   btn: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 4,
     backgroundColor: colors.brandLight,
     paddingHorizontal: 12,
     paddingVertical: 6,

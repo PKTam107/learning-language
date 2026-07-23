@@ -35,8 +35,28 @@ function flattenCard(c: Card): CardRowFlat {
 
 // ---------- Serializers ----------
 
+/**
+ * Chỉ giữ trường nội dung khi xuất — bỏ id, user_id, deck_id, created_at,
+ * updated_at (thông tin nội bộ). JSON giữ được cả definitions/examples.
+ */
+function cardToExport(c: Card) {
+  return {
+    term: c.term,
+    meaning_vi: c.meaning_vi ?? null,
+    phonetic: c.phonetic ?? null,
+    phonetic_uk: c.phonetic_uk ?? null,
+    phonetic_us: c.phonetic_us ?? null,
+    audio_us: c.audio_us ?? null,
+    audio_uk: c.audio_uk ?? null,
+    part_of_speech: c.part_of_speech ?? null,
+    note: c.note ?? null,
+    definitions: c.definitions ?? [],
+    examples: c.examples ?? [],
+  };
+}
+
 export function cardsToJson(cards: Card[]): string {
-  return JSON.stringify(cards, null, 2);
+  return JSON.stringify(cards.map(cardToExport), null, 2);
 }
 
 function csvEscape(v: string): string {

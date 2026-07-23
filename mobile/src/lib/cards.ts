@@ -151,8 +151,22 @@ export async function fetchCards(deckId: string): Promise<Card[]> {
   return (data ?? []) as Card[];
 }
 
+/** Lấy id user hiện tại; ném lỗi nếu chưa đăng nhập. */
+async function requireUserId(): Promise<string> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+  return user.id;
+}
+
 export async function deleteCard(id: string): Promise<void> {
-  const { error } = await supabase.from("cards").delete().eq("id", id);
+  const userId = await requireUserId();
+  const { error } = await supabase
+    .from("cards")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
   if (error) throw error;
 }
 
@@ -161,7 +175,12 @@ export async function deleteCard(id: string): Promise<void> {
 /** Xóa nhiều thẻ theo id. */
 export async function deleteCards(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
-  const { error } = await supabase.from("cards").delete().in("id", ids);
+  const userId = await requireUserId();
+  const { error } = await supabase
+    .from("cards")
+    .delete()
+    .in("id", ids)
+    .eq("user_id", userId);
   if (error) throw error;
 }
 
@@ -175,10 +194,15 @@ export async function moveCards(
 ): Promise<{ moved: number; skipped: number }> {
   if (ids.length === 0) return { moved: 0, skipped: 0 };
 
+  const userId = await requireUserId();
   const [{ data: moving, error: e1 }, { data: existing, error: e2 }] =
     await Promise.all([
-      supabase.from("cards").select("id, term").in("id", ids),
-      supabase.from("cards").select("term").eq("deck_id", targetDeckId),
+      supabase.from("cards").select("id, term").in("id", ids).eq("user_id", userId),
+      supabase
+        .from("cards")
+        .select("term")
+        .eq("deck_id", targetDeckId)
+        .eq("user_id", userId),
     ]);
   if (e1) throw e1;
   if (e2) throw e2;
@@ -193,7 +217,8 @@ export async function moveCards(
     const { error } = await supabase
       .from("cards")
       .update({ deck_id: targetDeckId })
-      .in("id", okIds);
+      .in("id", okIds)
+      .eq("user_id", userId);
     if (error) throw error;
   }
   return { moved: okIds.length, skipped };

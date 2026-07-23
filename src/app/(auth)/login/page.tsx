@@ -6,6 +6,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
+import { LogIn } from "lucide-react";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -74,7 +75,7 @@ export default function LoginPage() {
           size="lg"
           className="mt-6 w-full"
         >
-          {loading ? <Spinner /> : "🔓"} Tiếp tục với Google
+          {loading ? <Spinner /> : <LogIn className="h-[18px] w-[18px]" />} Tiếp tục với Google
         </Button>
 
         <div className="my-5 flex items-center gap-3 text-xs text-slate-400">

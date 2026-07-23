@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Pencil, ArrowLeftRight, Trash2 } from "lucide-react";
 import type { Card, CardStatus, CardWithProgress, Deck, DraftCard } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -419,17 +420,17 @@ export function DeckDetail({ deckId }: { deckId: string }) {
                 <div className="flex shrink-0 items-center gap-0.5">
                   <AudioButton url={card.audio_us} label="US" />
                   <IconBtn label="Sửa từ" onClick={() => openEdit(card)}>
-                    ✏️
+                    <Pencil size={16} />
                   </IconBtn>
                   <IconBtn label="Chuyển bộ thẻ" onClick={() => openMove(card)}>
-                    ↔️
+                    <ArrowLeftRight size={16} />
                   </IconBtn>
                   <IconBtn
                     label="Xóa từ"
                     onClick={() => handleDelete(card)}
                     danger
                   >
-                    🗑️
+                    <Trash2 size={16} />
                   </IconBtn>
                 </div>
               )}

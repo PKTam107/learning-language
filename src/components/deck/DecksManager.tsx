@@ -8,6 +8,7 @@ import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { StatusBar } from "@/components/status/StatusBar";
+import { Save } from "lucide-react";
 import { DeckCard } from "./DeckCard";
 import { DeckForm } from "./DeckForm";
 
@@ -106,7 +107,8 @@ export function DecksManager({ showStats }: DecksManagerProps) {
             title="Tải toàn bộ dữ liệu (bộ thẻ, từ, tiến độ) ra file JSON"
           >
             {backupBusy && <Spinner />}
-            💾 Sao lưu tài khoản
+            <Save size={16} />
+            Sao lưu tài khoản
           </Button>
           <Button
             onClick={() => {

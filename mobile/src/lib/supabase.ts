@@ -1,4 +1,5 @@
 import "react-native-url-polyfill/auto";
+import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 
@@ -27,4 +28,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
     flowType: "pkce",
   },
+});
+
+/**
+ * Chỉ tự gia hạn token khi app đang mở (foreground). React Native không có
+ * timer nền đáng tin, nên bật/tắt theo AppState để access token luôn được làm
+ * mới bằng refresh token — giữ đăng nhập liên tục thay vì hết hạn giữa chừng.
+ */
+AppState.addEventListener("change", (state) => {
+  if (state === "active") supabase.auth.startAutoRefresh();
+  else supabase.auth.stopAutoRefresh();
 });

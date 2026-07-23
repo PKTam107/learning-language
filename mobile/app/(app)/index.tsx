@@ -19,6 +19,7 @@ import { DeckForm } from "@/components/deck/DeckForm";
 import { StatusBar } from "@/components/status/StatusBar";
 import { Button } from "@/components/ui/Button";
 import { colors, radius, spacing } from "@/lib/theme";
+import { Save } from "lucide-react-native";
 
 export default function DecksScreen() {
   const router = useRouter();
@@ -138,7 +139,8 @@ export default function DecksScreen() {
             )}
             {decks.length > 0 && (
               <Button
-                title="💾 Sao lưu tài khoản (JSON)"
+                title="Sao lưu tài khoản (JSON)"
+                icon={<Save size={18} color={colors.text} />}
                 variant="ghost"
                 onPress={handleBackup}
                 loading={backupBusy}

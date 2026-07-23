@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { colors, radius, spacing } from "@/lib/theme";
+import { LogIn } from "lucide-react-native";
 
 // Hoàn tất phiên auth còn treo (nếu app bị mở lại giữa chừng OAuth).
 WebBrowser.maybeCompleteAuthSession();
@@ -83,7 +84,8 @@ export default function LoginScreen() {
           </Text>
 
           <Button
-            title="🔓 Tiếp tục với Google"
+            title="Tiếp tục với Google"
+            icon={<LogIn size={18} color={colors.text} />}
             variant="secondary"
             onPress={handleGoogle}
             loading={googleLoading}
