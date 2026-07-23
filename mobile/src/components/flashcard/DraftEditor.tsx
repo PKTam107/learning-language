@@ -20,8 +20,8 @@ export function DraftEditor({ draft, onChange }: Props) {
         {!!draft.phonetic && (
           <Text style={styles.phonetic}>{draft.phonetic}</Text>
         )}
-        <AudioButton url={draft.audioUs} label="US" />
-        <AudioButton url={draft.audioUk} label="UK" />
+        <AudioButton url={draft.audioUs} text={draft.term} label="US" />
+        <AudioButton url={draft.audioUk} text={draft.term} label="UK" />
       </View>
 
       {draft.translationSkipped && (

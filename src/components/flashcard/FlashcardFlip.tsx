@@ -35,8 +35,8 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
             </div>
           )}
           <div className="flex gap-2">
-            <AudioButton url={card.audio_us} label="US" />
-            <AudioButton url={card.audio_uk} label="UK" />
+            <AudioButton url={card.audio_us} text={card.term} label="US" />
+            <AudioButton url={card.audio_uk} text={card.term} label="UK" />
           </div>
           <p className="absolute bottom-4 text-xs text-slate-400">
             Nhấn để lật (Space)

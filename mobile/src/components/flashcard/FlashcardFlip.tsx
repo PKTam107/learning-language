@@ -71,8 +71,8 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
             onStartShouldSetResponder={() => true}
             onTouchEnd={(e) => e.stopPropagation()}
           >
-            <AudioButton url={card.audio_us} label="US" />
-            <AudioButton url={card.audio_uk} label="UK" />
+            <AudioButton url={card.audio_us} text={card.term} label="US" />
+            <AudioButton url={card.audio_uk} text={card.term} label="UK" />
           </View>
           <Text style={styles.hint}>Chạm để lật</Text>
         </Animated.View>
