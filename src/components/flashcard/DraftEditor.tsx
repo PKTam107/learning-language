@@ -21,8 +21,8 @@ export function DraftEditor({ draft, onChange }: DraftEditorProps) {
         {draft.phonetic && (
           <span className="text-slate-500">{draft.phonetic}</span>
         )}
-        <AudioButton url={draft.audioUs} label="US" />
-        <AudioButton url={draft.audioUk} label="UK" />
+        <AudioButton url={draft.audioUs} text={draft.term} label="US" />
+        <AudioButton url={draft.audioUk} text={draft.term} label="UK" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">

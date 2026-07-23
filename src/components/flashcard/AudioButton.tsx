@@ -5,19 +5,33 @@ import { Volume2 } from "lucide-react";
 
 interface AudioButtonProps {
   url?: string | null;
+  /** Văn bản để đọc bằng TTS khi không có URL audio (vd cụm từ). */
+  text?: string | null;
   label?: string; // "US" | "UK"
 }
 
-/** Nút phát âm. Ẩn nếu không có URL audio. */
-export function AudioButton({ url, label }: AudioButtonProps) {
+/**
+ * Nút phát âm. Ưu tiên file audio; nếu không có URL nhưng có `text` thì đọc
+ * bằng Web Speech (SpeechSynthesis) — giọng US/UK theo label. Ẩn nếu thiếu cả hai.
+ */
+export function AudioButton({ url, text, label }: AudioButtonProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  if (!url) return null;
+  if (!url && !text) return null;
 
   const play = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!audioRef.current) audioRef.current = new Audio(url);
-    audioRef.current.currentTime = 0;
-    void audioRef.current.play();
+    if (url) {
+      if (!audioRef.current) audioRef.current = new Audio(url);
+      audioRef.current.currentTime = 0;
+      void audioRef.current.play();
+      return;
+    }
+    if (text && typeof window !== "undefined" && "speechSynthesis" in window) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = label === "UK" ? "en-GB" : "en-US";
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }
   };
 
   return (

@@ -418,7 +418,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
 
               {!selectMode && (
                 <div className="flex shrink-0 items-center gap-0.5">
-                  <AudioButton url={card.audio_us} label="US" />
+                  <AudioButton url={card.audio_us} text={card.term} label="US" />
                   <IconBtn label="Sửa từ" onClick={() => openEdit(card)}>
                     <Pencil size={16} />
                   </IconBtn>

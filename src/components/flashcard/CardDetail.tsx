@@ -17,8 +17,8 @@ export function CardDetail({ card }: { card: Card }) {
             {card.part_of_speech}
           </span>
         )}
-        <AudioButton url={card.audio_us} label="US" />
-        <AudioButton url={card.audio_uk} label="UK" />
+        <AudioButton url={card.audio_us} text={card.term} label="US" />
+        <AudioButton url={card.audio_uk} text={card.term} label="UK" />
       </div>
 
       {(card.phonetic_uk || card.phonetic_us) && (

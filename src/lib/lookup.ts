@@ -1,5 +1,6 @@
 import type { DraftCard, LanguageCode } from "@/types";
 import { getDictionaryProvider } from "@/lib/dictionary";
+import type { DictionaryProvider } from "@/lib/dictionary";
 import { getTranslationProvider } from "@/lib/ai";
 import { createServiceClient } from "@/lib/supabase/server";
 
@@ -40,8 +41,15 @@ export async function buildDraftCard(
   const translator = getTranslationProvider();
 
   if (result.notFound) {
-    // Cụm từ / từ không có trong dictionary (vd "meaning of life").
-    // Fallback: dịch trực tiếp cả cụm để vẫn tạo được thẻ có nghĩa VI.
+    // Cụm từ / từ không có trong dictionary (vd "a number of", "meaning of life").
+    // 1) Phiên âm: ghép IPA từng từ (phát âm mang tính cộng gộp ở mức từ).
+    // 2) Nghĩa: dịch NGUYÊN cụm (không ghép từng từ — sai với collocation).
+    const words = term.split(/\s+/).filter(Boolean);
+    const composed =
+      words.length > 1
+        ? await composePhrasePhonetics(words, dict, source)
+        : {};
+
     if (translator && source !== target) {
       try {
         const [translated] = await translator.translateBatch([term], {
@@ -51,6 +59,7 @@ export async function buildDraftCard(
         if (translated && translated.trim()) {
           const draft: DraftCard = {
             term,
+            ...composed,
             meaningVi: translated,
             definitions: [],
             examples: [],
@@ -63,11 +72,12 @@ export async function buildDraftCard(
           return draft;
         }
       } catch {
-        // dịch fallback lỗi → trả notFound như cũ
+        // dịch fallback lỗi → trả notFound (vẫn kèm phiên âm ghép nếu có)
       }
     }
     return {
       term,
+      ...composed,
       definitions: [],
       examples: [],
       sourceLanguage: source,
@@ -126,6 +136,54 @@ export async function buildDraftCard(
   }
 
   return draft;
+}
+
+/** Bỏ dấu "/" hoặc "[]" bao quanh IPA của một từ để nối thành cụm gọn. */
+function stripIpaDelims(s: string): string {
+  return s.replace(/^[/[]+|[/\]]+$/g, "").trim();
+}
+
+/**
+ * Ghép phiên âm cho cụm từ: tra IPA từng từ rồi nối bằng dấu cách, bọc trong
+ * một cặp "/.../". IPA mang tính cộng gộp ở mức từ nên đây là xấp xỉ hợp lý
+ * (chưa tính weak form / nối âm trong lời nói). Từ nào không có IPA thì giữ
+ * nguyên chữ để không lệch thứ tự. Trả về {} nếu không tra được từ nào.
+ */
+async function composePhrasePhonetics(
+  words: string[],
+  dict: DictionaryProvider,
+  source: LanguageCode
+): Promise<Pick<DraftCard, "phonetic" | "phoneticUk" | "phoneticUs">> {
+  const results = await Promise.all(
+    words.map((w) => dict.lookup(w, source).catch(() => null))
+  );
+
+  const us: string[] = [];
+  const uk: string[] = [];
+  const gen: string[] = [];
+  let anyUs = false;
+  let anyUk = false;
+  let anyGen = false;
+
+  results.forEach((r, i) => {
+    const w = words[i];
+    const pUs = r?.phoneticUs || r?.phonetic;
+    const pUk = r?.phoneticUk || r?.phonetic;
+    const pGen = r?.phonetic || r?.phoneticUs || r?.phoneticUk;
+    if (pUs) anyUs = true;
+    if (pUk) anyUk = true;
+    if (pGen) anyGen = true;
+    us.push(pUs ? stripIpaDelims(pUs) : w);
+    uk.push(pUk ? stripIpaDelims(pUk) : w);
+    gen.push(pGen ? stripIpaDelims(pGen) : w);
+  });
+
+  const wrap = (parts: string[]) => `/${parts.join(" ")}/`;
+  return {
+    phonetic: anyGen ? wrap(gen) : undefined,
+    phoneticUs: anyUs ? wrap(us) : undefined,
+    phoneticUk: anyUk ? wrap(uk) : undefined,
+  };
 }
 
 /** Ghi DraftCard vào dictionary_cache (best-effort, nuốt lỗi). */
