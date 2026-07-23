@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Deck } from "@/types";
 import { StatusBar } from "@/components/status/StatusBar";
+import { Pencil, Trash2 } from "lucide-react";
 
 interface DeckCardProps {
   deck: Deck;
@@ -30,14 +31,14 @@ export function DeckCard({ deck, onEdit, onDelete }: DeckCardProps) {
             className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
             aria-label="Sửa"
           >
-            ✏️
+            <Pencil size={16} />
           </button>
           <button
             onClick={() => onDelete(deck)}
             className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
             aria-label="Xóa"
           >
-            🗑️
+            <Trash2 size={16} />
           </button>
         </div>
       </div>

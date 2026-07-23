@@ -10,6 +10,7 @@ import {
 import type { CardWithProgress } from "@/types";
 import { AudioButton } from "./AudioButton";
 import { colors, radius, spacing } from "@/lib/theme";
+import { StickyNote } from "lucide-react-native";
 
 interface Props {
   card: CardWithProgress;
@@ -98,7 +99,12 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
               <Text style={styles.meaning}>{card.meaning_vi}</Text>
             )}
 
-            {!!card.note && <Text style={styles.note}>📝 {card.note}</Text>}
+            {!!card.note && (
+              <View style={styles.note}>
+                <StickyNote size={14} color="#92400e" style={styles.noteIcon} />
+                <Text style={styles.noteText}>{card.note}</Text>
+              </View>
+            )}
 
             {card.definitions?.length > 0 && (
               <View style={styles.defs}>
@@ -170,12 +176,15 @@ const styles = StyleSheet.create({
   },
   meaning: { fontSize: 18, fontWeight: "600", color: colors.brandDark },
   note: {
-    fontSize: 14,
-    color: "#92400e",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
     backgroundColor: "#fffbeb",
     padding: spacing.sm,
     borderRadius: radius.md,
   },
+  noteIcon: { marginTop: 2 },
+  noteText: { flex: 1, fontSize: 14, color: "#92400e" },
   defs: { gap: 4 },
   def: { fontSize: 14, color: colors.textMuted, lineHeight: 20 },
   examples: {

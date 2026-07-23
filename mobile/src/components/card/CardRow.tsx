@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Card, CardStatus } from "@/types";
 import { StatusDot } from "@/components/status/StatusDot";
 import { colors, radius, spacing } from "@/lib/theme";
+import { Check, Trash2 } from "lucide-react-native";
 
 interface Props {
   card: Card;
@@ -25,7 +26,7 @@ export function CardRow({
     <View style={[styles.row, selectMode && selected && styles.rowSelected]}>
       {selectMode && (
         <View style={[styles.checkbox, selected && styles.checkboxOn]}>
-          {selected && <Text style={styles.checkmark}>✓</Text>}
+          {selected && <Check size={14} color="#fff" strokeWidth={3} />}
         </View>
       )}
       <View style={styles.info}>
@@ -50,7 +51,7 @@ export function CardRow({
           style={styles.iconBtn}
           accessibilityLabel="Xóa từ"
         >
-          <Text style={styles.icon}>🗑️</Text>
+          <Trash2 size={16} color={colors.textMuted} />
         </Pressable>
       )}
     </View>

@@ -15,6 +15,7 @@ import {
   useLocalSearchParams,
   useRouter,
 } from "expo-router";
+import { Upload, Download } from "lucide-react-native";
 import type { Card, CardStatus, CardWithProgress, Deck } from "@/types";
 import {
   fetchCardsWithProgress,
@@ -299,7 +300,8 @@ export default function DeckDetailScreen() {
 
         <View style={styles.headerBtns}>
           <Button
-            title="⬆️ Nhập Excel"
+            title="Nhập Excel"
+            icon={<Upload size={18} color={colors.text} />}
             variant="secondary"
             onPress={handleImport}
             loading={importing}
@@ -329,7 +331,8 @@ export default function DeckDetailScreen() {
 
             <View style={styles.headerBtns}>
               <Button
-                title="⬇️ Xuất (CSV/Excel/JSON)"
+                title="Xuất (CSV/Excel/JSON)"
+                icon={<Download size={18} color={colors.text} />}
                 variant="ghost"
                 onPress={handleExport}
                 style={styles.flexBtn}

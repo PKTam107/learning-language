@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Deck } from "@/types";
 import { StatusBar } from "@/components/status/StatusBar";
 import { colors, radius, spacing } from "@/lib/theme";
+import { Pencil, Trash2 } from "lucide-react-native";
 
 interface Props {
   deck: Deck;
@@ -34,7 +35,7 @@ export function DeckCard({ deck, onPress, onEdit, onDelete }: Props) {
             style={styles.iconBtn}
             accessibilityLabel="Sửa"
           >
-            <Text style={styles.icon}>✏️</Text>
+            <Pencil size={16} color={colors.textMuted} />
           </Pressable>
           <Pressable
             onPress={() => onDelete(deck)}
@@ -42,7 +43,7 @@ export function DeckCard({ deck, onPress, onEdit, onDelete }: Props) {
             style={styles.iconBtn}
             accessibilityLabel="Xóa"
           >
-            <Text style={styles.icon}>🗑️</Text>
+            <Trash2 size={16} color={colors.textMuted} />
           </Pressable>
         </View>
       </View>

@@ -16,6 +16,7 @@ import { FlashcardFlip } from "@/components/flashcard/FlashcardFlip";
 import { StatusDot } from "@/components/status/StatusDot";
 import { Button } from "@/components/ui/Button";
 import { colors, radius, spacing } from "@/lib/theme";
+import { PartyPopper } from "lucide-react-native";
 
 type Mode = "all" | "weak" | "due";
 type Phase = "setup" | "studying" | "done";
@@ -242,7 +243,7 @@ export default function StudyScreen() {
     return (
       <Screen title="Hoàn thành">
         <View style={styles.center}>
-          <Text style={styles.doneEmoji}>🎉</Text>
+          <PartyPopper size={48} color={colors.brand} />
           <Text style={styles.doneTitle}>Hoàn thành phiên học!</Text>
           <Text style={styles.doneSub}>Bạn đã ôn {reviewed} từ.</Text>
 

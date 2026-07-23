@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { Volume2 } from "lucide-react";
 
 interface AudioButtonProps {
   url?: string | null;
@@ -26,7 +27,8 @@ export function AudioButton({ url, label }: AudioButtonProps) {
       className="inline-flex items-center gap-1 rounded-full bg-brand-light px-2.5 py-1 text-xs font-medium text-brand-dark hover:bg-brand/20"
       aria-label={`Nghe phát âm ${label ?? ""}`}
     >
-      🔊 {label}
+      <Volume2 className="h-3.5 w-3.5" />
+      {label}
     </button>
   );
 }

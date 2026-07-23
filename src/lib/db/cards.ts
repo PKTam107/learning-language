@@ -83,6 +83,11 @@ export async function updateCard(
   deckId: string,
   draft: DraftCard
 ): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase().auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
   const term = draft.term.trim();
   if (!term) throw new Error("Từ không được để trống");
   await assertNoDuplicate(deckId, term, id);
@@ -102,7 +107,8 @@ export async function updateCard(
       definitions: draft.definitions,
       examples: draft.examples,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id); // chỉ sửa thẻ của chính mình
   if (error) {
     if (isUniqueViolation(error))
       throw new Error(`Từ “${term}” đã có trong bộ thẻ này.`);
@@ -210,16 +216,32 @@ export async function fetchCardsWithProgress(
   }));
 }
 
+/** Lấy id user hiện tại; ném lỗi nếu chưa đăng nhập. */
+async function requireUserId(): Promise<string> {
+  const {
+    data: { user },
+  } = await supabase().auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+  return user.id;
+}
+
 export async function deleteCard(id: string): Promise<void> {
-  const { error } = await supabase().from("cards").delete().eq("id", id);
+  const userId = await requireUserId();
+  const { error } = await supabase()
+    .from("cards")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
   if (error) throw error;
 }
 
 export async function moveCard(id: string, deckId: string): Promise<void> {
+  const userId = await requireUserId();
   const { error } = await supabase()
     .from("cards")
     .update({ deck_id: deckId })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", userId);
   if (error) throw error;
 }
 
@@ -228,7 +250,12 @@ export async function moveCard(id: string, deckId: string): Promise<void> {
 /** Xóa nhiều thẻ theo id. */
 export async function deleteCards(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
-  const { error } = await supabase().from("cards").delete().in("id", ids);
+  const userId = await requireUserId();
+  const { error } = await supabase()
+    .from("cards")
+    .delete()
+    .in("id", ids)
+    .eq("user_id", userId);
   if (error) throw error;
 }
 
@@ -243,10 +270,15 @@ export async function moveCards(
   if (ids.length === 0) return { moved: 0, skipped: 0 };
 
   const sb = supabase();
+  const userId = await requireUserId();
   const [{ data: moving, error: e1 }, { data: existing, error: e2 }] =
     await Promise.all([
-      sb.from("cards").select("id, term").in("id", ids),
-      sb.from("cards").select("term").eq("deck_id", targetDeckId),
+      sb.from("cards").select("id, term").in("id", ids).eq("user_id", userId),
+      sb
+        .from("cards")
+        .select("term")
+        .eq("deck_id", targetDeckId)
+        .eq("user_id", userId),
     ]);
   if (e1) throw e1;
   if (e2) throw e2;
@@ -261,7 +293,8 @@ export async function moveCards(
     const { error } = await sb
       .from("cards")
       .update({ deck_id: targetDeckId })
-      .in("id", okIds);
+      .in("id", okIds)
+      .eq("user_id", userId);
     if (error) throw error;
   }
   return { moved: okIds.length, skipped };

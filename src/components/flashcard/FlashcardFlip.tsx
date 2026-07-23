@@ -2,6 +2,7 @@
 
 import type { CardWithProgress } from "@/types";
 import { AudioButton } from "./AudioButton";
+import { StickyNote } from "lucide-react";
 
 interface FlashcardFlipProps {
   card: CardWithProgress;
@@ -59,8 +60,9 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
           )}
 
           {card.note && (
-            <p className="rounded-md bg-amber-50 px-2 py-1 text-sm text-amber-900">
-              📝 {card.note}
+            <p className="flex items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-sm text-amber-900">
+              <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              {card.note}
             </p>
           )}
 

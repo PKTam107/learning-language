@@ -8,6 +8,7 @@ import { importCards } from "@/lib/db/cards";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Spinner } from "@/components/ui/Spinner";
+import { Upload, Download } from "lucide-react";
 
 interface Props {
   deckId: string;
@@ -93,7 +94,8 @@ export function ImportButton({ deckId, onImported }: Props) {
         onChange={handleFile}
       />
       <Button variant="secondary" onClick={() => inputRef.current?.click()}>
-        ⬆️ Nhập Excel
+        <Upload size={16} />
+        Nhập Excel
       </Button>
 
       <Modal open={open} onClose={close} title="Nhập từ vựng từ Excel">
@@ -158,10 +160,11 @@ export function ImportButton({ deckId, onImported }: Props) {
               <div className="flex items-center justify-between gap-2">
                 <button
                   onClick={downloadTemplate}
-                  className="text-sm text-brand hover:underline"
+                  className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
                   type="button"
                 >
-                  ⬇️ Tải file mẫu
+                  <Download size={14} />
+                  Tải file mẫu
                 </button>
                 <div className="flex gap-2">
                   <Button variant="ghost" onClick={close}>
