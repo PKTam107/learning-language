@@ -4,6 +4,7 @@ import {
   Alert,
   FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -300,71 +301,118 @@ export default function DeckDetailScreen() {
     <View style={styles.flex}>
       <Stack.Screen options={{ title: deck.name }} />
 
-      <View style={styles.header}>
-        <Text style={styles.title}>{deck.name}</Text>
-        {!!deck.description && <Text style={styles.desc}>{deck.description}</Text>}
-        <Text style={styles.count}>
-          {cards.length} từ
-          {cards.length > 0 && ` · ${masteredPercent(stats)}% đã thuộc`}
-          {stats.due > 0 && (
-            <Text style={styles.due}> · {stats.due} cần ôn</Text>
-          )}
-        </Text>
-        {!!error && <Text style={styles.error}>{error}</Text>}
-
-        {cards.length > 0 && (
-          <View style={styles.barWrap}>
-            <StatusBar stats={stats} showLegend={false} />
-          </View>
-        )}
-
-        {cards.length > 0 && (
-          <View style={styles.headerBtns}>
-            <Button
-              title="Học ngay"
-              onPress={() => router.push(`/study/${deck.id}`)}
-              style={styles.flexBtn}
-            />
-            <Button
-              title={selectMode ? "Xong" : "Chọn"}
-              variant="secondary"
-              onPress={toggleSelectMode}
-              style={styles.flexBtn}
-            />
-          </View>
-        )}
-
-        <View style={styles.headerBtns}>
-          <Button
-            title="Nhập Excel"
-            icon={<Upload size={18} color={colors.text} />}
-            variant="secondary"
-            onPress={handleImport}
-            loading={importing}
-            style={styles.flexBtn}
+      {/* Thanh ghim: tìm kiếm + lọc luôn hiện; phần còn lại cuộn cùng danh sách. */}
+      {cards.length > 0 && (
+        <View style={styles.pinnedBar}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Tìm theo từ, nghĩa hoặc phiên âm..."
+            placeholderTextColor={colors.textSubtle}
+            style={styles.search}
           />
-          <Button
-            title="Xuất"
-            icon={<Download size={18} color={colors.text} />}
-            variant="secondary"
-            onPress={handleExport}
-            disabled={cards.length === 0}
-            style={styles.flexBtn}
-          />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+            keyboardShouldPersistTaps="handled"
+          >
+            <FilterChip
+              label={`Tất cả ${cards.length}`}
+              active={statusFilter === "all"}
+              onPress={() => setStatusFilter("all")}
+            />
+            {STATUS_ORDER.map((s) => (
+              <FilterChip
+                key={s}
+                label={`${STATUS_META[s].label} ${stats.byStatus[s]}`}
+                color={STATUS_META[s].color}
+                active={statusFilter === s}
+                disabled={stats.byStatus[s] === 0}
+                onPress={() => setStatusFilter(s)}
+              />
+            ))}
+          </ScrollView>
         </View>
+      )}
 
-        <Pressable
-          onPress={handleTemplate}
-          hitSlop={8}
-          style={styles.templateBtn}
-        >
-          <FileDown size={15} color={colors.brand} />
-          <Text style={styles.templateText}>Tải file Excel mẫu để nhập</Text>
-        </Pressable>
+      <FlatList
+        data={filtered}
+        keyExtractor={(c) => c.id}
+        contentContainerStyle={styles.list}
+        ItemSeparatorComponent={() => <View style={styles.sep} />}
+        onRefresh={() => {
+          setRefreshing(true);
+          load();
+        }}
+        refreshing={refreshing}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            {!!deck.description && (
+              <Text style={styles.desc}>{deck.description}</Text>
+            )}
+            <Text style={styles.count}>
+              {cards.length} từ
+              {cards.length > 0 && ` · ${masteredPercent(stats)}% đã thuộc`}
+              {stats.due > 0 && (
+                <Text style={styles.due}> · {stats.due} cần ôn</Text>
+              )}
+            </Text>
+            {!!error && <Text style={styles.error}>{error}</Text>}
 
-        {cards.length > 0 && (
-          <>
-            {selectMode && (
+            {cards.length > 0 && (
+              <View style={styles.barWrap}>
+                <StatusBar stats={stats} showLegend={false} />
+              </View>
+            )}
+
+            {cards.length > 0 && (
+              <View style={styles.headerBtns}>
+                <Button
+                  title="Học ngay"
+                  onPress={() => router.push(`/study/${deck.id}`)}
+                  style={styles.flexBtn}
+                />
+                <Button
+                  title={selectMode ? "Xong" : "Chọn"}
+                  variant="secondary"
+                  onPress={toggleSelectMode}
+                  style={styles.flexBtn}
+                />
+              </View>
+            )}
+
+            <View style={styles.headerBtns}>
+              <Button
+                title="Nhập Excel"
+                icon={<Upload size={18} color={colors.text} />}
+                variant="secondary"
+                onPress={handleImport}
+                loading={importing}
+                style={styles.flexBtn}
+              />
+              <Button
+                title="Xuất"
+                icon={<Download size={18} color={colors.text} />}
+                variant="secondary"
+                onPress={handleExport}
+                disabled={cards.length === 0}
+                style={styles.flexBtn}
+              />
+            </View>
+
+            <Pressable
+              onPress={handleTemplate}
+              hitSlop={8}
+              style={styles.templateBtn}
+            >
+              <FileDown size={15} color={colors.brand} />
+              <Text style={styles.templateText}>
+                Tải file Excel mẫu để nhập
+              </Text>
+            </Pressable>
+
+            {cards.length > 0 && selectMode && (
               <View style={styles.bulkBar}>
                 <Pressable onPress={toggleSelectAll}>
                   <Text style={styles.bulkLink}>
@@ -409,46 +457,8 @@ export default function DeckDetailScreen() {
                 </View>
               </View>
             )}
-
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Tìm theo từ, nghĩa hoặc phiên âm..."
-              placeholderTextColor={colors.textSubtle}
-              style={styles.search}
-            />
-
-            <View style={styles.chipRow}>
-              <FilterChip
-                label={`Tất cả ${cards.length}`}
-                active={statusFilter === "all"}
-                onPress={() => setStatusFilter("all")}
-              />
-              {STATUS_ORDER.map((s) => (
-                <FilterChip
-                  key={s}
-                  label={`${STATUS_META[s].label} ${stats.byStatus[s]}`}
-                  color={STATUS_META[s].color}
-                  active={statusFilter === s}
-                  disabled={stats.byStatus[s] === 0}
-                  onPress={() => setStatusFilter(s)}
-                />
-              ))}
-            </View>
-          </>
-        )}
-      </View>
-
-      <FlatList
-        data={filtered}
-        keyExtractor={(c) => c.id}
-        contentContainerStyle={styles.list}
-        ItemSeparatorComponent={() => <View style={styles.sep} />}
-        onRefresh={() => {
-          setRefreshing(true);
-          load();
-        }}
-        refreshing={refreshing}
+          </View>
+        }
         ListEmptyComponent={
           cards.length === 0 ? (
             <View style={styles.empty}>
@@ -559,12 +569,6 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   notFound: { color: colors.textMuted, fontSize: 16 },
-  header: {
-    padding: spacing.lg,
-    paddingBottom: spacing.sm,
-    gap: spacing.xs,
-  },
-  title: { fontSize: 22, fontWeight: "700", color: colors.text },
   desc: { fontSize: 14, color: colors.textMuted },
   count: { fontSize: 14, color: colors.textSubtle },
   due: { color: "#d97706" }, // amber-600
@@ -619,8 +623,17 @@ const styles = StyleSheet.create({
   moveItemPressed: { borderColor: colors.brand, backgroundColor: colors.brandLight },
   moveItemText: { fontSize: 15, color: colors.text, fontWeight: "600" },
   moveHint: { fontSize: 12, color: colors.textSubtle, marginTop: spacing.sm },
+  pinnedBar: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+    backgroundColor: colors.bg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  listHeader: { gap: spacing.xs, marginBottom: spacing.md },
   search: {
-    marginTop: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
@@ -631,10 +644,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   chipRow: {
-    marginTop: spacing.sm,
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
     gap: spacing.sm,
+    paddingRight: spacing.lg,
   },
   chip: {
     flexDirection: "row",
