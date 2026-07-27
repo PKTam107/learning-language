@@ -326,4 +326,13 @@ export async function recordProgress(
     { onConflict: "user_id,card_id" }
   );
   if (error) throw error;
+
+  // Ghi nhật ký ôn cho streak/thống kê. Không chặn luồng học nếu lỗi
+  // (vd migration review_events chưa chạy) — nuốt lỗi im lặng.
+  void supabase
+    .from("review_events")
+    .insert({ user_id: user.id, card_id: cardId, status })
+    .then(({ error: logErr }) => {
+      if (logErr) console.warn("review_events:", logErr.message);
+    });
 }

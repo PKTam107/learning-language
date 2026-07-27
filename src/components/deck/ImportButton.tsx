@@ -93,10 +93,20 @@ export function ImportButton({ deckId, onImported }: Props) {
         className="hidden"
         onChange={handleFile}
       />
-      <Button variant="secondary" onClick={() => inputRef.current?.click()}>
-        <Upload size={16} />
-        Nhập Excel
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="secondary" onClick={() => inputRef.current?.click()}>
+          <Upload size={16} />
+          Nhập Excel
+        </Button>
+        <button
+          onClick={downloadTemplate}
+          className="inline-flex items-center gap-1 whitespace-nowrap text-sm text-brand hover:underline"
+          type="button"
+        >
+          <Download size={14} />
+          Tải file mẫu
+        </button>
+      </div>
 
       <Modal open={open} onClose={close} title="Nhập từ vựng từ Excel">
         <div className="space-y-4">
