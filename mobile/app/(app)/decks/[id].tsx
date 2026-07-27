@@ -339,6 +339,9 @@ export default function DeckDetailScreen() {
       <FlatList
         data={filtered}
         keyExtractor={(c) => c.id}
+        // selectMode/selected không nằm trong data — cần extraData để hàng
+        // re-render khi bật chọn hoặc tick (FlatList là PureComponent).
+        extraData={selected}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         onRefresh={() => {
