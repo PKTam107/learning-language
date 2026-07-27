@@ -12,7 +12,11 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import type { CardStatus, CardWithProgress } from "@/types";
 import { fetchCardsWithProgress, recordProgress } from "@/lib/cards";
 import { STATUS_META, isDue } from "@/lib/status";
+import { useSettings } from "@/lib/settings";
+import { playPronunciation } from "@/lib/audio";
+import { REVIEW_TYPES, type ReviewType } from "@/lib/quiz";
 import { FlashcardFlip } from "@/components/flashcard/FlashcardFlip";
+import { QuizCard } from "@/components/flashcard/QuizCard";
 import { StatusDot } from "@/components/status/StatusDot";
 import { Button } from "@/components/ui/Button";
 import { colors, radius, spacing } from "@/lib/theme";
@@ -60,6 +64,7 @@ export default function StudyScreen() {
   const [inited, setInited] = useState(false);
 
   const [mode, setMode] = useState<Mode>("all");
+  const [reviewType, setReviewType] = useState<ReviewType>("flashcard");
   const [limit, setLimit] = useState(0);
   const [shuffle, setShuffle] = useState(false);
 
@@ -71,6 +76,8 @@ export default function StudyScreen() {
     good: 0,
     easy: 0,
   });
+
+  const { settings } = useSettings();
 
   const load = useCallback(() => {
     if (!deckId) return Promise.resolve();
@@ -117,6 +124,19 @@ export default function StudyScreen() {
 
   const current = queue[index];
 
+  // Tự phát âm khi lật thẻ (nếu bật trong Cài đặt).
+  useEffect(() => {
+    if (phase !== "studying" || !flipped || !settings.autoSpeak || !current) return;
+    void playPronunciation({
+      url: current.audio_us,
+      text: current.term,
+      label: "US",
+    });
+    // Chỉ chạy khi trạng thái lật đổi (cùng thẻ) — không thêm `current` để
+    // tránh phát lại khi state khác đổi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flipped, phase, settings.autoSpeak]);
+
   const next = useCallback(() => {
     setFlipped(false);
     setIndex((i) => {
@@ -136,6 +156,12 @@ export default function StudyScreen() {
       next();
     },
     [current, next]
+  );
+
+  // Kết quả câu ôn (trắc nghiệm/gõ/nghe): đúng → "good", sai → "hard".
+  const handleQuizAnswer = useCallback(
+    (correct: boolean) => assess(correct ? "good" : "hard"),
+    [assess]
   );
 
   if (loading) {
@@ -195,6 +221,34 @@ export default function StudyScreen() {
             disabled={weakCount === 0}
             onPress={() => setMode("weak")}
           />
+
+          <Text style={styles.optLabel}>Kiểu ôn</Text>
+          <View style={styles.chipRow}>
+            {REVIEW_TYPES.map((rt) => {
+              const disabled = rt.value === "mcq" && all.length < 4;
+              return (
+                <Pressable
+                  key={rt.value}
+                  onPress={() => setReviewType(rt.value)}
+                  disabled={disabled}
+                  style={[
+                    styles.chip,
+                    reviewType === rt.value && styles.chipActive,
+                    disabled && styles.modeDisabled,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      reviewType === rt.value && styles.chipTextActive,
+                    ]}
+                  >
+                    {rt.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
 
           <Text style={styles.optLabel}>Số thẻ/phiên</Text>
           <View style={styles.chipRow}>
@@ -283,40 +337,51 @@ export default function StudyScreen() {
         </View>
 
         <View style={styles.cardWrap}>
-          {current && (
+          {current && reviewType === "flashcard" && (
             <FlashcardFlip
               card={current}
               flipped={flipped}
               onFlip={() => setFlipped((f) => !f)}
             />
           )}
+          {current && reviewType !== "flashcard" && (
+            <QuizCard
+              key={current.id}
+              card={current}
+              pool={all}
+              type={reviewType}
+              autoSpeak={settings.autoSpeak}
+              onAnswered={handleQuizAnswer}
+            />
+          )}
         </View>
 
-        {flipped ? (
-          <View style={styles.assessRow}>
+        {reviewType === "flashcard" &&
+          (flipped ? (
+            <View style={styles.assessRow}>
+              <Button
+                title="Chưa thuộc"
+                onPress={() => assess("hard")}
+                style={[styles.grow, { backgroundColor: STATUS_META.hard.color }]}
+              />
+              <Button
+                title="Tạm nhớ"
+                onPress={() => assess("good")}
+                style={[styles.grow, { backgroundColor: STATUS_META.good.color }]}
+              />
+              <Button
+                title="Đã thuộc"
+                onPress={() => assess("easy")}
+                style={[styles.grow, { backgroundColor: STATUS_META.easy.color }]}
+              />
+            </View>
+          ) : (
             <Button
-              title="Chưa thuộc"
-              onPress={() => assess("hard")}
-              style={[styles.grow, { backgroundColor: STATUS_META.hard.color }]}
+              title="Hiện đáp án"
+              variant="secondary"
+              onPress={() => setFlipped(true)}
             />
-            <Button
-              title="Tạm nhớ"
-              onPress={() => assess("good")}
-              style={[styles.grow, { backgroundColor: STATUS_META.good.color }]}
-            />
-            <Button
-              title="Đã thuộc"
-              onPress={() => assess("easy")}
-              style={[styles.grow, { backgroundColor: STATUS_META.easy.color }]}
-            />
-          </View>
-        ) : (
-          <Button
-            title="Hiện đáp án"
-            variant="secondary"
-            onPress={() => setFlipped(true)}
-          />
-        )}
+          ))}
       </View>
     </Screen>
   );

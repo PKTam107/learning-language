@@ -13,10 +13,12 @@ import { useFocusEffect, useRouter } from "expo-router";
 import type { Deck, DeckStats } from "@/types";
 import { fetchDecksWithStats, deleteDeck } from "@/lib/decks";
 import { exportAccountBackup } from "@/lib/export";
+import { fetchStudyStats, EMPTY_STATS, type StudyStats } from "@/lib/stats";
 import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
 import { DeckCard } from "@/components/deck/DeckCard";
 import { DeckForm } from "@/components/deck/DeckForm";
 import { StatusBar } from "@/components/status/StatusBar";
+import { StreakCard } from "@/components/StreakCard";
 import { Button } from "@/components/ui/Button";
 import { colors, radius, spacing } from "@/lib/theme";
 import { Save } from "lucide-react-native";
@@ -30,6 +32,7 @@ export default function DecksScreen() {
   const [editing, setEditing] = useState<Deck | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
+  const [stats, setStats] = useState<StudyStats>(EMPTY_STATS);
 
   async function handleBackup() {
     setBackupBusy(true);
@@ -45,7 +48,12 @@ export default function DecksScreen() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      setDecks(await fetchDecksWithStats());
+      const [deckData, statData] = await Promise.all([
+        fetchDecksWithStats(),
+        fetchStudyStats(),
+      ]);
+      setDecks(deckData);
+      setStats(statData);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -124,6 +132,7 @@ export default function DecksScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.heading}>Bộ từ vựng của bạn</Text>
+            {decks.length > 0 && <StreakCard stats={stats} />}
             {agg.total > 0 && (
               <View style={styles.statsCard}>
                 <View style={styles.statsRow}>
