@@ -171,6 +171,50 @@ export async function exportCards(
   }
 }
 
+// ---------- File Excel mẫu để nhập ----------
+
+/** Cột mẫu — khớp alias trong lib/import/xlsx.ts. */
+const TEMPLATE_COLUMNS = [
+  "term",
+  "meaning_vi",
+  "phonetic",
+  "part_of_speech",
+  "note",
+] as const;
+
+const TEMPLATE_SAMPLE = [
+  {
+    term: "hello",
+    meaning_vi: "xin chào",
+    phonetic: "/həˈloʊ/",
+    part_of_speech: "exclamation",
+    note: "câu chào thông dụng",
+  },
+  {
+    term: "accommodation",
+    meaning_vi: "chỗ ở",
+    phonetic: "/əˌkɒməˈdeɪʃn/",
+    part_of_speech: "n",
+    note: "",
+  },
+];
+
+/** Tạo & chia sẻ file Excel mẫu để người dùng điền trước khi nhập. */
+export async function downloadImportTemplate(): Promise<void> {
+  const ws = XLSX.utils.json_to_sheet(TEMPLATE_SAMPLE, {
+    header: [...TEMPLATE_COLUMNS],
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "template");
+  const base64 = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
+  await writeAndShare(
+    "linguacards-mau-nhap.xlsx",
+    base64,
+    FileSystem.EncodingType.Base64,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+}
+
 /** Chia sẻ backup toàn tài khoản dạng JSON. */
 export async function exportAccountBackup(): Promise<void> {
   const backup = await buildAccountBackup();

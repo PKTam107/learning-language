@@ -15,7 +15,7 @@ import {
   useLocalSearchParams,
   useRouter,
 } from "expo-router";
-import { Upload, Download } from "lucide-react-native";
+import { Upload, Download, FileDown } from "lucide-react-native";
 import type { Card, CardStatus, CardWithProgress, Deck } from "@/types";
 import {
   fetchCardsWithProgress,
@@ -28,7 +28,11 @@ import {
 } from "@/lib/cards";
 import { fetchDecks } from "@/lib/decks";
 import { pickAndParseXlsx } from "@/lib/import/xlsx";
-import { exportCards, type ExportFormat } from "@/lib/export";
+import {
+  exportCards,
+  downloadImportTemplate,
+  type ExportFormat,
+} from "@/lib/export";
 import {
   STATUS_META,
   STATUS_ORDER,
@@ -162,6 +166,14 @@ export default function DeckDetailScreen() {
       { text: "JSON", onPress: () => run("json") },
       { text: "Hủy", style: "cancel" },
     ]);
+  }
+
+  async function handleTemplate() {
+    try {
+      await downloadImportTemplate();
+    } catch (e) {
+      Alert.alert("Lỗi", (e as Error).message);
+    }
   }
 
   // ----- Chọn nhiều thẻ -----
@@ -300,6 +312,28 @@ export default function DeckDetailScreen() {
         </Text>
         {!!error && <Text style={styles.error}>{error}</Text>}
 
+        {cards.length > 0 && (
+          <View style={styles.barWrap}>
+            <StatusBar stats={stats} showLegend={false} />
+          </View>
+        )}
+
+        {cards.length > 0 && (
+          <View style={styles.headerBtns}>
+            <Button
+              title="Học ngay"
+              onPress={() => router.push(`/study/${deck.id}`)}
+              style={styles.flexBtn}
+            />
+            <Button
+              title={selectMode ? "Xong" : "Chọn"}
+              variant="secondary"
+              onPress={toggleSelectMode}
+              style={styles.flexBtn}
+            />
+          </View>
+        )}
+
         <View style={styles.headerBtns}>
           <Button
             title="Nhập Excel"
@@ -309,38 +343,27 @@ export default function DeckDetailScreen() {
             loading={importing}
             style={styles.flexBtn}
           />
+          <Button
+            title="Xuất"
+            icon={<Download size={18} color={colors.text} />}
+            variant="secondary"
+            onPress={handleExport}
+            disabled={cards.length === 0}
+            style={styles.flexBtn}
+          />
         </View>
+
+        <Pressable
+          onPress={handleTemplate}
+          hitSlop={8}
+          style={styles.templateBtn}
+        >
+          <FileDown size={15} color={colors.brand} />
+          <Text style={styles.templateText}>Tải file Excel mẫu để nhập</Text>
+        </Pressable>
 
         {cards.length > 0 && (
           <>
-            <View style={styles.barWrap}>
-              <StatusBar stats={stats} />
-            </View>
-
-            <View style={styles.headerBtns}>
-              <Button
-                title="Học ngay"
-                onPress={() => router.push(`/study/${deck.id}`)}
-                style={styles.flexBtn}
-              />
-              <Button
-                title={selectMode ? "Xong" : "Chọn"}
-                variant="secondary"
-                onPress={toggleSelectMode}
-                style={styles.flexBtn}
-              />
-            </View>
-
-            <View style={styles.headerBtns}>
-              <Button
-                title="Xuất (CSV/Excel/JSON)"
-                icon={<Download size={18} color={colors.text} />}
-                variant="ghost"
-                onPress={handleExport}
-                style={styles.flexBtn}
-              />
-            </View>
-
             {selectMode && (
               <View style={styles.bulkBar}>
                 <Pressable onPress={toggleSelectAll}>
@@ -549,6 +572,15 @@ const styles = StyleSheet.create({
   barWrap: { marginTop: spacing.sm },
   headerBtns: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
   flexBtn: { flex: 1 },
+  templateBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: spacing.sm,
+    paddingVertical: 6,
+  },
+  templateText: { fontSize: 13, color: colors.brand, fontWeight: "600" },
   bulkBar: {
     marginTop: spacing.md,
     padding: spacing.md,
