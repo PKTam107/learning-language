@@ -14,11 +14,14 @@ import type { Deck, DeckStats } from "@/types";
 import { fetchDecksWithStats, deleteDeck } from "@/lib/decks";
 import { exportAccountBackup } from "@/lib/export";
 import { fetchStudyStats, EMPTY_STATS, type StudyStats } from "@/lib/stats";
+import { fetchWeakWords, type WeakWord } from "@/lib/weak";
 import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
 import { DeckCard } from "@/components/deck/DeckCard";
 import { DeckForm } from "@/components/deck/DeckForm";
 import { StatusBar } from "@/components/status/StatusBar";
 import { StreakCard } from "@/components/StreakCard";
+import { WeakWords } from "@/components/WeakWords";
+import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
 import { Button } from "@/components/ui/Button";
 import { colors, radius, spacing } from "@/lib/theme";
 import { Save } from "lucide-react-native";
@@ -33,6 +36,7 @@ export default function DecksScreen() {
   const [error, setError] = useState<string | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [stats, setStats] = useState<StudyStats>(EMPTY_STATS);
+  const [weak, setWeak] = useState<WeakWord[]>([]);
 
   async function handleBackup() {
     setBackupBusy(true);
@@ -48,12 +52,14 @@ export default function DecksScreen() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const [deckData, statData] = await Promise.all([
+      const [deckData, statData, weakData] = await Promise.all([
         fetchDecksWithStats(),
         fetchStudyStats(),
+        fetchWeakWords(8),
       ]);
       setDecks(deckData);
       setStats(statData);
+      setWeak(weakData);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -133,6 +139,8 @@ export default function DecksScreen() {
           <View style={styles.header}>
             <Text style={styles.heading}>Bộ từ vựng của bạn</Text>
             {decks.length > 0 && <StreakCard stats={stats} />}
+            <EnrichBackfillButton banner onDone={load} />
+            <WeakWords words={weak} />
             {agg.total > 0 && (
               <View style={styles.statsCard}>
                 <View style={styles.statsRow}>

@@ -62,6 +62,10 @@ export async function saveCard(
       note: draft.note ?? null,
       definitions: draft.definitions,
       examples: draft.examples,
+      cefr_level: draft.cefrLevel ?? null,
+      word_family: draft.wordFamily ?? [],
+      collocations: draft.collocations ?? [],
+      enriched_at: draft.enriched ? new Date().toISOString() : null,
       source_language: draft.sourceLanguage,
       target_language: draft.targetLanguage,
     })
@@ -128,6 +132,9 @@ export async function importCards(
       note: d.note ?? null,
       definitions: d.definitions ?? [],
       examples: d.examples ?? [],
+      cefr_level: d.cefrLevel ?? null,
+      word_family: d.wordFamily ?? [],
+      collocations: d.collocations ?? [],
       source_language: d.sourceLanguage ?? "en",
       target_language: d.targetLanguage ?? "vi",
     });

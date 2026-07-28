@@ -116,7 +116,10 @@ Nguồn sự thật nhãn/màu: [src/lib/status.ts](../src/lib/status.ts).
   tra **từ đơn tiếng Anh mới** rồi cache vào `cards.word_family/collocations/cefr_level`.
 - [x] **Backfill thẻ cũ** (migration `0007` + cột `enriched_at`): nút "Làm giàu N thẻ" ở deck +
   dashboard, chạy `/api/enrich` theo lô có throttle/rate-limit, **tự ẩn khi hết**.
-- [ ] Nâng chất word family (WordNet/AI) + đưa 4 tính năng lên mobile. → sau.
+- [x] **Mobile ngang bằng:** hiển thị CEFR/word family/collocations (CardDetail + DraftEditor),
+  "Bạn hay quên" (màn chính), nút "Làm giàu N thẻ" (deck + màn chính). Dùng chung `/api/lookup`
+  + `/api/enrich`.
+- [ ] Nâng chất word family (WordNet/AI). → sau.
 
 ### P3 — Đa ngôn ngữ (mở khóa kiến trúc DB có sẵn)
 - [ ] Dùng `profiles.default_source/target_language`; chọn ngôn ngữ khi tạo deck (bỏ hardcode).

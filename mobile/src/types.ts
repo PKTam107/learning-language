@@ -32,6 +32,12 @@ export interface DraftCard {
   fromCache?: boolean;
   translationSkipped?: boolean;
   notFound?: boolean;
+  // ----- Làm giàu (enrichment) — đồng bộ với web -----
+  /** true nếu đã chạy bước làm giàu → set enriched_at khi lưu. */
+  enriched?: boolean;
+  cefrLevel?: string;
+  wordFamily?: string[];
+  collocations?: string[];
 }
 
 /** Thống kê số thẻ theo trạng thái học trong 1 deck. */
@@ -70,6 +76,10 @@ export interface Card {
   note: string | null;
   definitions: Definition[];
   examples: Example[];
+  cefr_level: string | null;
+  word_family: string[];
+  collocations: string[];
+  enriched_at: string | null;
   source_language: LanguageCode;
   target_language: LanguageCode;
   created_at: string;

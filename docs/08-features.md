@@ -193,6 +193,9 @@ Cài đặt được lưu **trên từng thiết bị** (không đồng bộ qua
 - Hai bản **đã ngang bằng ở phần học**: trạng thái, các chế độ học, **kiểu ôn đa dạng**
   (lật thẻ / trắc nghiệm / gõ / nghe), lịch ôn, **streak**, tự phát âm, chống trùng từ, và
   **hành động hàng loạt** (chọn nhiều thẻ để xóa / chuyển bộ / reset tiến độ).
+- Cũng ngang bằng ở **làm giàu thẻ** (badge CEFR, họ từ, collocations), **"Bạn hay quên"**,
+  và nút **"Làm giàu N thẻ"** cho thẻ cũ. *(Bản mobile hiện chưa có sửa/xem chi tiết chỉnh sửa
+  một thẻ như web, nhưng phần hiển thị thông tin làm giàu thì có.)*
 - Điểm khác duy nhất còn lại là **cách nhắc học** (xem mục 10): điện thoại dùng thông báo hệ
   thống, web dùng banner trong app. Riêng **cài đặt** (tự phát âm, nhắc học) lưu theo từng
   thiết bị nên không đồng bộ qua tài khoản.

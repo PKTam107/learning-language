@@ -36,3 +36,22 @@ export async function lookupWord(
   if (!res.ok) throw new Error("Tra từ thất bại");
   return (await res.json()) as DraftCard;
 }
+
+export interface WordEnrichment {
+  cefrLevel?: string;
+  wordFamily?: string[];
+  collocations?: string[];
+}
+
+/** Làm giàu một lô từ (gọi /api/enrich của web) → { [word]: enrichment }. */
+export async function enrichWords(
+  words: string[]
+): Promise<Record<string, WordEnrichment>> {
+  const res = await apiFetch("/api/enrich", { words });
+  if (res.status === 401) throw new Error("Phiên đăng nhập hết hạn");
+  if (!res.ok) {
+    const info = (await res.json().catch(() => null)) as { message?: string } | null;
+    throw new Error(info?.message ?? "Làm giàu thất bại");
+  }
+  return (await res.json()) as Record<string, WordEnrichment>;
+}

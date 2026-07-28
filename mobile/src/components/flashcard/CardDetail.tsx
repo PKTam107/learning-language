@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import type { Card } from "@/types";
 import { AudioButton } from "./AudioButton";
+import { CefrBadge, EnrichmentSections } from "./Enrichment";
 import { colors, radius, spacing } from "@/lib/theme";
 
 /** Xem chi tiết 1 card đã lưu (read-only): phiên âm, audio US/UK, mọi nghĩa & ví dụ. */
@@ -16,6 +17,7 @@ export function CardDetail({ card }: { card: Card }) {
     >
       <View style={styles.header}>
         <Text style={styles.term}>{card.term}</Text>
+        <CefrBadge level={card.cefr_level} />
         {!!card.part_of_speech && (
           <Text style={styles.pos}>{card.part_of_speech}</Text>
         )}
@@ -81,6 +83,11 @@ export function CardDetail({ card }: { card: Card }) {
           ))}
         </View>
       )}
+
+      <EnrichmentSections
+        wordFamily={card.word_family}
+        collocations={card.collocations}
+      />
 
       {noContent && (
         <Text style={styles.emptyText}>Thẻ này chưa có nghĩa/ví dụ.</Text>

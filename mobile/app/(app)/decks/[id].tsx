@@ -42,6 +42,7 @@ import {
 } from "@/lib/status";
 import { CardRow } from "@/components/card/CardRow";
 import { CardDetail } from "@/components/flashcard/CardDetail";
+import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
 import { StatusBar } from "@/components/status/StatusBar";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -415,6 +416,14 @@ export default function DeckDetailScreen() {
               </Text>
             </Pressable>
 
+            {cards.length > 0 && (
+              <EnrichBackfillButton
+                deckId={deck.id}
+                onDone={load}
+                style={styles.enrichBtn}
+              />
+            )}
+
             {cards.length > 0 && selectMode && (
               <View style={styles.bulkBar}>
                 <Pressable onPress={toggleSelectAll}>
@@ -588,6 +597,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   templateText: { fontSize: 13, color: colors.brand, fontWeight: "600" },
+  enrichBtn: { marginTop: spacing.sm },
   bulkBar: {
     marginTop: spacing.md,
     padding: spacing.md,
