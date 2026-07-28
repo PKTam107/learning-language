@@ -53,7 +53,10 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ word, source: "en", target: "vi" }),
       });
-      if (!res.ok) throw new Error("Tra từ thất bại");
+      if (!res.ok) {
+        const info = await res.json().catch(() => null);
+        throw new Error(info?.message ?? "Tra từ thất bại");
+      }
       const data: DraftCard = await res.json();
       // Luôn dùng payload server (đã gồm meaningVi dịch sẵn cho cụm từ notFound).
       setDraft(data);

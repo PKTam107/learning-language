@@ -6,9 +6,13 @@ import { ArrowLeft, PartyPopper } from "lucide-react";
 import type { CardStatus, CardWithProgress } from "@/types";
 import { fetchCardsWithProgress, recordProgress } from "@/lib/db/cards";
 import { STATUS_META, isDue } from "@/lib/status";
+import { REVIEW_TYPES, type ReviewType } from "@/lib/quiz";
+import { useSettings } from "@/lib/settings";
+import { speak } from "@/lib/speak";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { FlashcardFlip } from "./FlashcardFlip";
+import { QuizCard } from "./QuizCard";
 
 type Mode = "all" | "weak" | "due";
 type Phase = "setup" | "studying" | "done";
@@ -50,8 +54,11 @@ export function StudySession({ deckId }: { deckId: string }) {
 
   // Tùy chọn phiên học
   const [mode, setMode] = useState<Mode>("all");
+  const [reviewType, setReviewType] = useState<ReviewType>("flashcard");
   const [limit, setLimit] = useState(0);
   const [shuffle, setShuffle] = useState(false);
+
+  const { settings } = useSettings();
 
   // Trạng thái phiên đang chạy
   const [queue, setQueue] = useState<CardWithProgress[]>([]);
@@ -129,9 +136,24 @@ export function StudySession({ deckId }: { deckId: string }) {
     [current, next]
   );
 
-  // Phím tắt khi đang học
+  // Kết quả câu ôn (trắc nghiệm/gõ/nghe): đúng → "good", sai → "hard".
+  const handleQuizAnswer = useCallback(
+    (correct: boolean) => assess(correct ? "good" : "hard"),
+    [assess]
+  );
+
+  // Tự phát âm khi lật thẻ (chế độ lật thẻ) — nếu bật trong Cài đặt.
   useEffect(() => {
-    if (phase !== "studying") return;
+    if (phase !== "studying" || reviewType !== "flashcard") return;
+    if (!flipped || !settings.autoSpeak || !current) return;
+    speak({ url: current.audio_us, text: current.term, label: "US" });
+    // Chỉ chạy khi trạng thái lật đổi (cùng thẻ) — không thêm `current`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flipped, phase, reviewType, settings.autoSpeak]);
+
+  // Phím tắt khi đang học (chỉ chế độ lật thẻ)
+  useEffect(() => {
+    if (phase !== "studying" || reviewType !== "flashcard") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
@@ -149,7 +171,7 @@ export function StudySession({ deckId }: { deckId: string }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, flipped, assess, next]);
+  }, [phase, flipped, assess, next, reviewType]);
 
   const progressPct = useMemo(
     () => (queue.length ? Math.round((index / queue.length) * 100) : 0),
@@ -210,6 +232,30 @@ export function StudySession({ deckId }: { deckId: string }) {
             onClick={() => setMode("weak")}
             disabled={weakCount === 0}
           />
+        </div>
+
+        <div className="mt-6">
+          <p className="mb-2 text-sm font-medium text-slate-600">Kiểu ôn</p>
+          <div className="flex flex-wrap gap-2">
+            {REVIEW_TYPES.map((rt) => {
+              const disabled = rt.value === "mcq" && all.length < 4;
+              const active = reviewType === rt.value;
+              return (
+                <button
+                  key={rt.value}
+                  onClick={() => setReviewType(rt.value)}
+                  disabled={disabled}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors disabled:opacity-40 ${
+                    active
+                      ? "border-brand bg-brand-light font-semibold text-brand-dark"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  }`}
+                >
+                  {rt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -307,50 +353,63 @@ export function StudySession({ deckId }: { deckId: string }) {
         </div>
       </div>
 
-      {current && (
-        <FlashcardFlip
-          card={current}
-          flipped={flipped}
-          onFlip={() => setFlipped((f) => !f)}
-        />
+      {current && reviewType === "flashcard" && (
+        <>
+          <FlashcardFlip
+            card={current}
+            flipped={flipped}
+            onFlip={() => setFlipped((f) => !f)}
+          />
+
+          <div className="mt-6">
+            {flipped ? (
+              <div className="grid grid-cols-3 gap-3">
+                <Button
+                  size="lg"
+                  className="bg-red-500 text-white hover:bg-red-600"
+                  onClick={() => assess("hard")}
+                >
+                  Chưa thuộc
+                </Button>
+                <Button
+                  size="lg"
+                  className="bg-amber-500 text-white hover:bg-amber-600"
+                  onClick={() => assess("good")}
+                >
+                  Tạm nhớ
+                </Button>
+                <Button
+                  size="lg"
+                  className="bg-green-600 text-white hover:bg-green-700"
+                  onClick={() => assess("easy")}
+                >
+                  Đã thuộc
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="lg"
+                variant="secondary"
+                className="w-full"
+                onClick={() => setFlipped(true)}
+              >
+                Hiện đáp án (Space)
+              </Button>
+            )}
+          </div>
+        </>
       )}
 
-      <div className="mt-6">
-        {flipped ? (
-          <div className="grid grid-cols-3 gap-3">
-            <Button
-              size="lg"
-              className="bg-red-500 text-white hover:bg-red-600"
-              onClick={() => assess("hard")}
-            >
-              Chưa thuộc
-            </Button>
-            <Button
-              size="lg"
-              className="bg-amber-500 text-white hover:bg-amber-600"
-              onClick={() => assess("good")}
-            >
-              Tạm nhớ
-            </Button>
-            <Button
-              size="lg"
-              className="bg-green-600 text-white hover:bg-green-700"
-              onClick={() => assess("easy")}
-            >
-              Đã thuộc
-            </Button>
-          </div>
-        ) : (
-          <Button
-            size="lg"
-            variant="secondary"
-            className="w-full"
-            onClick={() => setFlipped(true)}
-          >
-            Hiện đáp án (Space)
-          </Button>
-        )}
-      </div>
+      {current && reviewType !== "flashcard" && (
+        <QuizCard
+          key={current.id}
+          card={current}
+          pool={all}
+          type={reviewType}
+          autoSpeak={settings.autoSpeak}
+          onAnswered={handleQuizAnswer}
+        />
+      )}
     </div>
   );
 }

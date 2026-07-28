@@ -1,7 +1,8 @@
 # Current State & Development Plan — LinguaCards
 
 Đặc tả **hiện trạng thực tế (as-built)** của web app + kế hoạch phát triển tiếp.
-Cập nhật lần cuối: sau khi deploy Vercel + hoàn tất mobile Feature 1–5.
+Cập nhật lần cuối: web đã ngang bằng mobile ở phần học (kiểu ôn đa dạng, streak, nhắc học,
+tự phát âm) + rate-limit `/api/lookup`.
 
 > Đây là tài liệu "sống" — mô tả code **đang có**, khác với 01-product-spec (tầm nhìn)
 > và 05-roadmap (kế hoạch dài hạn). Khi hoàn thành hạng mục, cập nhật lại mục A/B.
@@ -38,19 +39,24 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
 | Lookup pipeline | cache → DictionaryAPI.dev → AI dịch → fallback dịch cả cụm nếu notFound → ghi cache | [lib/lookup.ts](../src/lib/lookup.ts) |
 | Translate providers | mymemory (default, free), openai, gemini, libretranslate | [lib/ai/index.ts](../src/lib/ai/index.ts) |
 | Study mode | Lật thẻ (Space), đánh giá 1/2/3, progress bar, sắp xếp ưu tiên hard→new→good→easy | [StudySession.tsx](../src/components/flashcard/StudySession.tsx) |
-| Audio | US/UK từ DictionaryAPI | [AudioButton.tsx](../src/components/flashcard/AudioButton.tsx) |
-| Dashboard | Stat: số bộ thẻ / tổng từ / "EN→VI" | [DecksManager.tsx](../src/components/deck/DecksManager.tsx) |
+| Kiểu ôn đa dạng | Lật thẻ / trắc nghiệm (MCQ) / gõ từ (sai ≤1 ký tự) / nghe; tự chấm → good/hard | [quiz.ts](../src/lib/quiz.ts), [QuizCard.tsx](../src/components/flashcard/QuizCard.tsx) |
+| Audio | US/UK từ DictionaryAPI + TTS fallback; tự phát âm khi lật thẻ (theo cài đặt) | [speak.ts](../src/lib/speak.ts), [AudioButton.tsx](../src/components/flashcard/AudioButton.tsx) |
+| Streak | Nhật ký `review_events` → streak + lượt hôm nay/tuần + biểu đồ 7 ngày (dashboard) | [db/stats.ts](../src/lib/db/stats.ts), [StreakCard.tsx](../src/components/StreakCard.tsx), [StudyOverview.tsx](../src/components/StudyOverview.tsx) |
+| Cài đặt & nhắc học | localStorage (autoSpeak, reminder giờ) + banner nhắc trên dashboard | [settings.ts](../src/lib/settings.ts), [SettingsForm.tsx](../src/components/SettingsForm.tsx) |
+| Rate limit | `/api/lookup` 30 lượt/phút/user qua RPC `consume_rate_limit` (fixed window) | [0005_rate_limit.sql](../supabase/migrations/0005_rate_limit.sql), [api/lookup/route.ts](../src/app/api/lookup/route.ts) |
+| Dashboard | Stat: số bộ thẻ / tổng từ / "EN→VI" + streak + banner nhắc học | [DecksManager.tsx](../src/components/deck/DecksManager.tsx), [StudyOverview.tsx](../src/components/StudyOverview.tsx) |
 
 ### A4. Khoảng trống & nợ kỹ thuật
 1. ~~**Sửa thẻ đã lưu**~~ — ✅ đã làm (P1).
 2. ~~**Chuyển thẻ giữa deck (UI)**~~ — ✅ đã làm (P1); `moveCard()` đã có sẵn từ trước.
 3. ~~**Tìm/lọc card trong deck**~~ — ✅ đã làm (P1).
 4. ~~**Xem chi tiết card**~~ (definitions/examples/audio UK ngoài study) — ✅ đã làm (P1).
-5. **Spaced Repetition**: cột `next_due_at`/`ease_factor` để sẵn nhưng study chỉ sort theo
-   status — **chưa có lịch ôn / "hôm nay cần ôn N từ"**. → P2.
+5. ~~**Spaced Repetition**~~ — ✅ đã làm (P2.3): `recordProgress` tính `next_due_at`/`ease_factor`,
+   có chế độ "Ôn hôm nay" + số thẻ đến hạn.
 6. **Đa ngôn ngữ**: DB sẵn sàng nhưng UI/logic hardcode EN→VI. → P3.
-7. **Dashboard thống kê thật** (streak, phân bố theo status): chưa có. → P2.
-8. **Rate limit** `/api/lookup`: chưa có. → P4.
+7. ~~**Dashboard thống kê thật (streak)**~~ — ✅ đã làm: streak + biểu đồ 7 ngày trên dashboard
+   (web + mobile), dựa trên bảng `review_events`.
+8. ~~**Rate limit** `/api/lookup`~~ — ✅ đã làm: 30 lượt/phút/user qua RPC Supabase.
 9. **Test**: chưa có. → P4.
 
 ---
@@ -86,14 +92,19 @@ Nguồn sự thật nhãn/màu: [src/lib/status.ts](../src/lib/status.ts).
 - [x] Màn chọn chế độ trước phiên: Ôn tất cả / Chỉ từ chưa thuộc (new+hard) / giới hạn số thẻ / xáo trộn.
 - [x] Tóm tắt sau phiên (đếm số từ đánh giá theo mỗi nhóm).
 
-**P2.3 — Spaced Repetition** ✅ (trừ streak)
+**P2.3 — Spaced Repetition + Streak** ✅
 - [x] SM-2 rút gọn trong `recordProgress`: đánh giá → tính `next_due_at` + cập nhật
   `ease_factor` (hard: ôn lại 1 ngày & giảm ease; good: khoảng × ease; easy: × ease × 1.3).
 - [x] Chế độ **"Ôn hôm nay"** (thẻ đến hạn / chưa học) trong màn chọn chế độ; mặc định
   chọn khi có thẻ đến hạn.
 - [x] Deck detail + deck card + dashboard hiện **số thẻ cần ôn** (`due`).
-- [ ] **Streak** (chuỗi ngày học liên tục): cần bảng lịch sử ôn (`review_log`) vì
-  `last_reviewed_at` chỉ lưu lần cuối mỗi thẻ → **để lại P4** (kèm migration).
+- [x] **Streak** (chuỗi ngày học liên tục): bảng `review_events` (migration `0004`) ghi từng
+  lượt ôn; dashboard hiện streak + biểu đồ 7 ngày (web + mobile).
+
+**P2.4 — Kiểu ôn đa dạng + nhắc học** ✅ (web + mobile)
+- [x] Kiểu ôn: lật thẻ / trắc nghiệm (MCQ) / gõ từ / nghe — tự chấm, quy về good/hard.
+- [x] Trang Cài đặt: tự phát âm khi lật thẻ + nhắc học hằng ngày. Web dùng **banner in-app**
+  (dashboard); mobile dùng **local notification**. Cài đặt lưu theo thiết bị.
 
 ### P3 — Đa ngôn ngữ (mở khóa kiến trúc DB có sẵn)
 - [ ] Dùng `profiles.default_source/target_language`; chọn ngôn ngữ khi tạo deck (bỏ hardcode).
@@ -101,8 +112,10 @@ Nguồn sự thật nhãn/màu: [src/lib/status.ts](../src/lib/status.ts).
 - [ ] i18n giao diện.
 
 ### P4 — Mở rộng / vận hành
-- [ ] Import/export (CSV, Anki `.apkg`), chia sẻ deck công khai.
-- [ ] Chế độ học khác: gõ lại (typing), trắc nghiệm.
+- [x] Import Excel (`.xlsx`) + export CSV/Excel/JSON + backup tài khoản.
+- [ ] Nhập Anki (`.apkg`), chia sẻ deck công khai.
+- [x] Chế độ học khác: gõ lại (typing), trắc nghiệm, nghe.
 - [ ] PWA (offline cơ bản).
-- [ ] Rate limit `/api/lookup` + test cho lookup pipeline & db helpers.
-- [ ] Mobile Feature 6 (Google OAuth + dashboard) cho ngang web.
+- [x] Rate limit `/api/lookup` (30 lượt/phút/user qua RPC Supabase).
+- [ ] Test cho lookup pipeline & db helpers.
+- [x] Mobile Google OAuth (đăng nhập) cho ngang web.

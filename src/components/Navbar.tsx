@@ -28,6 +28,9 @@ export function Navbar() {
           <Link href="/decks" className="text-slate-600 hover:text-brand">
             Bộ thẻ
           </Link>
+          <Link href="/settings" className="text-slate-600 hover:text-brand">
+            Cài đặt
+          </Link>
           {/* Filter ngôn ngữ — khóa cứng en→vi ở MVP */}
           <span className="hidden rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-500 sm:inline">
             🇬🇧 EN → 🇻🇳 VI
