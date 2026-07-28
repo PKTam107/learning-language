@@ -28,6 +28,9 @@ export function Navbar() {
           <Link href="/decks" className="text-slate-600 hover:text-brand">
             Bộ thẻ
           </Link>
+          <Link href="/weak" className="text-slate-600 hover:text-brand">
+            Hay quên
+          </Link>
           <Link href="/settings" className="text-slate-600 hover:text-brand">
             Cài đặt
           </Link>

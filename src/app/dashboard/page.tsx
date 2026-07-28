@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { QuickCreator } from "@/components/QuickCreator";
 import { StudyOverview } from "@/components/StudyOverview";
+import { WeakWords } from "@/components/WeakWords";
 import { DecksManager } from "@/components/deck/DecksManager";
 import { Hand } from "lucide-react";
 
@@ -13,6 +14,9 @@ export default function DashboardPage() {
           Xin chào <Hand className="h-6 w-6 text-amber-500" />
         </h1>
         <StudyOverview />
+        <div className="mb-6">
+          <WeakWords limit={6} />
+        </div>
         <DecksManager showStats />
       </main>
       <QuickCreator />

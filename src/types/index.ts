@@ -37,6 +37,13 @@ export interface DraftCard {
   translationSkipped?: boolean;
   /** Có khi DictionaryAPI không tìm thấy từ → người dùng nhập tay. */
   notFound?: boolean;
+  // ----- Làm giàu (enrichment) tự sinh khi tra từ mới -----
+  /** Cấp độ CEFR (A1..C2) tra từ danh sách CEFR-J. */
+  cefrLevel?: string;
+  /** Họ từ (word family): các dạng phái sinh — happy → happiness, happily... */
+  wordFamily?: string[];
+  /** Kết hợp từ (collocations) hay gặp — strong coffee, make a decision... */
+  collocations?: string[];
 }
 
 /** Thống kê số thẻ theo trạng thái học trong 1 deck. */
@@ -77,6 +84,12 @@ export interface Card {
   note: string | null;
   definitions: Definition[];
   examples: Example[];
+  /** CEFR (A1..C2) — null nếu chưa xác định. */
+  cefr_level: string | null;
+  /** Họ từ (word family) — mảng dạng phái sinh. */
+  word_family: string[];
+  /** Collocations hay gặp. */
+  collocations: string[];
   source_language: LanguageCode;
   target_language: LanguageCode;
   created_at: string;
