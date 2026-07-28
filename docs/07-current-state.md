@@ -44,7 +44,9 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
 | Streak | Nhật ký `review_events` → streak + lượt hôm nay/tuần + biểu đồ 7 ngày (dashboard) | [db/stats.ts](../src/lib/db/stats.ts), [StreakCard.tsx](../src/components/StreakCard.tsx), [StudyOverview.tsx](../src/components/StudyOverview.tsx) |
 | Cài đặt & nhắc học | localStorage (autoSpeak, reminder giờ) + banner nhắc trên dashboard | [settings.ts](../src/lib/settings.ts), [SettingsForm.tsx](../src/components/SettingsForm.tsx) |
 | Rate limit | `/api/lookup` 30 lượt/phút/user qua RPC `consume_rate_limit` (fixed window) | [0005_rate_limit.sql](../supabase/migrations/0005_rate_limit.sql), [api/lookup/route.ts](../src/app/api/lookup/route.ts) |
-| Dashboard | Stat: số bộ thẻ / tổng từ / "EN→VI" + streak + banner nhắc học | [DecksManager.tsx](../src/components/deck/DecksManager.tsx), [StudyOverview.tsx](../src/components/StudyOverview.tsx) |
+| Làm giàu thẻ | Tra từ mới → CEFR (danh sách CEFR-J offline) + word family + collocations (Datamuse), cache vào card | [enrich.ts](../src/lib/enrich.ts), [cefr.ts](../src/lib/cefr.ts), [data/cefr.json](../src/data/cefr.json), [Enrichment.tsx](../src/components/flashcard/Enrichment.tsx) |
+| Weak Words | "Bạn hay quên": xếp từ theo số lần đánh giá `hard` từ `review_events` | [db/weak.ts](../src/lib/db/weak.ts), [WeakWords.tsx](../src/components/WeakWords.tsx), [/weak](../src/app/weak/page.tsx) |
+| Dashboard | Stat + streak + banner nhắc học + "Bạn hay quên" | [DecksManager.tsx](../src/components/deck/DecksManager.tsx), [StudyOverview.tsx](../src/components/StudyOverview.tsx), [WeakWords.tsx](../src/components/WeakWords.tsx) |
 
 ### A4. Khoảng trống & nợ kỹ thuật
 1. ~~**Sửa thẻ đã lưu**~~ — ✅ đã làm (P1).
@@ -105,6 +107,13 @@ Nguồn sự thật nhãn/màu: [src/lib/status.ts](../src/lib/status.ts).
 - [x] Kiểu ôn: lật thẻ / trắc nghiệm (MCQ) / gõ từ / nghe — tự chấm, quy về good/hard.
 - [x] Trang Cài đặt: tự phát âm khi lật thẻ + nhắc học hằng ngày. Web dùng **banner in-app**
   (dashboard); mobile dùng **local notification**. Cài đặt lưu theo thiết bị.
+
+**P2.5 — Làm giàu thẻ + Weak Words** ✅ (web) — migration `0006`
+- [x] **Weak Words** ("Bạn hay quên"): xếp từ theo số lần đánh giá `hard` (180 ngày) — dashboard + `/weak`.
+- [x] **CEFR (A1–C2):** bundle `src/data/cefr.json` (CEFR-J, CC BY-SA) → badge màu; tra offline.
+- [x] **Word family + Collocations:** Datamuse (miễn phí, không key), lọc theo tần suất; sinh khi
+  tra **từ đơn tiếng Anh mới** rồi cache vào `cards.word_family/collocations/cefr_level`.
+- [ ] Nâng chất word family (WordNet/AI) + backfill thẻ cũ + đưa lên mobile. → sau.
 
 ### P3 — Đa ngôn ngữ (mở khóa kiến trúc DB có sẵn)
 - [ ] Dùng `profiles.default_source/target_language`; chọn ngôn ngữ khi tạo deck (bỏ hardcode).

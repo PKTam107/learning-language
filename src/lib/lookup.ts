@@ -2,6 +2,7 @@ import type { DraftCard, LanguageCode } from "@/types";
 import { getDictionaryProvider } from "@/lib/dictionary";
 import type { DictionaryProvider } from "@/lib/dictionary";
 import { getTranslationProvider } from "@/lib/ai";
+import { enrichWord } from "@/lib/enrich";
 import { createServiceClient } from "@/lib/supabase/server";
 
 /** Chuẩn hóa từ khóa để cache & lookup nhất quán. */
@@ -129,6 +130,12 @@ export async function buildDraftCard(
     fromCache: false,
     translationSkipped,
   };
+
+  // 3.5) Làm giàu (CEFR + word family + collocations) cho từ đơn tiếng Anh.
+  //      Best-effort: lỗi/timeout không ảnh hưởng draft cốt lõi.
+  if (source === "en") {
+    Object.assign(draft, await enrichWord(term));
+  }
 
   // 4) Ghi cache (best-effort, không chặn nếu lỗi)
   if (!translationSkipped) {
