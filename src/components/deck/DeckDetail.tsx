@@ -27,6 +27,7 @@ import { DraftEditor } from "@/components/flashcard/DraftEditor";
 import { StatusBar } from "@/components/status/StatusBar";
 import { StatusDot } from "@/components/status/StatusDot";
 import { QuickCreator } from "@/components/QuickCreator";
+import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
 import { ImportButton } from "@/components/deck/ImportButton";
 import { ExportMenu } from "@/components/deck/ExportMenu";
 
@@ -278,6 +279,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <EnrichBackfillButton deckId={deck.id} onDone={load} />
           <ImportButton deckId={deck.id} onImported={load} />
           {cards.length > 0 && (
             <>

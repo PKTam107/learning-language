@@ -38,6 +38,8 @@ export interface DraftCard {
   /** Có khi DictionaryAPI không tìm thấy từ → người dùng nhập tay. */
   notFound?: boolean;
   // ----- Làm giàu (enrichment) tự sinh khi tra từ mới -----
+  /** true nếu đã CHẠY bước làm giàu (dù có/không tìm được dữ liệu) → set enriched_at khi lưu. */
+  enriched?: boolean;
   /** Cấp độ CEFR (A1..C2) tra từ danh sách CEFR-J. */
   cefrLevel?: string;
   /** Họ từ (word family): các dạng phái sinh — happy → happiness, happily... */
@@ -90,6 +92,8 @@ export interface Card {
   word_family: string[];
   /** Collocations hay gặp. */
   collocations: string[];
+  /** Thời điểm đã thử làm giàu (null = chưa) — dùng để đếm thẻ cần backfill. */
+  enriched_at: string | null;
   source_language: LanguageCode;
   target_language: LanguageCode;
   created_at: string;

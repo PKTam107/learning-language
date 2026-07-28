@@ -135,6 +135,7 @@ export async function buildDraftCard(
   //      Best-effort: lỗi/timeout không ảnh hưởng draft cốt lõi.
   if (source === "en") {
     Object.assign(draft, await enrichWord(term));
+    draft.enriched = true; // đã chạy làm giàu → khi lưu sẽ set enriched_at
   }
 
   // 4) Ghi cache (best-effort, không chặn nếu lỗi)

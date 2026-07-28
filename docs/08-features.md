@@ -64,14 +64,17 @@ Bộ thẻ là một nhóm từ vựng người dùng tự đặt tên (ví dụ
 - Sau khi lưu, ô tạo thẻ **giữ nguyên** để người dùng gõ từ tiếp theo (nhập liên tục nhanh).
 - **Giới hạn tần suất:** mỗi người tra tối đa **30 từ/phút** (chống lạm dụng dịch vụ dịch). Vượt mức sẽ được nhắc thử lại sau ít giây.
 - **Làm giàu tự động:** khi tra một **từ đơn tiếng Anh mới**, hệ thống tự bổ sung cấp độ **CEFR**,
-  **họ từ** và **collocations** rồi lưu kèm thẻ (xem mục dưới). Chạy nền, không có cũng không sao;
-  chỉ áp dụng cho từ mới (thẻ cũ giữ nguyên).
+  **họ từ** và **collocations** rồi lưu kèm thẻ (xem mục dưới). Chạy nền, không có cũng không sao.
+  Từ mới tự có; **thẻ cũ có thể bổ sung bằng nút "Làm giàu"** (xem mục dưới).
 
 **Làm giàu thẻ (CEFR · Word Family · Collocations):**
 - **CEFR (A1–C2):** tra theo danh sách CEFR-J miễn phí (offline). Hiện dưới dạng **badge màu** cạnh từ.
 - **Họ từ (word family):** các dạng phái sinh — vd *happy → happiness, happily, happier, unhappy*.
   Lấy gần đúng từ nguồn miễn phí (Datamuse) nên **có thể sót hoặc lẫn từ không liên quan**.
 - **Collocations:** cụm hay đi cùng — vd *make a decision, strong coffee* (nguồn Datamuse).
+- **Bổ sung cho thẻ cũ:** nút **"Làm giàu N thẻ"** (ở mỗi bộ thẻ và trang chủ) làm giàu các thẻ
+  tạo trước đây, có thanh tiến độ. Nút hiện **số thẻ còn thiếu** và **tự ẩn khi đã làm giàu hết** —
+  vì từ tạo mới đã tự có sẵn, đây là thao tác chuyển đổi **một lần** cho backlog.
 
 ---
 

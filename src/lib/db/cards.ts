@@ -67,6 +67,7 @@ export async function saveCard(
       cefr_level: draft.cefrLevel ?? null,
       word_family: draft.wordFamily ?? [],
       collocations: draft.collocations ?? [],
+      enriched_at: draft.enriched ? new Date().toISOString() : null,
       source_language: draft.sourceLanguage,
       target_language: draft.targetLanguage,
     })
