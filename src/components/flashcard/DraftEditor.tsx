@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { DraftCard } from "@/types";
 import { Input, Textarea } from "@/components/ui/Input";
 import { AudioButton } from "./AudioButton";
+import { CefrBadge, EnrichmentSections } from "./Enrichment";
 
 interface DraftEditorProps {
   draft: DraftCard;
@@ -18,6 +19,7 @@ export function DraftEditor({ draft, onChange }: DraftEditorProps) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-2xl font-bold">{draft.term}</span>
+        <CefrBadge level={draft.cefrLevel} />
         {draft.phonetic && (
           <span className="text-slate-500">{draft.phonetic}</span>
         )}
@@ -103,6 +105,15 @@ export function DraftEditor({ draft, onChange }: DraftEditorProps) {
             ))}
           </div>
         </Field>
+      )}
+
+      {(draft.wordFamily?.length || draft.collocations?.length) && (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <EnrichmentSections
+            wordFamily={draft.wordFamily}
+            collocations={draft.collocations}
+          />
+        </div>
       )}
 
       <Field label="Ghi chú của bạn (tùy chọn)">

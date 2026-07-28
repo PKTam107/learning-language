@@ -55,7 +55,7 @@ Bộ thẻ là một nhóm từ vựng người dùng tự đặt tên (ví dụ
 - **Không cho trùng từ trong cùng một bộ thẻ.** Khi kiểm tra trùng, từ được chuẩn hóa trước (bỏ khoảng trắng đầu/cuối, gộp khoảng trắng giữa, không phân biệt hoa/thường). Nếu trùng, hệ thống báo và không lưu.
 - **Cùng một từ vẫn được phép nằm ở nhiều bộ thẻ khác nhau.**
 
-**Cấu trúc một thẻ:** từ, phiên âm IPA (chung + tách **UK/US** khi có), audio **UK/US**, từ loại, nhiều nghĩa, nhiều ví dụ (kèm bản dịch), và **ghi chú cá nhân** của người dùng.
+**Cấu trúc một thẻ:** từ, phiên âm IPA (chung + tách **UK/US** khi có), audio **UK/US**, từ loại, nhiều nghĩa, nhiều ví dụ (kèm bản dịch), **ghi chú cá nhân**, và các thông tin **làm giàu tự động**: cấp độ **CEFR** (A1–C2), **họ từ** (word family), **kết hợp từ** (collocations).
 
 **Quy tắc tra từ:**
 - Nếu từ đã từng được ai đó tra trước đây, hệ thống lấy lại kết quả đã lưu cho nhanh (không tra lại từ đầu).
@@ -63,6 +63,18 @@ Bộ thẻ là một nhóm từ vựng người dùng tự đặt tên (ví dụ
 - Nếu gõ vào **một cụm từ không có trong từ điển**, hệ thống vẫn cố dịch cả cụm để tạo được thẻ, thay vì báo lỗi trắng.
 - Sau khi lưu, ô tạo thẻ **giữ nguyên** để người dùng gõ từ tiếp theo (nhập liên tục nhanh).
 - **Giới hạn tần suất:** mỗi người tra tối đa **30 từ/phút** (chống lạm dụng dịch vụ dịch). Vượt mức sẽ được nhắc thử lại sau ít giây.
+- **Làm giàu tự động:** khi tra một **từ đơn tiếng Anh mới**, hệ thống tự bổ sung cấp độ **CEFR**,
+  **họ từ** và **collocations** rồi lưu kèm thẻ (xem mục dưới). Chạy nền, không có cũng không sao.
+  Từ mới tự có; **thẻ cũ có thể bổ sung bằng nút "Làm giàu"** (xem mục dưới).
+
+**Làm giàu thẻ (CEFR · Word Family · Collocations):**
+- **CEFR (A1–C2):** tra theo danh sách CEFR-J miễn phí (offline). Hiện dưới dạng **badge màu** cạnh từ.
+- **Họ từ (word family):** các dạng phái sinh — vd *happy → happiness, happily, happier, unhappy*.
+  Lấy gần đúng từ nguồn miễn phí (Datamuse) nên **có thể sót hoặc lẫn từ không liên quan**.
+- **Collocations:** cụm hay đi cùng — vd *make a decision, strong coffee* (nguồn Datamuse).
+- **Bổ sung cho thẻ cũ:** nút **"Làm giàu N thẻ"** (ở mỗi bộ thẻ và trang chủ) làm giàu các thẻ
+  tạo trước đây, có thanh tiến độ. Nút hiện **số thẻ còn thiếu** và **tự ẩn khi đã làm giàu hết** —
+  vì từ tạo mới đã tự có sẵn, đây là thao tác chuyển đổi **một lần** cho backlog.
 
 ---
 
@@ -152,6 +164,8 @@ Ngoài ra còn có:
   nghe) đều được tính. Chuỗi vẫn còn "sống" hết ngày hôm nay nếu hôm nay chưa ôn.
 - **Banner nhắc học:** nếu bật nhắc học (mục 10) và đã qua giờ nhắc mà hôm nay chưa ôn từ nào,
   trang chủ hiện lời nhắc dẫn tới danh sách bộ thẻ.
+- **Bạn hay quên:** danh sách các từ bị đánh giá **"Chưa thuộc"** nhiều nhất (từ nhật ký ôn),
+  kèm số lần quên — để ưu tiên ôn lại. Có trang riêng **/weak** liệt kê đầy đủ.
 
 ---
 
@@ -179,6 +193,9 @@ Cài đặt được lưu **trên từng thiết bị** (không đồng bộ qua
 - Hai bản **đã ngang bằng ở phần học**: trạng thái, các chế độ học, **kiểu ôn đa dạng**
   (lật thẻ / trắc nghiệm / gõ / nghe), lịch ôn, **streak**, tự phát âm, chống trùng từ, và
   **hành động hàng loạt** (chọn nhiều thẻ để xóa / chuyển bộ / reset tiến độ).
+- Cũng ngang bằng ở **làm giàu thẻ** (badge CEFR, họ từ, collocations), **"Bạn hay quên"**,
+  và nút **"Làm giàu N thẻ"** cho thẻ cũ. *(Bản mobile hiện chưa có sửa/xem chi tiết chỉnh sửa
+  một thẻ như web, nhưng phần hiển thị thông tin làm giàu thì có.)*
 - Điểm khác duy nhất còn lại là **cách nhắc học** (xem mục 10): điện thoại dùng thông báo hệ
   thống, web dùng banner trong app. Riêng **cài đặt** (tự phát âm, nhắc học) lưu theo từng
   thiết bị nên không đồng bộ qua tài khoản.

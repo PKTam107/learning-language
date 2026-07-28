@@ -2,6 +2,7 @@
 
 import type { Card } from "@/types";
 import { AudioButton } from "./AudioButton";
+import { CefrBadge, EnrichmentSections } from "./Enrichment";
 
 /** Xem chi tiết 1 card đã lưu (read-only): phiên âm, audio US/UK, mọi nghĩa & ví dụ. */
 export function CardDetail({ card }: { card: Card }) {
@@ -9,6 +10,7 @@ export function CardDetail({ card }: { card: Card }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-2xl font-bold">{card.term}</span>
+        <CefrBadge level={card.cefr_level} />
         {card.phonetic && (
           <span className="text-slate-500">{card.phonetic}</span>
         )}
@@ -87,6 +89,11 @@ export function CardDetail({ card }: { card: Card }) {
           </div>
         </Section>
       )}
+
+      <EnrichmentSections
+        wordFamily={card.word_family}
+        collocations={card.collocations}
+      />
 
       {!card.meaning_vi &&
         !card.definitions?.length &&

@@ -64,6 +64,10 @@ export async function saveCard(
       note: draft.note ?? null,
       definitions: draft.definitions,
       examples: draft.examples,
+      cefr_level: draft.cefrLevel ?? null,
+      word_family: draft.wordFamily ?? [],
+      collocations: draft.collocations ?? [],
+      enriched_at: draft.enriched ? new Date().toISOString() : null,
       source_language: draft.sourceLanguage,
       target_language: draft.targetLanguage,
     })
@@ -106,6 +110,9 @@ export async function updateCard(
       note: draft.note ?? null,
       definitions: draft.definitions,
       examples: draft.examples,
+      cefr_level: draft.cefrLevel ?? null,
+      word_family: draft.wordFamily ?? [],
+      collocations: draft.collocations ?? [],
     })
     .eq("id", id)
     .eq("user_id", user.id); // chỉ sửa thẻ của chính mình
@@ -130,6 +137,9 @@ export function cardToDraft(card: Card): DraftCard {
     note: card.note ?? undefined,
     definitions: card.definitions ?? [],
     examples: card.examples ?? [],
+    cefrLevel: card.cefr_level ?? undefined,
+    wordFamily: card.word_family ?? [],
+    collocations: card.collocations ?? [],
     sourceLanguage: card.source_language,
     targetLanguage: card.target_language,
   };
@@ -178,6 +188,9 @@ export async function importCards(
       note: d.note ?? null,
       definitions: d.definitions ?? [],
       examples: d.examples ?? [],
+      cefr_level: d.cefrLevel ?? null,
+      word_family: d.wordFamily ?? [],
+      collocations: d.collocations ?? [],
       source_language: d.sourceLanguage ?? "en",
       target_language: d.targetLanguage ?? "vi",
     });

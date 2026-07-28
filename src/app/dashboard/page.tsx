@@ -1,6 +1,8 @@
 import { Navbar } from "@/components/Navbar";
 import { QuickCreator } from "@/components/QuickCreator";
 import { StudyOverview } from "@/components/StudyOverview";
+import { WeakWords } from "@/components/WeakWords";
+import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
 import { DecksManager } from "@/components/deck/DecksManager";
 import { Hand } from "lucide-react";
 
@@ -12,7 +14,11 @@ export default function DashboardPage() {
         <h1 className="mb-6 flex items-center gap-2 text-2xl font-bold">
           Xin chào <Hand className="h-6 w-6 text-amber-500" />
         </h1>
+        <EnrichBackfillButton banner />
         <StudyOverview />
+        <div className="mb-6">
+          <WeakWords limit={6} />
+        </div>
         <DecksManager showStats />
       </main>
       <QuickCreator />

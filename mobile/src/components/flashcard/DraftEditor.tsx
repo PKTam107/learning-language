@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { DraftCard } from "@/types";
 import { Input } from "@/components/ui/Input";
 import { AudioButton } from "./AudioButton";
+import { CefrBadge, EnrichmentSections } from "./Enrichment";
 import { colors, radius, spacing } from "@/lib/theme";
 
 interface Props {
@@ -17,6 +18,7 @@ export function DraftEditor({ draft, onChange }: Props) {
     <View style={styles.wrap}>
       <View style={styles.termLine}>
         <Text style={styles.term}>{draft.term}</Text>
+        <CefrBadge level={draft.cefrLevel} />
         {!!draft.phonetic && (
           <Text style={styles.phonetic}>{draft.phonetic}</Text>
         )}
@@ -103,6 +105,15 @@ export function DraftEditor({ draft, onChange }: Props) {
         </Field>
       )}
 
+      {(!!draft.wordFamily?.length || !!draft.collocations?.length) && (
+        <View style={styles.enrich}>
+          <EnrichmentSections
+            wordFamily={draft.wordFamily}
+            collocations={draft.collocations}
+          />
+        </View>
+      )}
+
       <Field label="Ghi chú của bạn (tùy chọn)">
         <Input
           value={draft.note ?? ""}
@@ -170,4 +181,11 @@ const styles = StyleSheet.create({
   example: { backgroundColor: colors.bg, borderRadius: radius.md, padding: spacing.sm },
   exampleText: { fontSize: 14, fontStyle: "italic", color: colors.text },
   exampleVi: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+  enrich: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.bg,
+    padding: spacing.md,
+  },
 });
