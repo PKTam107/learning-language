@@ -62,6 +62,7 @@ Bộ thẻ là một nhóm từ vựng người dùng tự đặt tên (ví dụ
 - Phần nghĩa và ví dụ được **dịch tự động sang tiếng Việt**. Nếu dịch tự động không khả dụng, thẻ vẫn tạo được nhưng nghĩa giữ nguyên tiếng Anh để người dùng tự sửa.
 - Nếu gõ vào **một cụm từ không có trong từ điển**, hệ thống vẫn cố dịch cả cụm để tạo được thẻ, thay vì báo lỗi trắng.
 - Sau khi lưu, ô tạo thẻ **giữ nguyên** để người dùng gõ từ tiếp theo (nhập liên tục nhanh).
+- **Giới hạn tần suất:** mỗi người tra tối đa **30 từ/phút** (chống lạm dụng dịch vụ dịch). Vượt mức sẽ được nhắc thử lại sau ít giây.
 
 ---
 
@@ -91,12 +92,17 @@ Một phiên học gồm ba bước: **chọn chế độ → học → xem tóm
 - **Ôn hôm nay:** chỉ những từ đã đến hạn ôn (theo lịch nhớ). *Mặc định chọn sẵn nếu có từ tới hạn.*
 - **Ôn tất cả:** toàn bộ thẻ trong bộ.
 - **Chỉ từ chưa thuộc:** những từ chưa học và những từ đã bị đánh giá "chưa thuộc".
+- **Kiểu ôn:** chọn cách kiểm tra — **Lật thẻ**, **Trắc nghiệm** (chọn nghĩa đúng), **Gõ từ**
+  (gõ lại từ tiếng Anh), hoặc **Nghe** (nghe rồi gõ lại). *Trắc nghiệm cần bộ thẻ có ít nhất 4 từ.*
 - Tùy chọn thêm: **giới hạn số thẻ** mỗi phiên và **xáo trộn** thứ tự.
 
-**Bước học** — với mỗi thẻ, người dùng xem mặt trước (từ + phiên âm), lật thẻ để xem mặt
-sau (nghĩa + ví dụ + ghi chú), nghe phát âm Anh hoặc Mỹ, rồi **tự đánh giá** mình nhớ tới
-đâu bằng ba mức: **Chưa thuộc / Tạm nhớ / Đã thuộc**. Có thanh tiến độ cho biết đang ở thẻ
-thứ mấy. *Bấm nút phát âm chỉ phát tiếng — không làm lật thẻ.*
+**Bước học** — tùy kiểu ôn:
+- **Lật thẻ:** xem mặt trước (từ + phiên âm), lật thẻ để xem mặt sau (nghĩa + ví dụ + ghi chú),
+  nghe phát âm Anh hoặc Mỹ, rồi **tự đánh giá** bằng ba mức: **Chưa thuộc / Tạm nhớ / Đã thuộc**.
+- **Trắc nghiệm / Gõ từ / Nghe:** hệ thống **tự chấm** đúng/sai (gõ cho phép sai 1 ký tự) rồi hiện
+  đáp án. Kết quả được quy về đánh giá: **đúng → "Tạm nhớ", sai → "Chưa thuộc"**.
+- Có thanh tiến độ cho biết đang ở thẻ thứ mấy. *Bấm nút phát âm chỉ phát tiếng — không làm lật thẻ.*
+- Có thể bật **tự phát âm khi lật thẻ / khi lộ đáp án** trong Cài đặt (xem mục 10).
 
 **Bước tóm tắt** — kết thúc phiên, hệ thống tổng kết số từ ở mỗi mức đánh giá trong
 phiên vừa rồi, và cho phép học tiếp hoặc quay về.
@@ -140,24 +146,49 @@ càng nhớ tốt thì lần ôn sau càng để lâu; nhớ kém thì ôn lại
 Trang chính hiển thị các con số toàn tài khoản: **số bộ thẻ**, **tổng số từ**, **số từ
 đã thuộc**, và **số từ cần ôn hôm nay**, kèm một thanh thể hiện tỷ lệ các trạng thái.
 
+Ngoài ra còn có:
+- **Chuỗi ngày học (streak):** số ngày liên tiếp có ôn tập, số lượt ôn hôm nay, và biểu đồ
+  7 ngày gần nhất. Streak được tính từ nhật ký ôn — mọi kiểu ôn (lật thẻ, trắc nghiệm, gõ,
+  nghe) đều được tính. Chuỗi vẫn còn "sống" hết ngày hôm nay nếu hôm nay chưa ôn.
+- **Banner nhắc học:** nếu bật nhắc học (mục 10) và đã qua giờ nhắc mà hôm nay chưa ôn từ nào,
+  trang chủ hiện lời nhắc dẫn tới danh sách bộ thẻ.
+
 ---
 
-## 10. Web và điện thoại đồng bộ ra sao
+## 10. Cài đặt & nhắc học
+
+Trang **Cài đặt** cho phép mỗi người tùy chỉnh:
+- **Tự phát âm khi lật thẻ / lộ đáp án:** bật/tắt việc tự đọc từ tiếng Anh khi học (mặc định bật).
+- **Nhắc học hằng ngày:** bật/tắt và chọn **giờ nhắc**. Khi bật, đến giờ mà hôm nay chưa ôn thì
+  hệ thống hiển thị **lời nhắc ngay trong app** (trên trang chủ).
+
+**Khác biệt web / điện thoại:**
+- **Điện thoại** dùng **thông báo hệ thống** (local notification) — hiện cả khi app đang đóng.
+- **Web** dùng **banner nhắc trong app** — hiện khi mở trang chủ (trình duyệt không tự bật thông
+  báo khi tab đã đóng nếu không có hạ tầng push riêng).
+
+Cài đặt được lưu **trên từng thiết bị** (không đồng bộ qua tài khoản).
+
+---
+
+## 11. Web và điện thoại đồng bộ ra sao
 
 - Cả hai bản dùng **chung một tài khoản và một kho dữ liệu**. Tạo thẻ trên điện thoại
   thì mở web thấy ngay, và ngược lại — không cần thao tác đồng bộ thủ công.
-- Tiến độ học, lịch ôn, trạng thái từng từ đều dùng chung.
-- Hiện bản điện thoại **đã ngang bằng web ở phần học** (trạng thái, chế độ học, lịch ôn,
-  thống kê), chống trùng từ khi thêm, và **hành động hàng loạt** (chọn nhiều thẻ để xóa /
-  chuyển bộ / reset tiến độ). Bản điện thoại còn **thiếu**: đăng nhập Google, và các thao
-  tác **sửa / xem chi tiết một thẻ đơn lẻ** (web đã có).
+- Tiến độ học, lịch ôn, trạng thái từng từ, và **nhật ký ôn (streak)** đều dùng chung.
+- Hai bản **đã ngang bằng ở phần học**: trạng thái, các chế độ học, **kiểu ôn đa dạng**
+  (lật thẻ / trắc nghiệm / gõ / nghe), lịch ôn, **streak**, tự phát âm, chống trùng từ, và
+  **hành động hàng loạt** (chọn nhiều thẻ để xóa / chuyển bộ / reset tiến độ).
+- Điểm khác duy nhất còn lại là **cách nhắc học** (xem mục 10): điện thoại dùng thông báo hệ
+  thống, web dùng banner trong app. Riêng **cài đặt** (tự phát âm, nhắc học) lưu theo từng
+  thiết bị nên không đồng bộ qua tài khoản.
 
 ---
 
-## 11. Chưa có (dự kiến làm sau)
+## 12. Chưa có (dự kiến làm sau)
 
-- **Chuỗi ngày học liên tục (streak).**
 - **Học nhiều ngôn ngữ** ngoài Anh → Việt.
-- **Nhập/xuất dữ liệu** (CSV, Anki) và **chia sẻ bộ thẻ**.
-- **Kiểu học khác:** gõ lại từ, trắc nghiệm.
+- **Nhập Anki** (`.apkg`) và **chia sẻ bộ thẻ** (đã có nhập Excel + xuất CSV/Excel/JSON).
 - **Dùng offline** (PWA).
+- **Đồng bộ cài đặt qua tài khoản** (hiện lưu theo thiết bị) và **nhắc học khi đóng tab trên web**
+  (cần hạ tầng push).

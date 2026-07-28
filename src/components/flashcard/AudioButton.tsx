@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef } from "react";
 import { Volume2 } from "lucide-react";
+import { speak } from "@/lib/speak";
 
 interface AudioButtonProps {
   url?: string | null;
@@ -15,23 +15,11 @@ interface AudioButtonProps {
  * bằng Web Speech (SpeechSynthesis) — giọng US/UK theo label. Ẩn nếu thiếu cả hai.
  */
 export function AudioButton({ url, text, label }: AudioButtonProps) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   if (!url && !text) return null;
 
   const play = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (url) {
-      if (!audioRef.current) audioRef.current = new Audio(url);
-      audioRef.current.currentTime = 0;
-      void audioRef.current.play();
-      return;
-    }
-    if (text && typeof window !== "undefined" && "speechSynthesis" in window) {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = label === "UK" ? "en-GB" : "en-US";
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
-    }
+    speak({ url, text, label });
   };
 
   return (
