@@ -54,6 +54,7 @@ export function DeckForm({ open, onClose, onSaved, deck }: Props) {
       open={open}
       onClose={onClose}
       title={deck ? "Sửa bộ thẻ" : "Tạo bộ thẻ mới"}
+      bodyDrag={false}
     >
       <Input
         placeholder="Tên bộ thẻ (vd: TOEIC 900)"

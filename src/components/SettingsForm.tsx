@@ -1,12 +1,28 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { AlarmClock } from "lucide-react";
 import { useSettings } from "@/lib/settings";
+import {
+  formatCountdown,
+  formatHm,
+  nextReminderIn,
+  parseHm,
+  partOfDay,
+  REMINDER_PRESETS,
+} from "@/lib/reminder";
 import { Spinner } from "@/components/ui/Spinner";
-
-const HOUR_OPTIONS = [7, 8, 9, 12, 18, 20, 21, 22];
 
 export function SettingsForm() {
   const { settings, ready, update } = useSettings();
+  const [now, setNow] = useState(() => new Date());
+
+  // Cho dòng "còn bao lâu" không bị cũ khi để trang mở lâu.
+  useEffect(() => {
+    if (!settings.reminderEnabled) return;
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, [settings.reminderEnabled]);
 
   if (!ready) {
     return (
@@ -15,6 +31,9 @@ export function SettingsForm() {
       </div>
     );
   }
+
+  const { reminderHour: hour, reminderMinute: minute } = settings;
+  const next = nextReminderIn(hour, minute, now);
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
@@ -47,25 +66,77 @@ export function SettingsForm() {
           />
 
           {settings.reminderEnabled && (
-            <div className="border-t border-slate-200 pt-4">
-              <p className="mb-2 text-sm font-medium text-slate-700">Giờ nhắc</p>
-              <div className="flex flex-wrap gap-2">
-                {HOUR_OPTIONS.map((h) => {
-                  const active = settings.reminderHour === h;
-                  return (
-                    <button
-                      key={h}
-                      onClick={() => update({ reminderHour: h })}
-                      className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                        active
-                          ? "border-brand bg-brand-light font-semibold text-brand-dark"
-                          : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                      }`}
-                    >
-                      {String(h).padStart(2, "0")}:00
-                    </button>
-                  );
-                })}
+            <div className="space-y-3 border-t border-slate-200 pt-4">
+              {/* Giờ nhắc — chọn tự do tới từng phút */}
+              <div className="flex items-center gap-3 rounded-xl bg-brand-light p-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-brand-dark">
+                  <AlarmClock className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <label
+                    htmlFor="reminder-time"
+                    className="block text-xs font-semibold text-brand-dark"
+                  >
+                    Giờ nhắc mỗi ngày
+                  </label>
+                  <input
+                    id="reminder-time"
+                    type="time"
+                    step={60}
+                    value={formatHm(hour, minute)}
+                    onChange={(e) => {
+                      const parsed = parseHm(e.target.value);
+                      if (!parsed) return;
+                      update({
+                        reminderHour: parsed.hour,
+                        reminderMinute: parsed.minute,
+                      });
+                      setNow(new Date());
+                    }}
+                    className="w-full cursor-pointer bg-transparent text-3xl font-extrabold tabular-nums text-brand-dark outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-brand/40"
+                  />
+                  <p className="text-xs text-slate-500">
+                    Buổi {partOfDay(hour)} · lần nhắc tới{" "}
+                    {next.tomorrow ? "mai" : "hôm nay"},{" "}
+                    {formatCountdown(next.minutes)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Mốc gợi ý nhanh */}
+              <div>
+                <p className="mb-2 text-xs font-medium text-slate-500">
+                  Gợi ý nhanh
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {REMINDER_PRESETS.map((p) => {
+                    const active = p.hour === hour && p.minute === minute;
+                    return (
+                      <button
+                        key={p.label}
+                        onClick={() => {
+                          update({
+                            reminderHour: p.hour,
+                            reminderMinute: p.minute,
+                          });
+                          setNow(new Date());
+                        }}
+                        className={`rounded-xl border px-3 py-1.5 text-left transition-colors ${
+                          active
+                            ? "border-brand bg-brand-light text-brand-dark"
+                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span className="block text-sm font-bold tabular-nums">
+                          {formatHm(p.hour, p.minute)}
+                        </span>
+                        <span className="block text-[11px] text-slate-500">
+                          {p.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

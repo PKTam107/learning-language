@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -9,25 +9,41 @@ import {
   View,
 } from "react-native";
 import { Stack } from "expo-router";
+import { AlarmClock, ChevronRight } from "lucide-react-native";
 import { useSettings } from "@/lib/settings";
 import {
-  scheduleDailyReminder,
   cancelDailyReminder,
+  formatCountdown,
+  formatHm,
+  nextReminderIn,
+  partOfDay,
+  scheduleDailyReminder,
 } from "@/lib/notifications";
+import { TimePickerSheet } from "@/components/ui/TimePickerSheet";
 import { colors, radius, spacing } from "@/lib/theme";
-
-const HOUR_OPTIONS = [7, 8, 9, 12, 18, 20, 21, 22];
 
 export default function SettingsScreen() {
   const { settings, ready, update } = useSettings();
   const [busy, setBusy] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+
+  // Cập nhật đồng hồ để dòng "còn bao lâu" không bị cũ khi màn hình mở lâu.
+  useEffect(() => {
+    if (!settings.reminderEnabled) return;
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, [settings.reminderEnabled]);
 
   async function toggleReminder(on: boolean) {
     if (busy) return;
     setBusy(true);
     try {
       if (on) {
-        const okScheduled = await scheduleDailyReminder(settings.reminderHour);
+        const okScheduled = await scheduleDailyReminder(
+          settings.reminderHour,
+          settings.reminderMinute
+        );
         if (!okScheduled) {
           Alert.alert(
             "Chưa bật được nhắc học",
@@ -35,6 +51,7 @@ export default function SettingsScreen() {
           );
           return;
         }
+        setNow(new Date());
         update({ reminderEnabled: true });
       } else {
         await cancelDailyReminder();
@@ -45,15 +62,19 @@ export default function SettingsScreen() {
     }
   }
 
-  async function pickHour(hour: number) {
-    update({ reminderHour: hour });
+  async function pickTime(hour: number, minute: number) {
+    setPickerOpen(false);
+    update({ reminderHour: hour, reminderMinute: minute });
+    setNow(new Date());
     if (settings.reminderEnabled) {
       // Đặt lại lịch theo giờ mới.
-      await scheduleDailyReminder(hour);
+      await scheduleDailyReminder(hour, minute);
     }
   }
 
   if (!ready) return <View style={styles.flex} />;
+
+  const next = nextReminderIn(settings.reminderHour, settings.reminderMinute, now);
 
   return (
     <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
@@ -94,34 +115,49 @@ export default function SettingsScreen() {
         </View>
 
         {settings.reminderEnabled && (
-          <View style={styles.hourWrap}>
-            <Text style={styles.rowLabel}>Giờ nhắc</Text>
-            <View style={styles.chipRow}>
-              {HOUR_OPTIONS.map((h) => {
-                const active = settings.reminderHour === h;
-                return (
-                  <Pressable
-                    key={h}
-                    onPress={() => pickHour(h)}
-                    style={[styles.chip, active && styles.chipActive]}
-                  >
-                    <Text
-                      style={[styles.chipText, active && styles.chipTextActive]}
-                    >
-                      {String(h).padStart(2, "0")}:00
-                    </Text>
-                  </Pressable>
-                );
-              })}
+          <Pressable
+            onPress={() => setPickerOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Đổi giờ nhắc"
+            style={({ pressed }) => [styles.timeCard, pressed && styles.pressed]}
+          >
+            <View style={styles.clockBadge}>
+              <AlarmClock size={22} color={colors.brandDark} />
             </View>
-          </View>
+
+            <View style={styles.rowText}>
+              <Text style={styles.time}>
+                {formatHm(settings.reminderHour, settings.reminderMinute)}
+              </Text>
+              <Text style={styles.timeSub}>
+                Mỗi ngày, buổi {partOfDay(settings.reminderHour)}
+              </Text>
+              <Text style={styles.timeNext}>
+                Lần nhắc tới: {next.tomorrow ? "mai" : "hôm nay"} ·{" "}
+                {formatCountdown(next.minutes)}
+              </Text>
+            </View>
+
+            <View style={styles.editWrap}>
+              <Text style={styles.editText}>Đổi</Text>
+              <ChevronRight size={18} color={colors.textSubtle} />
+            </View>
+          </Pressable>
         )}
       </View>
 
       <Text style={styles.hint}>
         Nhắc học dùng thông báo cục bộ trên máy — không cần internet và hoàn toàn
-        miễn phí.
+        miễn phí. Bạn chọn được bất kỳ giờ:phút nào.
       </Text>
+
+      <TimePickerSheet
+        open={pickerOpen}
+        hour={settings.reminderHour}
+        minute={settings.reminderMinute}
+        onClose={() => setPickerOpen(false)}
+        onConfirm={pickTime}
+      />
     </ScrollView>
   );
 }
@@ -148,24 +184,37 @@ const styles = StyleSheet.create({
   rowText: { flex: 1 },
   rowLabel: { fontSize: 15, fontWeight: "600", color: colors.text },
   rowDesc: { marginTop: 2, fontSize: 13, color: colors.textMuted },
-  hourWrap: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.md,
-    gap: spacing.sm,
-  },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
+
+  timeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
+    borderColor: colors.brandLight,
+    backgroundColor: colors.brandLight,
+    padding: spacing.md,
   },
-  chipActive: { borderColor: colors.brand, backgroundColor: colors.brandLight },
-  chipText: { fontSize: 14, color: colors.textMuted },
-  chipTextActive: { color: colors.brandDark, fontWeight: "700" },
+  pressed: { opacity: 0.7 },
+  clockBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.card,
+  },
+  time: {
+    fontSize: 30,
+    fontWeight: "800",
+    color: colors.brandDark,
+    fontVariant: ["tabular-nums"],
+  },
+  timeSub: { fontSize: 13, fontWeight: "600", color: colors.brandDark },
+  timeNext: { marginTop: 2, fontSize: 12, color: colors.textMuted },
+  editWrap: { flexDirection: "row", alignItems: "center", gap: 2 },
+  editText: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
+
   hint: {
     marginTop: spacing.sm,
     fontSize: 12,

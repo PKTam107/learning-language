@@ -8,12 +8,15 @@ export interface AppSettings {
   reminderEnabled: boolean;
   /** Giờ nhắc học (0..23). */
   reminderHour: number;
+  /** Phút nhắc học (0..59). */
+  reminderMinute: number;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   autoSpeak: true,
   reminderEnabled: false,
   reminderHour: 20,
+  reminderMinute: 0,
 };
 
 const KEY = "linguacards.settings.v1";

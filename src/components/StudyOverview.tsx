@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlarmClock } from "lucide-react";
 import { fetchStudyStats, type StudyStats } from "@/lib/db/stats";
 import { useSettings } from "@/lib/settings";
+import { minutesOfDay } from "@/lib/reminder";
 import { StreakCard } from "./StreakCard";
 
 /**
@@ -32,7 +33,8 @@ export function StudyOverview() {
     ready &&
     settings.reminderEnabled &&
     stats.todayCount === 0 &&
-    now.getHours() >= settings.reminderHour;
+    minutesOfDay(now.getHours(), now.getMinutes()) >=
+      minutesOfDay(settings.reminderHour, settings.reminderMinute);
 
   return (
     <div className="mb-6 space-y-4">
