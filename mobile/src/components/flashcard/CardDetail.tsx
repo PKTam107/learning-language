@@ -1,7 +1,8 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import type { Card } from "@/types";
 import { AudioButton } from "./AudioButton";
 import { CefrBadge, EnrichmentSections } from "./Enrichment";
+import { SheetScrollView } from "@/components/ui/Modal";
 import { colors, radius, spacing } from "@/lib/theme";
 
 /** Xem chi tiết 1 card đã lưu (read-only): phiên âm, audio US/UK, mọi nghĩa & ví dụ. */
@@ -10,7 +11,7 @@ export function CardDetail({ card }: { card: Card }) {
     !card.meaning_vi && !card.definitions?.length && !card.examples?.length;
 
   return (
-    <ScrollView
+    <SheetScrollView
       style={styles.scroll}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -92,7 +93,7 @@ export function CardDetail({ card }: { card: Card }) {
       {noContent && (
         <Text style={styles.emptyText}>Thẻ này chưa có nghĩa/ví dụ.</Text>
       )}
-    </ScrollView>
+    </SheetScrollView>
   );
 }
 

@@ -88,7 +88,8 @@ export function QuickCreator({ deckId, onSaved }: Props) {
         <Text style={styles.fabText}>＋</Text>
       </Pressable>
 
-      <Modal open={open} onClose={close} title="Thêm từ mới">
+      {/* bodyDrag=false: tránh vuốt trúng lúc đang gõ làm mất bản nháp. */}
+      <Modal open={open} onClose={close} title="Thêm từ mới" bodyDrag={false}>
         <View style={styles.lookupRow}>
           <Input
             value={word}

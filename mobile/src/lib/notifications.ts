@@ -29,10 +29,13 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 }
 
 /**
- * Lên lịch nhắc học hằng ngày lúc `hour` giờ (lặp lại mỗi ngày).
+ * Lên lịch nhắc học hằng ngày lúc `hour:minute` (lặp lại mỗi ngày).
  * Xóa lịch cũ trước khi đặt lịch mới. Trả về false nếu chưa được cấp quyền.
  */
-export async function scheduleDailyReminder(hour: number): Promise<boolean> {
+export async function scheduleDailyReminder(
+  hour: number,
+  minute = 0
+): Promise<boolean> {
   const ok = await ensureNotificationPermission();
   if (!ok) return false;
 
@@ -53,7 +56,7 @@ export async function scheduleDailyReminder(hour: number): Promise<boolean> {
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
       hour,
-      minute: 0,
+      minute,
       channelId: Platform.OS === "android" ? ANDROID_CHANNEL : undefined,
     },
   });
@@ -63,4 +66,44 @@ export async function scheduleDailyReminder(hour: number): Promise<boolean> {
 /** Hủy toàn bộ lịch nhắc học. */
 export async function cancelDailyReminder(): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
+}
+
+/** "20:05" từ (20, 5). */
+export function formatHm(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+/** Nhãn buổi trong ngày cho giờ nhắc — dùng cho phần mô tả. */
+export function partOfDay(hour: number): string {
+  if (hour < 5) return "khuya";
+  if (hour < 11) return "sáng";
+  if (hour < 13) return "trưa";
+  if (hour < 18) return "chiều";
+  return "tối";
+}
+
+/**
+ * Còn bao lâu tới lần nhắc kế tiếp. `tomorrow` = true nếu giờ nhắc hôm nay đã
+ * qua (lần nhắc sẽ là ngày mai).
+ */
+export function nextReminderIn(
+  hour: number,
+  minute: number,
+  now: Date = new Date()
+): { tomorrow: boolean; minutes: number } {
+  const target = hour * 60 + minute;
+  const current = now.getHours() * 60 + now.getMinutes();
+  const diff = target - current;
+  return diff > 0
+    ? { tomorrow: false, minutes: diff }
+    : { tomorrow: true, minutes: diff + 24 * 60 };
+}
+
+/** "còn 3 giờ 12 phút" / "còn 45 phút". */
+export function formatCountdown(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `còn ${m} phút`;
+  if (m === 0) return `còn ${h} giờ`;
+  return `còn ${h} giờ ${m} phút`;
 }
