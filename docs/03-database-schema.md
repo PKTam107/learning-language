@@ -126,3 +126,6 @@ Chi tiết policy nằm trong file migration.
 - `cards(deck_id, lower(btrim(term)))` UNIQUE — chống trùng từ trong deck.
 - `card_progress(user_id, card_id)` (đã có qua UNIQUE).
 - `dictionary_cache(term, source_language, target_language)` (đã có qua UNIQUE).
+- `review_events(user_id, reviewed_at desc)` (migration `0004`) — streak, heatmap, "Bạn hay quên".
+- `card_progress(user_id, next_due_at)` (migration `0008`) — lịch ôn tập / số thẻ tới hạn.
+- `cards(user_id, created_at desc)` (migration `0008`) — đếm thẻ tạo trong ngày (thử thách hôm nay).

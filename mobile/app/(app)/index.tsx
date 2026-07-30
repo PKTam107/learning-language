@@ -15,16 +15,22 @@ import { fetchDecksWithStats, deleteDeck } from "@/lib/decks";
 import { exportAccountBackup } from "@/lib/export";
 import { fetchStudyStats, EMPTY_STATS, type StudyStats } from "@/lib/stats";
 import { fetchWeakWords, type WeakWord } from "@/lib/weak";
+import { fetchChallengeMetrics } from "@/lib/insights";
+import {
+  buildDailyChallenge,
+  type DailyChallenge as Challenge,
+} from "@/lib/challenge";
 import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
 import { DeckCard } from "@/components/deck/DeckCard";
 import { DeckForm } from "@/components/deck/DeckForm";
 import { StatusBar } from "@/components/status/StatusBar";
 import { StreakCard } from "@/components/StreakCard";
+import { DailyChallenge } from "@/components/DailyChallenge";
 import { WeakWords } from "@/components/WeakWords";
 import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
 import { Button } from "@/components/ui/Button";
 import { colors, radius, spacing } from "@/lib/theme";
-import { Save } from "lucide-react-native";
+import { Save, TrendingUp } from "lucide-react-native";
 
 export default function DecksScreen() {
   const router = useRouter();
@@ -37,6 +43,7 @@ export default function DecksScreen() {
   const [backupBusy, setBackupBusy] = useState(false);
   const [stats, setStats] = useState<StudyStats>(EMPTY_STATS);
   const [weak, setWeak] = useState<WeakWord[]>([]);
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
 
   async function handleBackup() {
     setBackupBusy(true);
@@ -52,14 +59,16 @@ export default function DecksScreen() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const [deckData, statData, weakData] = await Promise.all([
+      const [deckData, statData, weakData, challengeMetrics] = await Promise.all([
         fetchDecksWithStats(),
         fetchStudyStats(),
         fetchWeakWords(8),
+        fetchChallengeMetrics(),
       ]);
       setDecks(deckData);
       setStats(statData);
       setWeak(weakData);
+      setChallenge(buildDailyChallenge(challengeMetrics));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -140,6 +149,7 @@ export default function DecksScreen() {
             <Text style={styles.heading}>Bộ từ vựng của bạn</Text>
             {decks.length > 0 && <StreakCard stats={stats} />}
             <EnrichBackfillButton banner onDone={load} />
+            <DailyChallenge challenge={challenge} />
             <WeakWords words={weak} />
             {agg.total > 0 && (
               <View style={styles.statsCard}>
@@ -155,14 +165,23 @@ export default function DecksScreen() {
               </View>
             )}
             {decks.length > 0 && (
-              <Button
-                title="Sao lưu tài khoản (JSON)"
-                icon={<Save size={18} color={colors.text} />}
-                variant="ghost"
-                onPress={handleBackup}
-                loading={backupBusy}
-                style={styles.backupBtn}
-              />
+              <>
+                <Button
+                  title="Xem tiến độ học"
+                  icon={<TrendingUp size={18} color={colors.text} />}
+                  variant="secondary"
+                  onPress={() => router.push("/progress")}
+                  style={styles.progressBtn}
+                />
+                <Button
+                  title="Sao lưu tài khoản (JSON)"
+                  icon={<Save size={18} color={colors.text} />}
+                  variant="ghost"
+                  onPress={handleBackup}
+                  loading={backupBusy}
+                  style={styles.backupBtn}
+                />
+              </>
             )}
             {!!error && <Text style={styles.error}>{error}</Text>}
           </View>
@@ -251,6 +270,7 @@ const styles = StyleSheet.create({
   },
   list: { padding: spacing.lg, paddingBottom: 96, flexGrow: 1 },
   header: { marginBottom: spacing.md },
+  progressBtn: { marginTop: spacing.md },
   backupBtn: { marginTop: spacing.sm },
   heading: { fontSize: 20, fontWeight: "700", color: colors.text },
   error: { marginTop: spacing.sm, color: colors.danger, fontSize: 14 },

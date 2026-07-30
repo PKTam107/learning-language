@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { QuickCreator } from "@/components/QuickCreator";
 import { StudyOverview } from "@/components/StudyOverview";
+import { DailyChallenge } from "@/components/DailyChallenge";
 import { WeakWords } from "@/components/WeakWords";
 import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
 import { DecksManager } from "@/components/deck/DecksManager";
@@ -16,7 +17,8 @@ export default function DashboardPage() {
         </h1>
         <EnrichBackfillButton banner />
         <StudyOverview />
-        <div className="mb-6">
+        <div className="mb-6 grid items-start gap-4 lg:grid-cols-2">
+          <DailyChallenge />
           <WeakWords limit={6} />
         </div>
         <DecksManager showStats />

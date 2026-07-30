@@ -1,8 +1,8 @@
 # Current State & Development Plan — LinguaCards
 
 Đặc tả **hiện trạng thực tế (as-built)** của web app + kế hoạch phát triển tiếp.
-Cập nhật lần cuối: web đã ngang bằng mobile ở phần học (kiểu ôn đa dạng, streak, nhắc học,
-tự phát âm) + rate-limit `/api/lookup`.
+Cập nhật lần cuối: thêm **trang Tiến độ** (huy hiệu, heatmap 1 năm, lịch ôn) + **thử thách
+hôm nay** trên trang chủ — có cả ở web và mobile.
 
 > Đây là tài liệu "sống" — mô tả code **đang có**, khác với 01-product-spec (tầm nhìn)
 > và 05-roadmap (kế hoạch dài hạn). Khi hoàn thành hạng mục, cập nhật lại mục A/B.
@@ -47,7 +47,12 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
 | Làm giàu thẻ | Tra từ mới → CEFR (danh sách CEFR-J offline) + word family + collocations (Datamuse), cache vào card | [enrich.ts](../src/lib/enrich.ts), [cefr.ts](../src/lib/cefr.ts), [data/cefr.json](../src/data/cefr.json), [Enrichment.tsx](../src/components/flashcard/Enrichment.tsx) |
 | Backfill thẻ cũ | Nút "Làm giàu N thẻ" (deck + dashboard), tự ẩn khi hết; `/api/enrich` tính, client cập nhật; cột `enriched_at` đánh dấu đã xử lý | [0007_card_enriched_at.sql](../supabase/migrations/0007_card_enriched_at.sql), [api/enrich/route.ts](../src/app/api/enrich/route.ts), [db/enrich-backfill.ts](../src/lib/db/enrich-backfill.ts), [EnrichBackfillButton.tsx](../src/components/EnrichBackfillButton.tsx) |
 | Weak Words | "Bạn hay quên": xếp từ theo số lần đánh giá `hard` từ `review_events` | [db/weak.ts](../src/lib/db/weak.ts), [WeakWords.tsx](../src/components/WeakWords.tsx), [/weak](../src/app/weak/page.tsx) |
-| Dashboard | Stat + streak + banner nhắc học + "Bạn hay quên" | [DecksManager.tsx](../src/components/deck/DecksManager.tsx), [StudyOverview.tsx](../src/components/StudyOverview.tsx), [WeakWords.tsx](../src/components/WeakWords.tsx) |
+| Thử thách hôm nay | 3–4 nhiệm vụ tất định theo ngày (giữ chuỗi / ôn N lượt / thêm từ mới / 1 nhiệm vụ luân phiên); tiến độ đo từ `review_events` + `cards.created_at` | [challenge.ts](../src/lib/challenge.ts), [db/insights.ts](../src/lib/db/insights.ts), [DailyChallenge.tsx](../src/components/DailyChallenge.tsx) |
+| Huy hiệu | 22 mốc / 5 nhóm (thẻ, đã thuộc, chuỗi dài nhất, lượt ôn, ngày có học) | [achievements.ts](../src/lib/achievements.ts), [Achievements.tsx](../src/components/Achievements.tsx) |
+| Heatmap học tập | Lưới 52 tuần kiểu GitHub từ `review_events`, 5 mức đậm theo ngày ôn nhiều nhất | [Heatmap.tsx](../src/components/Heatmap.tsx), [streak.ts](../src/lib/streak.ts) |
+| Lịch ôn tập | Lịch tháng đếm thẻ tới hạn theo `card_progress.next_due_at`; chạm ngày → danh sách từ | [ReviewCalendar.tsx](../src/components/ReviewCalendar.tsx) |
+| Dashboard | Stat + streak + banner nhắc học + thử thách hôm nay + "Bạn hay quên" | [DecksManager.tsx](../src/components/deck/DecksManager.tsx), [StudyOverview.tsx](../src/components/StudyOverview.tsx), [DailyChallenge.tsx](../src/components/DailyChallenge.tsx), [WeakWords.tsx](../src/components/WeakWords.tsx) |
+| Trang Tiến độ | `/progress`: 4 ô số + heatmap + huy hiệu + lịch ôn, **1 lần nạp** dùng chung dữ liệu (3 query song song) | [/progress](../src/app/progress/page.tsx), [ProgressDashboard.tsx](../src/components/ProgressDashboard.tsx), [db/insights.ts](../src/lib/db/insights.ts) |
 
 ### A4. Khoảng trống & nợ kỹ thuật
 1. ~~**Sửa thẻ đã lưu**~~ — ✅ đã làm (P1).
@@ -58,7 +63,10 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
    có chế độ "Ôn hôm nay" + số thẻ đến hạn.
 6. **Đa ngôn ngữ**: DB sẵn sàng nhưng UI/logic hardcode EN→VI. → P3.
 7. ~~**Dashboard thống kê thật (streak)**~~ — ✅ đã làm: streak + biểu đồ 7 ngày trên dashboard
-   (web + mobile), dựa trên bảng `review_events`.
+   (web + mobile), dựa trên bảng `review_events`. Mở rộng ở P2.6: trang **Tiến độ** (huy hiệu,
+   heatmap 52 tuần, lịch ôn) + **thử thách hôm nay**.
+   *Giới hạn hiện tại:* heatmap/chuỗi dài nhất/số ngày có học tính trong cửa sổ **364 ngày**
+   gần nhất (tổng lượt ôn thì đếm toàn bộ qua `count` phía server).
 8. ~~**Rate limit** `/api/lookup`~~ — ✅ đã làm: 30 lượt/phút/user qua RPC Supabase.
 9. **Test**: chưa có. → P4.
 
@@ -120,6 +128,18 @@ Nguồn sự thật nhãn/màu: [src/lib/status.ts](../src/lib/status.ts).
   "Bạn hay quên" (màn chính), nút "Làm giàu N thẻ" (deck + màn chính). Dùng chung `/api/lookup`
   + `/api/enrich`.
 - [ ] Nâng chất word family (WordNet/AI). → sau.
+
+**P2.6 — Tiến độ & động lực học** ✅ (web + mobile) — migration `0008` (chỉ thêm index)
+- [x] **Huy hiệu:** 22 mốc / 5 nhóm, chỉ đọc dữ liệu có sẵn (số thẻ, `card_progress.status`,
+  `review_events`). Nhóm chuỗi ngày xét theo **chuỗi dài nhất** nên không bị mất khi đứt chuỗi.
+- [x] **Heatmap 52 tuần** kiểu GitHub Calendar từ `review_events` (cột = tuần, Thứ 2 → CN).
+- [x] **Thử thách hôm nay:** sinh **tất định theo ngày** (không random, không bảng mới) →
+  web/mobile hiện cùng nhiệm vụ; mục tiêu co giãn theo số thẻ tới hạn & kích thước kho thẻ.
+- [x] **Lịch ôn tập:** lịch tháng đếm thẻ tới hạn theo `next_due_at` (thẻ chưa học/quá hạn gom
+  vào hôm nay), chạm ngày → danh sách từ → mở deck.
+- [x] Gom helper ngày/chuỗi vào [streak.ts](../src/lib/streak.ts) (web) và
+  `mobile/src/lib/streak.ts`; `stats.ts` (streak card) dùng lại chính các helper này.
+- [x] Migration `0008`: index `card_progress(user_id, next_due_at)` + `cards(user_id, created_at)`.
 
 ### P3 — Đa ngôn ngữ (mở khóa kiến trúc DB có sẵn)
 - [ ] Dùng `profiles.default_source/target_language`; chọn ngôn ngữ khi tạo deck (bỏ hardcode).
