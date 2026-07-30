@@ -31,6 +31,9 @@ export function Navbar() {
           <Link href="/weak" className="text-slate-600 hover:text-brand">
             Hay quên
           </Link>
+          <Link href="/progress" className="text-slate-600 hover:text-brand">
+            Tiến độ
+          </Link>
           <Link href="/settings" className="text-slate-600 hover:text-brand">
             Cài đặt
           </Link>

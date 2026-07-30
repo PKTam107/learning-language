@@ -114,7 +114,7 @@ Một phiên học gồm ba bước: **chọn chế độ → học → xem tóm
 - **Trắc nghiệm / Gõ từ / Nghe:** hệ thống **tự chấm** đúng/sai (gõ cho phép sai 1 ký tự) rồi hiện
   đáp án. Kết quả được quy về đánh giá: **đúng → "Tạm nhớ", sai → "Chưa thuộc"**.
 - Có thanh tiến độ cho biết đang ở thẻ thứ mấy. *Bấm nút phát âm chỉ phát tiếng — không làm lật thẻ.*
-- Có thể bật **tự phát âm khi lật thẻ / khi lộ đáp án** trong Cài đặt (xem mục 10).
+- Có thể bật **tự phát âm khi lật thẻ / khi lộ đáp án** trong Cài đặt (xem mục 11).
 
 **Bước tóm tắt** — kết thúc phiên, hệ thống tổng kết số từ ở mỗi mức đánh giá trong
 phiên vừa rồi, và cho phép học tiếp hoặc quay về.
@@ -162,14 +162,74 @@ Ngoài ra còn có:
 - **Chuỗi ngày học (streak):** số ngày liên tiếp có ôn tập, số lượt ôn hôm nay, và biểu đồ
   7 ngày gần nhất. Streak được tính từ nhật ký ôn — mọi kiểu ôn (lật thẻ, trắc nghiệm, gõ,
   nghe) đều được tính. Chuỗi vẫn còn "sống" hết ngày hôm nay nếu hôm nay chưa ôn.
-- **Banner nhắc học:** nếu bật nhắc học (mục 10) và đã qua giờ nhắc mà hôm nay chưa ôn từ nào,
+- **Banner nhắc học:** nếu bật nhắc học (mục 11) và đã qua giờ nhắc mà hôm nay chưa ôn từ nào,
   trang chủ hiện lời nhắc dẫn tới danh sách bộ thẻ.
+- **Thử thách hôm nay:** 3–4 nhiệm vụ trong ngày kèm thanh tiến độ (xem mục 10).
 - **Bạn hay quên:** danh sách các từ bị đánh giá **"Chưa thuộc"** nhiều nhất (từ nhật ký ôn),
   kèm số lần quên — để ưu tiên ôn lại. Có trang riêng **/weak** liệt kê đầy đủ.
 
 ---
 
-## 10. Cài đặt & nhắc học
+## 10. Tiến độ học: thử thách, huy hiệu, lịch học
+
+Trang **Tiến độ** (web: `/progress`; điện thoại: nút "Xem tiến độ học" ở màn chính hoặc
+biểu tượng 📈 trên thanh tiêu đề) gom mọi thứ liên quan tới "mình đã học được bao nhiêu".
+Toàn bộ số liệu lấy từ dữ liệu đã có (thẻ, tiến độ từng từ, nhật ký ôn) — không phải khai báo tay.
+
+**Thử thách hôm nay** (hiện ở **trang chủ**, cả web và điện thoại)
+
+Mỗi ngày hệ thống tự đặt ra 3–4 nhiệm vụ nhỏ, kèm thanh tiến độ và dấu ✓ khi xong:
+- **Giữ chuỗi ngày học:** ôn ít nhất 1 lượt trong hôm nay.
+- **Ôn N lượt:** N lấy theo **số thẻ tới hạn hôm nay**, giới hạn trong khoảng 5–20 lượt và
+  không vượt số thẻ đang có (kho thẻ nhỏ thì mục tiêu nhỏ theo).
+- **Thêm từ mới:** 3 từ, cứ 3 ngày một lần thành 5 từ.
+- **Một nhiệm vụ luân phiên** đổi theo ngày: chốt vài từ lên mức *"Đã thuộc"* / ôn đủ số **từ
+  khác nhau** / **dọn hết hàng đợi** thẻ tới hạn.
+
+**Quy tắc:** nhiệm vụ được sinh **theo ngày, không ngẫu nhiên** — cùng một ngày thì web và
+điện thoại hiện đúng cùng bộ nhiệm vụ. Thử thách **tự đổi lúc 0h** (giờ máy của bạn) và
+không lưu vào cơ sở dữ liệu: tiến độ được đo lại từ nhật ký ôn + số thẻ tạo trong ngày.
+Nếu chưa có thẻ nào, thử thách chỉ còn một nhiệm vụ: *"Thêm từ đầu tiên"*.
+
+**Huy hiệu (achievement)**
+
+Có **22 mốc** chia 5 nhóm, mốc nào đạt thì "mở" (hiện màu + dấu ✓), chưa đạt thì xám kèm
+thanh tiến độ và số còn thiếu. Trang cũng nêu rõ **mốc sắp đạt nhất**.
+
+| Nhóm | Xét theo | Các mốc |
+|---|---|---|
+| Kho từ vựng | tổng số thẻ đã tạo | 10 · 50 · 100 · 250 · 500 |
+| Từ đã thuộc | số thẻ đang ở mức *Đã thuộc* | 10 · 50 · 100 · 250 |
+| Chuỗi ngày học | **chuỗi dài nhất** từng đạt | 3 · 7 · 14 · 30 · 100 |
+| Lượt ôn | tổng số lượt ôn | 50 · 200 · 500 · 1000 |
+| Ngày có học | số ngày khác nhau có ôn tập | 7 · 30 · 100 · 365 |
+
+**Quy tắc:** nhóm *Chuỗi ngày học* xét theo **chuỗi dài nhất** nên huy hiệu **không bị mất**
+khi chuỗi hiện tại đứt. Nhóm *Từ đã thuộc* thì lên/xuống theo trạng thái thật của từng từ.
+
+**Heatmap học tập (lịch 1 năm)**
+
+Lưới ô vuông kiểu GitHub: mỗi cột là một tuần (Thứ 2 → Chủ nhật) trong **52 tuần gần nhất**,
+ô càng đậm là ngày đó ôn càng nhiều (5 mức, chia theo ngày ôn nhiều nhất trong kỳ). Trên web,
+trỏ chuột vào một ô để xem *"số lượt ôn · ngày/tháng/năm"*. Kèm tổng số lượt ôn và số ngày có học.
+
+**Lịch ôn tập (calendar)**
+
+Lịch theo tháng cho biết **ngày nào có nhiều thẻ tới hạn**, xem trước được các tháng sau
+để biết lịch có bị dồn. Mỗi ô hiện ngày + số thẻ, tô màu đậm dần theo số lượng (từ 1–3 thẻ
+đến trên 25 thẻ). Chạm/bấm một ngày để xem **những từ nào** tới hạn ngày đó (tối đa 12 từ,
+bấm vào từ để mở bộ thẻ chứa nó).
+
+**Quy tắc:** thẻ **chưa học** và thẻ **quá hạn** được gom vào ô **hôm nay** (đó là việc cần
+làm ngay). Lịch được tính lại sau mỗi lần bạn đánh giá một thẻ, vì ngày hẹn ôn thay đổi theo
+đánh giá (xem mục 8).
+
+Ngoài ra trang có 4 ô số nhanh: **chuỗi hiện tại** (kèm chuỗi dài nhất), **tổng lượt ôn**
+(kèm số ngày có học), **số thẻ cần ôn ngay** (kèm 7 ngày tới), và **số huy hiệu đã mở**.
+
+---
+
+## 11. Cài đặt & nhắc học
 
 Trang **Cài đặt** cho phép mỗi người tùy chỉnh:
 - **Tự phát âm khi lật thẻ / lộ đáp án:** bật/tắt việc tự đọc từ tiếng Anh khi học (mặc định bật).
@@ -185,7 +245,7 @@ Cài đặt được lưu **trên từng thiết bị** (không đồng bộ qua
 
 ---
 
-## 11. Web và điện thoại đồng bộ ra sao
+## 12. Web và điện thoại đồng bộ ra sao
 
 - Cả hai bản dùng **chung một tài khoản và một kho dữ liệu**. Tạo thẻ trên điện thoại
   thì mở web thấy ngay, và ngược lại — không cần thao tác đồng bộ thủ công.
@@ -196,13 +256,15 @@ Cài đặt được lưu **trên từng thiết bị** (không đồng bộ qua
 - Cũng ngang bằng ở **làm giàu thẻ** (badge CEFR, họ từ, collocations), **"Bạn hay quên"**,
   và nút **"Làm giàu N thẻ"** cho thẻ cũ. *(Bản mobile hiện chưa có sửa/xem chi tiết chỉnh sửa
   một thẻ như web, nhưng phần hiển thị thông tin làm giàu thì có.)*
-- Điểm khác duy nhất còn lại là **cách nhắc học** (xem mục 10): điện thoại dùng thông báo hệ
+- Ngang bằng cả ở **Tiến độ học** (mục 10): thử thách hôm nay, huy hiệu, heatmap 1 năm và lịch
+  ôn tập — cùng cách tính nên hai bên hiện cùng số liệu.
+- Điểm khác duy nhất còn lại là **cách nhắc học** (xem mục 11): điện thoại dùng thông báo hệ
   thống, web dùng banner trong app. Riêng **cài đặt** (tự phát âm, nhắc học) lưu theo từng
   thiết bị nên không đồng bộ qua tài khoản.
 
 ---
 
-## 12. Chưa có (dự kiến làm sau)
+## 13. Chưa có (dự kiến làm sau)
 
 - **Học nhiều ngôn ngữ** ngoài Anh → Việt.
 - **Nhập Anki** (`.apkg`) và **chia sẻ bộ thẻ** (đã có nhập Excel + xuất CSV/Excel/JSON).

@@ -33,7 +33,8 @@ npm install
 
 ### 2. Tạo Supabase project
 1. Vào https://supabase.com → New Project.
-2. Mở **SQL Editor** → dán nội dung [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql) → **Run**.
+2. Mở **SQL Editor** → chạy lần lượt các file trong [`supabase/migrations/`](./supabase/migrations)
+   **theo đúng thứ tự số** (`0001_init.sql` → `0008_progress_indexes.sql`): dán nội dung từng file → **Run**.
 3. Bật **Google OAuth**: Dashboard → Authentication → Providers → Google
    (tạo OAuth Client ID/Secret ở [Google Cloud Console](https://console.cloud.google.com/),
    thêm redirect URL: `https://<project>.supabase.co/auth/v1/callback`).

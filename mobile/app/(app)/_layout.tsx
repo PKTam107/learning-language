@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Redirect, Stack, useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { Settings as SettingsIcon } from "lucide-react-native";
+import { Settings as SettingsIcon, TrendingUp } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { configureNotificationHandler } from "@/lib/notifications";
 import { colors } from "@/lib/theme";
@@ -43,6 +43,13 @@ export default function AppLayout() {
           headerRight: () => (
             <View style={styles.headerRight}>
               <Pressable
+                onPress={() => router.push("/progress")}
+                hitSlop={8}
+                accessibilityLabel="Tiến độ"
+              >
+                <TrendingUp size={20} color={colors.textMuted} />
+              </Pressable>
+              <Pressable
                 onPress={() => router.push("/settings")}
                 hitSlop={8}
                 accessibilityLabel="Cài đặt"
@@ -58,6 +65,7 @@ export default function AppLayout() {
       />
       <Stack.Screen name="decks/[id]" options={{ title: "Bộ thẻ" }} />
       <Stack.Screen name="study/[deckId]" options={{ title: "Học" }} />
+      <Stack.Screen name="progress" options={{ title: "Tiến độ" }} />
       <Stack.Screen name="settings" options={{ title: "Cài đặt" }} />
     </Stack>
   );
