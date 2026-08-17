@@ -5,7 +5,8 @@ import { createDeck, updateDeck } from "@/lib/decks";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { colors, spacing } from "@/lib/theme";
+import { spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles } from "@/contexts/ThemeContext";
 
 interface Props {
   open: boolean;
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function DeckForm({ open, onClose, onSaved, deck }: Props) {
+  const styles = useStyles(makeStyles);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -90,9 +92,10 @@ export function DeckForm({ open, onClose, onSaved, deck }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  textarea: { minHeight: 64, textAlignVertical: "top" },
-  error: { color: colors.danger, fontSize: 14 },
-  actions: { flexDirection: "row", gap: spacing.md, marginTop: spacing.xs },
-  flex: { flex: 1 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    textarea: { minHeight: 64, textAlignVertical: "top" },
+    error: { color: colors.danger, fontSize: 14 },
+    actions: { flexDirection: "row", gap: spacing.md, marginTop: spacing.xs },
+    flex: { flex: 1 },
+  });

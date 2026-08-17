@@ -1,6 +1,7 @@
 import { View } from "react-native";
 import type { CardStatus } from "@/types";
-import { STATUS_META } from "@/lib/status";
+import { statusColor } from "@/lib/status";
+import { useThemeColors } from "@/contexts/ThemeContext";
 
 /** Chấm màu trạng thái học của 1 thẻ. */
 export function StatusDot({
@@ -10,13 +11,14 @@ export function StatusDot({
   status: CardStatus;
   size?: number;
 }) {
+  const colors = useThemeColors();
   return (
     <View
       style={{
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: STATUS_META[status].color,
+        backgroundColor: statusColor(status, colors),
       }}
     />
   );

@@ -21,7 +21,8 @@ import {
   type PanResponderGestureState,
   type ScrollViewProps,
 } from "react-native";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles } from "@/contexts/ThemeContext";
 
 /** Kéo quá khoảng này (px) hoặc vuốt nhanh hơn ngưỡng vận tốc → đóng sheet. */
 const DISMISS_DISTANCE = 110;
@@ -84,6 +85,7 @@ export function Modal({
   bodyDrag = true,
   children,
 }: Props) {
+  const styles = useStyles(makeStyles);
   const translateY = useRef(new Animated.Value(0)).current;
   const bodyDragEnabled = useRef(bodyDrag);
 
@@ -208,34 +210,35 @@ export function Modal({
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, justifyContent: "flex-end" },
-  flexFill: { flex: 1 },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(15,23,42,0.4)",
-  },
-  sheet: {
-    backgroundColor: colors.card,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl + spacing.lg,
-  },
-  // Vùng chạm để kéo — cố ý cao thoáng cho dễ trúng ngón tay.
-  grabberZone: { paddingTop: spacing.md, paddingBottom: spacing.lg },
-  grabber: {
-    alignSelf: "center",
-    width: 44,
-    height: 5,
-    borderRadius: radius.full,
-    backgroundColor: colors.border,
-  },
-  title: {
-    marginTop: spacing.md,
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  body: { gap: spacing.md },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, justifyContent: "flex-end" },
+    flexFill: { flex: 1 },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(15,23,42,0.4)",
+    },
+    sheet: {
+      backgroundColor: colors.card,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.xl + spacing.lg,
+    },
+    // Vùng chạm để kéo — cố ý cao thoáng cho dễ trúng ngón tay.
+    grabberZone: { paddingTop: spacing.md, paddingBottom: spacing.lg },
+    grabber: {
+      alignSelf: "center",
+      width: 44,
+      height: 5,
+      borderRadius: radius.full,
+      backgroundColor: colors.border,
+    },
+    title: {
+      marginTop: spacing.md,
+      fontSize: 18,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    body: { gap: spacing.md },
+  });

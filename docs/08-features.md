@@ -117,7 +117,9 @@ Một phiên học gồm ba bước: **chọn chế độ → học → xem tóm
 - Có thể bật **tự phát âm khi lật thẻ / khi lộ đáp án** trong Cài đặt (xem mục 11).
 
 **Bước tóm tắt** — kết thúc phiên, hệ thống tổng kết số từ ở mỗi mức đánh giá trong
-phiên vừa rồi, và cho phép học tiếp hoặc quay về.
+phiên vừa rồi, và cho phép học tiếp hoặc quay về. Có **hiệu ứng pháo giấy ăn mừng**
+(cả web lẫn điện thoại) — chỉ bắn khi bạn thực sự có ôn, và tự tắt nếu bạn đã bật
+"giảm chuyển động" trong cài đặt hệ điều hành.
 
 **Quy tắc sắp xếp:** khi không xáo trộn, thẻ được ưu tiên theo thứ tự — *chưa thuộc*
 trước, rồi *chưa học*, rồi *tạm nhớ*, cuối cùng *đã thuộc* — để người dùng gặp từ khó trước.
@@ -232,10 +234,11 @@ Ngoài ra trang có 4 ô số nhanh: **chuỗi hiện tại** (kèm chuỗi dài
 ## 11. Cài đặt & nhắc học
 
 Trang **Cài đặt** cho phép mỗi người tùy chỉnh:
-- **Giao diện (web):** chọn **Sáng**, **Tối**, hoặc **Theo máy** (tự đổi theo cài đặt sáng/tối
-  của hệ điều hành — đây là mặc định). Đổi được ngay trên thanh điều hướng bằng nút hình
-  mặt trời/mặt trăng, hoặc trong trang Cài đặt. Lựa chọn được nhớ lại và áp dụng **trước khi
-  trang hiện ra**, nên không bị nháy nền trắng lúc tải. *(Bản điện thoại hiện chỉ có nền sáng.)*
+- **Giao diện:** chọn **Sáng**, **Tối**, hoặc **Theo máy** (tự đổi theo cài đặt sáng/tối
+  của hệ điều hành — đây là mặc định). **Có ở cả hai bản.** Trên web đổi được ngay trên thanh
+  điều hướng bằng nút hình mặt trời/mặt trăng, hoặc trong trang Cài đặt; trên điện thoại thì
+  ở trang Cài đặt. Riêng web còn áp dụng lựa chọn **trước khi trang hiện ra** nên không bị
+  nháy nền trắng lúc tải.
 - **Tự phát âm khi lật thẻ / lộ đáp án:** bật/tắt việc tự đọc từ tiếng Anh khi học (mặc định bật).
 - **Nhắc học hằng ngày:** bật/tắt và chọn **giờ nhắc**. Khi bật, đến giờ mà hôm nay chưa ôn thì
   hệ thống hiển thị **lời nhắc ngay trong app** (trên trang chủ).
@@ -262,9 +265,10 @@ Cài đặt được lưu **trên từng thiết bị** (không đồng bộ qua
   một thẻ như web, nhưng phần hiển thị thông tin làm giàu thì có.)*
 - Ngang bằng cả ở **Tiến độ học** (mục 10): thử thách hôm nay, huy hiệu, heatmap 1 năm và lịch
   ôn tập — cùng cách tính nên hai bên hiện cùng số liệu.
+- Ngang bằng cả ở **giao diện Sáng/Tối** (mục 11) và **hiệu ứng ăn mừng cuối phiên học** (mục 6).
 - Điểm khác duy nhất còn lại là **cách nhắc học** (xem mục 11): điện thoại dùng thông báo hệ
-  thống, web dùng banner trong app. Riêng **cài đặt** (tự phát âm, nhắc học) lưu theo từng
-  thiết bị nên không đồng bộ qua tài khoản.
+  thống, web dùng banner trong app. Riêng **cài đặt** (giao diện, tự phát âm, nhắc học) lưu
+  theo từng thiết bị nên không đồng bộ qua tài khoản.
 
 ---
 

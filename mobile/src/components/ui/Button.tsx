@@ -6,7 +6,8 @@ import {
   type PressableProps,
 } from "react-native";
 import type { ReactNode } from "react";
-import { colors, radius } from "@/lib/theme";
+import { radius, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 type Variant = "primary" | "secondary" | "ghost";
 
@@ -27,6 +28,9 @@ export function Button({
   style,
   ...rest
 }: Props) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
+  const variantStyle = useStyles(makeVariantStyle);
   const isDisabled = disabled || loading;
   return (
     <Pressable
@@ -54,27 +58,29 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: radius.md,
-  },
-  dim: { opacity: 0.6 },
-  text: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  textDark: { color: colors.text },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    base: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      paddingVertical: 14,
+      paddingHorizontal: 18,
+      borderRadius: radius.md,
+    },
+    dim: { opacity: 0.6 },
+    text: { color: "#fff", fontSize: 16, fontWeight: "600" },
+    textDark: { color: colors.text },
+  });
 
-const variantStyle = StyleSheet.create({
-  primary: { backgroundColor: colors.brand },
-  secondary: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  ghost: { backgroundColor: "transparent" },
-});
+const makeVariantStyle = (colors: ThemeColors) =>
+  StyleSheet.create({
+    primary: { backgroundColor: colors.brand },
+    secondary: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    ghost: { backgroundColor: "transparent" },
+  });

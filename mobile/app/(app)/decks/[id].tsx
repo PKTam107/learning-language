@@ -36,6 +36,7 @@ import {
 } from "@/lib/export";
 import {
   STATUS_META,
+  statusColor,
   STATUS_ORDER,
   computeStats,
   masteredPercent,
@@ -47,11 +48,14 @@ import { StatusBar } from "@/components/status/StatusBar";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { QuickCreator } from "@/components/QuickCreator";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 const statusOf = (c: CardWithProgress): CardStatus => c.progress?.status ?? "new";
 
 export default function DeckDetailScreen() {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [deck, setDeck] = useState<Deck | null>(null);
@@ -327,7 +331,7 @@ export default function DeckDetailScreen() {
               <FilterChip
                 key={s}
                 label={`${STATUS_META[s].label} ${stats.byStatus[s]}`}
-                color={STATUS_META[s].color}
+                color={statusColor(s, colors)}
                 active={statusFilter === s}
                 disabled={stats.byStatus[s] === 0}
                 onPress={() => setStatusFilter(s)}
@@ -553,6 +557,7 @@ function FilterChip({
   disabled?: boolean;
   onPress: () => void;
 }) {
+  const styles = useStyles(makeStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -571,127 +576,128 @@ function FilterChip({
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bg,
-    padding: spacing.xl,
-  },
-  notFound: { color: colors.textMuted, fontSize: 16 },
-  desc: { fontSize: 14, color: colors.textMuted },
-  count: { fontSize: 14, color: colors.textSubtle },
-  due: { color: "#d97706" }, // amber-600
-  error: { color: colors.danger, fontSize: 14 },
-  barWrap: { marginTop: spacing.sm },
-  headerBtns: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
-  flexBtn: { flex: 1 },
-  templateBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: spacing.sm,
-    paddingVertical: 6,
-  },
-  templateText: { fontSize: 13, color: colors.brand, fontWeight: "600" },
-  enrichBtn: { marginTop: spacing.sm },
-  bulkBar: {
-    marginTop: spacing.md,
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.brand,
-    backgroundColor: colors.brandLight,
-    gap: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-  bulkLink: { color: colors.brandDark, fontWeight: "600", fontSize: 13 },
-  bulkCount: { color: colors.textMuted, fontSize: 13 },
-  bulkActions: { flexDirection: "row", gap: spacing.sm, marginLeft: "auto" },
-  bulkBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.md,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  bulkBtnDim: { opacity: 0.4 },
-  bulkBtnText: { color: colors.text, fontSize: 13, fontWeight: "600" },
-  bulkBtnDanger: { backgroundColor: colors.danger, borderColor: colors.danger },
-  bulkBtnDangerText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  moveList: { gap: spacing.sm },
-  moveItem: {
-    padding: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  moveItemPressed: { borderColor: colors.brand, backgroundColor: colors.brandLight },
-  moveItemText: { fontSize: 15, color: colors.text, fontWeight: "600" },
-  moveHint: { fontSize: 12, color: colors.textSubtle, marginTop: spacing.sm },
-  pinnedBar: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-    gap: spacing.sm,
-    backgroundColor: colors.bg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  listHeader: { gap: spacing.xs, marginBottom: spacing.md },
-  search: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: 14,
-    color: colors.text,
-    backgroundColor: colors.card,
-  },
-  chipRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingRight: spacing.lg,
-  },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  chipActive: { borderColor: colors.brand, backgroundColor: colors.brandLight },
-  chipDisabled: { opacity: 0.4 },
-  chipDot: { width: 8, height: 8, borderRadius: 4 },
-  chipText: { fontSize: 13, color: colors.textMuted },
-  chipTextActive: { color: colors.brandDark, fontWeight: "600" },
-  list: { padding: spacing.lg, paddingTop: spacing.sm, paddingBottom: 96, flexGrow: 1 },
-  sep: { height: spacing.md },
-  empty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 56,
-    paddingHorizontal: spacing.lg,
-  },
-  emptyTitle: { fontSize: 16, fontWeight: "600", color: colors.textMuted },
-  emptyText: {
-    marginTop: spacing.xs,
-    textAlign: "center",
-    color: colors.textSubtle,
-    lineHeight: 20,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.bg,
+      padding: spacing.xl,
+    },
+    notFound: { color: colors.textMuted, fontSize: 16 },
+    desc: { fontSize: 14, color: colors.textMuted },
+    count: { fontSize: 14, color: colors.textSubtle },
+    due: { color: colors.tints.amber.fg },
+    error: { color: colors.danger, fontSize: 14 },
+    barWrap: { marginTop: spacing.sm },
+    headerBtns: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+    flexBtn: { flex: 1 },
+    templateBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      marginTop: spacing.sm,
+      paddingVertical: 6,
+    },
+    templateText: { fontSize: 13, color: colors.brand, fontWeight: "600" },
+    enrichBtn: { marginTop: spacing.sm },
+    bulkBar: {
+      marginTop: spacing.md,
+      padding: spacing.md,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.brand,
+      backgroundColor: colors.brandLight,
+      gap: spacing.sm,
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+    },
+    bulkLink: { color: colors.brandDark, fontWeight: "600", fontSize: 13 },
+    bulkCount: { color: colors.textMuted, fontSize: 13 },
+    bulkActions: { flexDirection: "row", gap: spacing.sm, marginLeft: "auto" },
+    bulkBtn: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: 6,
+      borderRadius: radius.md,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    bulkBtnDim: { opacity: 0.4 },
+    bulkBtnText: { color: colors.text, fontSize: 13, fontWeight: "600" },
+    bulkBtnDanger: { backgroundColor: colors.danger, borderColor: colors.danger },
+    bulkBtnDangerText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+    moveList: { gap: spacing.sm },
+    moveItem: {
+      padding: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    moveItemPressed: { borderColor: colors.brand, backgroundColor: colors.brandLight },
+    moveItemText: { fontSize: 15, color: colors.text, fontWeight: "600" },
+    moveHint: { fontSize: 12, color: colors.textSubtle, marginTop: spacing.sm },
+    pinnedBar: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm,
+      gap: spacing.sm,
+      backgroundColor: colors.bg,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    listHeader: { gap: spacing.xs, marginBottom: spacing.md },
+    search: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      fontSize: 14,
+      color: colors.text,
+      backgroundColor: colors.card,
+    },
+    chipRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      paddingRight: spacing.lg,
+    },
+    chip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 6,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    chipActive: { borderColor: colors.brand, backgroundColor: colors.brandLight },
+    chipDisabled: { opacity: 0.4 },
+    chipDot: { width: 8, height: 8, borderRadius: 4 },
+    chipText: { fontSize: 13, color: colors.textMuted },
+    chipTextActive: { color: colors.brandDark, fontWeight: "600" },
+    list: { padding: spacing.lg, paddingTop: spacing.sm, paddingBottom: 96, flexGrow: 1 },
+    sep: { height: spacing.md },
+    empty: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 56,
+      paddingHorizontal: spacing.lg,
+    },
+    emptyTitle: { fontSize: 16, fontWeight: "600", color: colors.textMuted },
+    emptyText: {
+      marginTop: spacing.xs,
+      textAlign: "center",
+      color: colors.textSubtle,
+      lineHeight: 20,
+    },
+  });

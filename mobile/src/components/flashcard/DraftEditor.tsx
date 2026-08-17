@@ -3,7 +3,8 @@ import type { DraftCard } from "@/types";
 import { Input } from "@/components/ui/Input";
 import { AudioButton } from "./AudioButton";
 import { CefrBadge, EnrichmentSections } from "./Enrichment";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles } from "@/contexts/ThemeContext";
 
 interface Props {
   draft: DraftCard;
@@ -12,6 +13,7 @@ interface Props {
 
 /** Form sửa DraftCard trước khi lưu (mobile). */
 export function DraftEditor({ draft, onChange }: Props) {
+  const styles = useStyles(makeStyles);
   const set = (patch: Partial<DraftCard>) => onChange({ ...draft, ...patch });
 
   return (
@@ -136,6 +138,7 @@ function Field({
   children: React.ReactNode;
   style?: object;
 }) {
+  const styles = useStyles(makeStyles);
   return (
     <View style={[styles.field, style]}>
       <Text style={styles.label}>{label}</Text>
@@ -144,48 +147,49 @@ function Field({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { gap: spacing.md },
-  row: { flexDirection: "row", gap: spacing.sm },
-  flex: { flex: 1 },
-  noteInput: { minHeight: 64, textAlignVertical: "top" },
-  termLine: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },
-  term: { fontSize: 24, fontWeight: "700", color: colors.text },
-  phonetic: { fontSize: 15, color: colors.textMuted },
-  warn: {
-    backgroundColor: "#fffbeb",
-    color: "#b45309",
-    fontSize: 12,
-    padding: spacing.sm,
-    borderRadius: radius.md,
-  },
-  field: { gap: 4 },
-  label: {
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    color: colors.textMuted,
-    letterSpacing: 0.5,
-  },
-  defs: { gap: spacing.sm },
-  defBtn: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-  },
-  defPressed: { borderColor: colors.brand, backgroundColor: colors.brandLight },
-  defText: { fontSize: 14, color: colors.text },
-  pos: { color: colors.textSubtle, fontSize: 12 },
-  defEn: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
-  example: { backgroundColor: colors.bg, borderRadius: radius.md, padding: spacing.sm },
-  exampleText: { fontSize: 14, fontStyle: "italic", color: colors.text },
-  exampleVi: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
-  enrich: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    backgroundColor: colors.bg,
-    padding: spacing.md,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    wrap: { gap: spacing.md },
+    row: { flexDirection: "row", gap: spacing.sm },
+    flex: { flex: 1 },
+    noteInput: { minHeight: 64, textAlignVertical: "top" },
+    termLine: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },
+    term: { fontSize: 24, fontWeight: "700", color: colors.text },
+    phonetic: { fontSize: 15, color: colors.textMuted },
+    warn: {
+      backgroundColor: colors.tints.amber.bg,
+      color: colors.tints.amber.fg,
+      fontSize: 12,
+      padding: spacing.sm,
+      borderRadius: radius.md,
+    },
+    field: { gap: 4 },
+    label: {
+      fontSize: 11,
+      fontWeight: "600",
+      textTransform: "uppercase",
+      color: colors.textMuted,
+      letterSpacing: 0.5,
+    },
+    defs: { gap: spacing.sm },
+    defBtn: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+    },
+    defPressed: { borderColor: colors.brand, backgroundColor: colors.brandLight },
+    defText: { fontSize: 14, color: colors.text },
+    pos: { color: colors.textSubtle, fontSize: 12 },
+    defEn: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
+    example: { backgroundColor: colors.bg, borderRadius: radius.md, padding: spacing.sm },
+    exampleText: { fontSize: 14, fontStyle: "italic", color: colors.text },
+    exampleVi: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    enrich: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      backgroundColor: colors.bg,
+      padding: spacing.md,
+    },
+  });

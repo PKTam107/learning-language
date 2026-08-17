@@ -18,13 +18,16 @@ import { evaluateAchievements, summarize } from "@/lib/achievements";
 import { Achievements } from "@/components/Achievements";
 import { Heatmap } from "@/components/Heatmap";
 import { ReviewCalendar, dueInNextDays } from "@/components/ReviewCalendar";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 /**
  * Màn Tiến độ: nạp **một lần** dữ liệu dùng chung (nhật ký ôn + thẻ + tiến độ)
  * rồi dựng heatmap, huy hiệu và lịch ôn từ cùng bộ dữ liệu đó.
  */
 export default function ProgressScreen() {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const [data, setData] = useState<ProgressData>(EMPTY_PROGRESS);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,7 +93,7 @@ export default function ProgressScreen() {
           hint={`${activity.activeDays} ngày học`}
         />
         <Tile
-          icon={<CalendarCheck size={14} color="#d97706" />}
+          icon={<CalendarCheck size={14} color={colors.tints.amber.fg} />}
           label="Cần ôn"
           value={due.dueNow}
           hint={`7 ngày tới: ${dueInNextDays(due, 7)}`}
@@ -128,6 +131,7 @@ function Tile({
   value: string | number;
   hint?: string;
 }) {
+  const styles = useStyles(makeStyles);
   return (
     <View style={styles.tile}>
       <View style={styles.tileHead}>
@@ -140,37 +144,38 @@ function Tile({
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bg,
-  },
-  error: { color: colors.danger, fontSize: 14, marginBottom: spacing.sm },
-  tiles: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  tile: {
-    width: "48%",
-    flexGrow: 1,
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  tileHead: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  tileLabel: {
-    fontSize: 11,
-    color: colors.textSubtle,
-    textTransform: "uppercase",
-  },
-  tileValue: {
-    marginTop: 2,
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  tileHint: { fontSize: 11, color: colors.textSubtle },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    content: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.bg,
+    },
+    error: { color: colors.danger, fontSize: 14, marginBottom: spacing.sm },
+    tiles: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+    tile: {
+      width: "48%",
+      flexGrow: 1,
+      padding: spacing.md,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    tileHead: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+    tileLabel: {
+      fontSize: 11,
+      color: colors.textSubtle,
+      textTransform: "uppercase",
+    },
+    tileValue: {
+      marginTop: 2,
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    tileHint: { fontSize: 11, color: colors.textSubtle },
+  });

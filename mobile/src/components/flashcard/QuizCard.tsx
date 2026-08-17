@@ -12,7 +12,8 @@ import { buildMcq, checkTyped, type ReviewType } from "@/lib/quiz";
 import { playPronunciation } from "@/lib/audio";
 import { AudioButton } from "@/components/flashcard/AudioButton";
 import { Button } from "@/components/ui/Button";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 import { Check, Volume2, X } from "lucide-react-native";
 
 interface Props {
@@ -27,6 +28,8 @@ interface Props {
 
 /** Một câu ôn dạng trắc nghiệm / gõ từ / nghe. Tự chấm rồi báo kết quả về cha. */
 export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const mcq = useMemo(
     () => (type === "mcq" ? buildMcq(card, pool) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,7 +121,7 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
                 ]}
               >
                 <Text style={styles.optionText}>{opt}</Text>
-                {answered && isAnswer && <Check size={18} color="#16a34a" />}
+                {answered && isAnswer && <Check size={18} color={colors.success} />}
                 {answered && isPicked && !isAnswer && (
                   <X size={18} color={colors.danger} />
                 )}
@@ -180,69 +183,82 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, width: "100%" },
-  content: { gap: spacing.lg, paddingVertical: spacing.md },
-  prompt: { alignItems: "center", gap: spacing.sm },
-  term: { fontSize: 34, fontWeight: "800", color: colors.text, textAlign: "center" },
-  phonetic: { fontSize: 16, color: colors.textMuted },
-  qLabel: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    textTransform: "uppercase",
-    fontWeight: "600",
-  },
-  meaning: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.brandDark,
-    textAlign: "center",
-  },
-  pos: { fontSize: 14, color: colors.textSubtle },
-  ask: { marginTop: spacing.sm, fontSize: 14, color: colors.textMuted },
-  listenBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.full,
-    backgroundColor: colors.brandLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  options: { gap: spacing.sm },
-  option: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  optionCorrect: { borderColor: "#16a34a", backgroundColor: "#f0fdf4" },
-  optionWrong: { borderColor: colors.danger, backgroundColor: "#fef2f2" },
-  optionText: { flex: 1, fontSize: 16, color: colors.text },
-  fallback: { fontSize: 15, color: colors.textMuted, textAlign: "center" },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: 18,
-    color: colors.text,
-    backgroundColor: colors.card,
-    textAlign: "center",
-  },
-  inputCorrect: { borderColor: "#16a34a", backgroundColor: "#f0fdf4" },
-  inputWrong: { borderColor: colors.danger, backgroundColor: "#fef2f2" },
-  feedback: { padding: spacing.md, borderRadius: radius.md, alignItems: "center", gap: 4 },
-  fbOk: { backgroundColor: "#f0fdf4" },
-  fbBad: { backgroundColor: "#fef2f2" },
-  fbText: { fontSize: 16, fontWeight: "700" },
-  fbTextOk: { color: "#16a34a" },
-  fbTextBad: { color: colors.danger },
-  fbMeaning: { fontSize: 14, color: colors.textMuted },
-  actions: { marginTop: spacing.sm },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, width: "100%" },
+    content: { gap: spacing.lg, paddingVertical: spacing.md },
+    prompt: { alignItems: "center", gap: spacing.sm },
+    term: { fontSize: 34, fontWeight: "800", color: colors.text, textAlign: "center" },
+    phonetic: { fontSize: 16, color: colors.textMuted },
+    qLabel: {
+      fontSize: 12,
+      color: colors.textSubtle,
+      textTransform: "uppercase",
+      fontWeight: "600",
+    },
+    meaning: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: colors.brandDark,
+      textAlign: "center",
+    },
+    pos: { fontSize: 14, color: colors.textSubtle },
+    ask: { marginTop: spacing.sm, fontSize: 14, color: colors.textMuted },
+    listenBtn: {
+      width: 72,
+      height: 72,
+      borderRadius: radius.full,
+      backgroundColor: colors.brandLight,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    options: { gap: spacing.sm },
+    option: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    optionCorrect: {
+      borderColor: colors.success,
+      backgroundColor: colors.tints.green.bg,
+    },
+    optionWrong: {
+      borderColor: colors.danger,
+      backgroundColor: colors.tints.red.bg,
+    },
+    optionText: { flex: 1, fontSize: 16, color: colors.text },
+    fallback: { fontSize: 15, color: colors.textMuted, textAlign: "center" },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      fontSize: 18,
+      color: colors.text,
+      backgroundColor: colors.card,
+      textAlign: "center",
+    },
+    inputCorrect: {
+      borderColor: colors.success,
+      backgroundColor: colors.tints.green.bg,
+    },
+    inputWrong: {
+      borderColor: colors.danger,
+      backgroundColor: colors.tints.red.bg,
+    },
+    feedback: { padding: spacing.md, borderRadius: radius.md, alignItems: "center", gap: 4 },
+    fbOk: { backgroundColor: colors.tints.green.bg },
+    fbBad: { backgroundColor: colors.tints.red.bg },
+    fbText: { fontSize: 16, fontWeight: "700" },
+    fbTextOk: { color: colors.success },
+    fbTextBad: { color: colors.danger },
+    fbMeaning: { fontSize: 14, color: colors.textMuted },
+    actions: { marginTop: spacing.sm },
+  });

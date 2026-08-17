@@ -1,13 +1,16 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Check, Target } from "lucide-react-native";
 import type { DailyChallenge as Challenge } from "@/lib/challenge";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 /**
  * "Thử thách hôm nay": 3–4 nhiệm vụ tự sinh theo ngày (ôn N lượt, thêm từ mới,
  * giữ chuỗi...). Dữ liệu do màn hình nạp (fetchChallengeMetrics + buildDailyChallenge).
  */
 export function DailyChallenge({ challenge }: { challenge: Challenge | null }) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   if (!challenge || challenge.quests.length === 0) return null;
 
   return (
@@ -69,66 +72,67 @@ export function DailyChallenge({ challenge }: { challenge: Challenge | null }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginTop: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  head: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-  },
-  headLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  title: { fontSize: 16, fontWeight: "700", color: colors.text },
-  pill: {
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-    backgroundColor: "#f1f5f9",
-  },
-  pillDone: { backgroundColor: "#dcfce7" },
-  pillText: { fontSize: 12, fontWeight: "700", color: colors.textMuted },
-  pillTextDone: { color: "#15803d" },
-  track: {
-    height: 8,
-    borderRadius: radius.full,
-    backgroundColor: "#f1f5f9",
-    overflow: "hidden",
-    marginBottom: spacing.sm,
-  },
-  fill: { height: "100%", borderRadius: radius.full, backgroundColor: colors.brand },
-  fillDone: { backgroundColor: colors.success },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  rowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
-  icon: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: "#f1f5f9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconDone: { backgroundColor: "#dcfce7" },
-  iconText: { fontSize: 15 },
-  rowMain: { flex: 1, minWidth: 0 },
-  questTitle: { fontSize: 14, fontWeight: "600", color: colors.text },
-  questTitleDone: {
-    color: colors.textSubtle,
-    textDecorationLine: "line-through",
-  },
-  questHint: { fontSize: 12, color: colors.textSubtle },
-  count: { fontSize: 12, fontWeight: "700", color: colors.textMuted },
-  countDone: { color: colors.success },
-  footer: { marginTop: spacing.sm, fontSize: 12, color: colors.textSubtle },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      marginTop: spacing.md,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    head: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: spacing.sm,
+    },
+    headLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    title: { fontSize: 16, fontWeight: "700", color: colors.text },
+    pill: {
+      paddingHorizontal: 10,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+      backgroundColor: colors.sunken,
+    },
+    pillDone: { backgroundColor: colors.tints.green.bg },
+    pillText: { fontSize: 12, fontWeight: "700", color: colors.textMuted },
+    pillTextDone: { color: colors.tints.green.fg },
+    track: {
+      height: 8,
+      borderRadius: radius.full,
+      backgroundColor: colors.sunken,
+      overflow: "hidden",
+      marginBottom: spacing.sm,
+    },
+    fill: { height: "100%", borderRadius: radius.full, backgroundColor: colors.brand },
+    fillDone: { backgroundColor: colors.success },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    rowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
+    icon: {
+      width: 32,
+      height: 32,
+      borderRadius: radius.full,
+      backgroundColor: colors.sunken,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    iconDone: { backgroundColor: colors.tints.green.bg },
+    iconText: { fontSize: 15 },
+    rowMain: { flex: 1, minWidth: 0 },
+    questTitle: { fontSize: 14, fontWeight: "600", color: colors.text },
+    questTitleDone: {
+      color: colors.textSubtle,
+      textDecorationLine: "line-through",
+    },
+    questHint: { fontSize: 12, color: colors.textSubtle },
+    count: { fontSize: 12, fontWeight: "700", color: colors.textMuted },
+    countDone: { color: colors.success },
+    footer: { marginTop: spacing.sm, fontSize: 12, color: colors.textSubtle },
+  });

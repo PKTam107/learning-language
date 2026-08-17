@@ -9,7 +9,8 @@ import {
 } from "react-native";
 import type { CardWithProgress } from "@/types";
 import { AudioButton } from "./AudioButton";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 import { StickyNote } from "lucide-react-native";
 
 interface Props {
@@ -20,6 +21,8 @@ interface Props {
 
 /** Thẻ lật: mặt trước = từ + phiên âm + audio; mặt sau = nghĩa + từ loại + ví dụ. */
 export function FlashcardFlip({ card, flipped, onFlip }: Props) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -99,7 +102,11 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
 
             {!!card.note && (
               <View style={styles.note}>
-                <StickyNote size={14} color="#92400e" style={styles.noteIcon} />
+                <StickyNote
+                  size={14}
+                  color={colors.tints.amber.fg}
+                  style={styles.noteIcon}
+                />
                 <Text style={styles.noteText}>{card.note}</Text>
               </View>
             )}
@@ -135,63 +142,64 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
 
 const CARD_HEIGHT = 340;
 
-const styles = StyleSheet.create({
-  container: { height: CARD_HEIGHT, width: "100%" },
-  face: {
-    position: "absolute",
-    height: CARD_HEIGHT,
-    width: "100%",
-    backgroundColor: colors.card,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backfaceVisibility: "hidden",
-  },
-  front: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    padding: spacing.xl,
-  },
-  back: { padding: spacing.xl },
-  backContent: { gap: spacing.md, paddingBottom: spacing.sm },
-  term: { fontSize: 40, fontWeight: "700", color: colors.text, textAlign: "center" },
-  phonetic: { fontSize: 18, color: colors.textMuted },
-  ipaRow: { flexDirection: "row", gap: spacing.md },
-  ipa: { fontSize: 13, color: colors.textSubtle },
-  audioRow: { flexDirection: "row", gap: spacing.sm },
-  hint: { position: "absolute", bottom: spacing.lg, fontSize: 12, color: colors.textSubtle },
-  termLine: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  backTerm: { fontSize: 22, fontWeight: "700", color: colors.text },
-  posBadge: {
-    backgroundColor: colors.bg,
-    color: colors.textMuted,
-    fontSize: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radius.md,
-    overflow: "hidden",
-  },
-  meaning: { fontSize: 18, fontWeight: "600", color: colors.brandDark },
-  note: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 6,
-    backgroundColor: "#fffbeb",
-    padding: spacing.sm,
-    borderRadius: radius.md,
-  },
-  noteIcon: { marginTop: 2 },
-  noteText: { flex: 1, fontSize: 14, color: "#92400e" },
-  defs: { gap: 4 },
-  def: { fontSize: 14, color: colors.textMuted, lineHeight: 20 },
-  examples: {
-    gap: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.md,
-  },
-  example: { gap: 2 },
-  exampleText: { fontSize: 14, fontStyle: "italic", color: colors.text },
-  exampleVi: { fontSize: 14, color: colors.textSubtle },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { height: CARD_HEIGHT, width: "100%" },
+    face: {
+      position: "absolute",
+      height: CARD_HEIGHT,
+      width: "100%",
+      backgroundColor: colors.card,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backfaceVisibility: "hidden",
+    },
+    front: {
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.md,
+      padding: spacing.xl,
+    },
+    back: { padding: spacing.xl },
+    backContent: { gap: spacing.md, paddingBottom: spacing.sm },
+    term: { fontSize: 40, fontWeight: "700", color: colors.text, textAlign: "center" },
+    phonetic: { fontSize: 18, color: colors.textMuted },
+    ipaRow: { flexDirection: "row", gap: spacing.md },
+    ipa: { fontSize: 13, color: colors.textSubtle },
+    audioRow: { flexDirection: "row", gap: spacing.sm },
+    hint: { position: "absolute", bottom: spacing.lg, fontSize: 12, color: colors.textSubtle },
+    termLine: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    backTerm: { fontSize: 22, fontWeight: "700", color: colors.text },
+    posBadge: {
+      backgroundColor: colors.bg,
+      color: colors.textMuted,
+      fontSize: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: radius.md,
+      overflow: "hidden",
+    },
+    meaning: { fontSize: 18, fontWeight: "600", color: colors.brandDark },
+    note: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 6,
+      backgroundColor: colors.tints.amber.bg,
+      padding: spacing.sm,
+      borderRadius: radius.md,
+    },
+    noteIcon: { marginTop: 2 },
+    noteText: { flex: 1, fontSize: 14, color: colors.tints.amber.fg },
+    defs: { gap: 4 },
+    def: { fontSize: 14, color: colors.textMuted, lineHeight: 20 },
+    examples: {
+      gap: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: spacing.md,
+    },
+    example: { gap: 2 },
+    exampleText: { fontSize: 14, fontStyle: "italic", color: colors.text },
+    exampleVi: { fontSize: 14, color: colors.textSubtle },
+  });

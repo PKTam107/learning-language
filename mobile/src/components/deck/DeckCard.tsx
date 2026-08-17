@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Deck } from "@/types";
 import { StatusBar } from "@/components/status/StatusBar";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 import { Pencil, Trash2 } from "lucide-react-native";
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export function DeckCard({ deck, onPress, onEdit, onDelete }: Props) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   return (
     <Pressable
       onPress={() => onPress(deck)}
@@ -65,23 +68,24 @@ export function DeckCard({ deck, onPress, onEdit, onDelete }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  pressed: { opacity: 0.7 },
-  row: { flexDirection: "row", alignItems: "flex-start" },
-  info: { flex: 1, minWidth: 0 },
-  name: { fontSize: 17, fontWeight: "700", color: colors.text },
-  desc: { marginTop: 2, fontSize: 14, color: colors.textMuted },
-  actions: { flexDirection: "row", marginLeft: spacing.sm },
-  iconBtn: { padding: 4 },
-  icon: { fontSize: 16 },
-  count: { fontSize: 14, color: colors.textMuted },
-  due: { color: "#d97706" }, // amber-600
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.lg,
+      gap: spacing.md,
+    },
+    pressed: { opacity: 0.7 },
+    row: { flexDirection: "row", alignItems: "flex-start" },
+    info: { flex: 1, minWidth: 0 },
+    name: { fontSize: 17, fontWeight: "700", color: colors.text },
+    desc: { marginTop: 2, fontSize: 14, color: colors.textMuted },
+    actions: { flexDirection: "row", marginLeft: spacing.sm },
+    iconBtn: { padding: 4 },
+    icon: { fontSize: 16 },
+    count: { fontSize: 14, color: colors.textMuted },
+    due: { color: colors.tints.amber.fg },
+  });

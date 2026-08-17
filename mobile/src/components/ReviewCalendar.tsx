@@ -4,17 +4,45 @@ import { useRouter } from "expo-router";
 import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { addDays, dayKey, fromDayKey, startOfDay } from "@/lib/streak";
 import type { DueCalendarData } from "@/lib/insights";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useTheme } from "@/contexts/ThemeContext";
 
 const WEEK_HEAD = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
+type Tone = { bg: string; fg: string };
+
+/**
+ * Thang màu theo số thẻ tới hạn: ít → nhiều là indigo nhạt → indigo đậm → hổ
+ * phách → hồng (báo lịch bị dồn). Nền tối cần thang RIÊNG: các pastel của bản
+ * sáng đặt lên nền tối sẽ chói và làm chữ mất tương phản.
+ */
+const TONE_RAMP: Record<"light" | "dark", readonly Tone[]> = {
+  light: [
+    { bg: "#eef2ff", fg: "#4338ca" }, // ≤ 3 thẻ
+    { bg: "#e0e7ff", fg: "#3730a3" }, // ≤ 10
+    { bg: "#fef3c7", fg: "#92400e" }, // ≤ 25
+    { bg: "#ffe4e6", fg: "#9f1239" }, // > 25
+  ],
+  dark: [
+    { bg: "#1e1b4b", fg: "#c7d2fe" },
+    { bg: "#312e81", fg: "#e0e7ff" },
+    { bg: "#451a03", fg: "#fcd34d" },
+    { bg: "#4c0519", fg: "#fda4af" },
+  ],
+};
+
 /** Nền/chữ theo số thẻ tới hạn trong ngày. */
-function toneOf(count: number): { bg: string; fg: string } {
+function toneOf(
+  count: number,
+  colors: ThemeColors,
+  scheme: "light" | "dark"
+): Tone {
   if (count === 0) return { bg: colors.card, fg: colors.textSubtle };
-  if (count <= 3) return { bg: "#eef2ff", fg: "#4338ca" };
-  if (count <= 10) return { bg: "#e0e7ff", fg: "#3730a3" };
-  if (count <= 25) return { bg: "#fef3c7", fg: "#92400e" };
-  return { bg: "#ffe4e6", fg: "#9f1239" };
+  const ramp = TONE_RAMP[scheme];
+  if (count <= 3) return ramp[0];
+  if (count <= 10) return ramp[1];
+  if (count <= 25) return ramp[2];
+  return ramp[3];
 }
 
 /** Thứ trong tuần với Thứ 2 = 0 ... Chủ nhật = 6. */
@@ -27,6 +55,8 @@ function mondayIndex(d: Date): number {
  * Thẻ chưa học và thẻ quá hạn gom vào ô hôm nay. Chạm một ngày để xem từ nào tới hạn.
  */
 export function ReviewCalendar({ due }: { due: DueCalendarData }) {
+  const { colors, scheme } = useTheme();
+  const styles = useStyles(makeStyles);
   const router = useRouter();
   const today = startOfDay();
   const todayKey = dayKey(today);
@@ -113,9 +143,10 @@ export function ReviewCalendar({ due }: { due: DueCalendarData }) {
           const isToday = key === todayKey;
           const isSelected = key === selected;
           const past = key < todayKey;
+          // Ngày đã qua mà không có thẻ nào: làm chìm hẳn cho lịch đỡ rối.
           const tone = past && count === 0
-            ? { bg: "#f8fafc", fg: "#cbd5e1" }
-            : toneOf(count);
+            ? { bg: colors.bg, fg: colors.statusNew }
+            : toneOf(count, colors, scheme);
           return (
             <View key={key} style={styles.cellWrap}>
               <Pressable
@@ -193,76 +224,77 @@ export function dueInNextDays(due: DueCalendarData, days: number): number {
   return sum;
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginTop: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  head: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  headLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  title: { fontSize: 16, fontWeight: "700", color: colors.text },
-  headMeta: { fontSize: 11, color: colors.textSubtle },
-  monthBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-  },
-  monthText: { fontSize: 14, fontWeight: "600", color: colors.text },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
-  cellWrap: { width: `${100 / 7}%`, padding: 2 },
-  weekHead: {
-    textAlign: "center",
-    fontSize: 10,
-    fontWeight: "600",
-    color: colors.textSubtle,
-    paddingBottom: 2,
-  },
-  day: {
-    aspectRatio: 1,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dayToday: { borderColor: colors.brand },
-  daySelected: { borderColor: colors.brand, borderWidth: 2 },
-  dayNum: { fontSize: 12, fontWeight: "600" },
-  dayNumToday: { fontWeight: "800" },
-  dayCount: { fontSize: 10, fontWeight: "700" },
-  detail: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  detailEmpty: { fontSize: 13, color: colors.textSubtle },
-  detailTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-    backgroundColor: "#f1f5f9",
-  },
-  chipPressed: { backgroundColor: colors.brandLight },
-  chipText: { fontSize: 13, color: colors.text },
-  more: { fontSize: 13, color: colors.textSubtle, paddingVertical: 3 },
-  footer: { marginTop: spacing.sm, fontSize: 11, color: colors.textSubtle },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      marginTop: spacing.md,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    head: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    headLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    title: { fontSize: 16, fontWeight: "700", color: colors.text },
+    headMeta: { fontSize: 11, color: colors.textSubtle },
+    monthBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: spacing.sm,
+    },
+    monthText: { fontSize: 14, fontWeight: "600", color: colors.text },
+    grid: { flexDirection: "row", flexWrap: "wrap" },
+    cellWrap: { width: `${100 / 7}%`, padding: 2 },
+    weekHead: {
+      textAlign: "center",
+      fontSize: 10,
+      fontWeight: "600",
+      color: colors.textSubtle,
+      paddingBottom: 2,
+    },
+    day: {
+      aspectRatio: 1,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: "#f1f5f9",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    dayToday: { borderColor: colors.brand },
+    daySelected: { borderColor: colors.brand, borderWidth: 2 },
+    dayNum: { fontSize: 12, fontWeight: "600" },
+    dayNumToday: { fontWeight: "800" },
+    dayCount: { fontSize: 10, fontWeight: "700" },
+    detail: {
+      marginTop: spacing.md,
+      paddingTop: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    detailEmpty: { fontSize: 13, color: colors.textSubtle },
+    detailTitle: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: spacing.sm,
+    },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
+    chip: {
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      borderRadius: radius.full,
+      backgroundColor: "#f1f5f9",
+    },
+    chipPressed: { backgroundColor: colors.brandLight },
+    chipText: { fontSize: 13, color: colors.text },
+    more: { fontSize: 13, color: colors.textSubtle, paddingVertical: 3 },
+    footer: { marginTop: spacing.sm, fontSize: 11, color: colors.textSubtle },
+  });

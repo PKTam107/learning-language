@@ -20,9 +20,13 @@ import {
   scheduleDailyReminder,
 } from "@/lib/notifications";
 import { TimePickerSheet } from "@/components/ui/TimePickerSheet";
-import { colors, radius, spacing } from "@/lib/theme";
+import { ThemePicker } from "@/components/ThemePicker";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 export default function SettingsScreen() {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const { settings, ready, update } = useSettings();
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -79,6 +83,15 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
       <Stack.Screen options={{ title: "Cài đặt" }} />
+
+      {/* --- Giao diện --- */}
+      <Text style={styles.section}>Giao diện</Text>
+      <View style={styles.card}>
+        <ThemePicker />
+        <Text style={styles.rowDesc}>
+          “Theo máy” sẽ tự đổi sáng/tối theo cài đặt của điện thoại.
+        </Text>
+      </View>
 
       {/* --- Học tập --- */}
       <Text style={styles.section}>Học tập</Text>
@@ -162,63 +175,64 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: spacing.xl },
-  section: {
-    marginTop: spacing.md,
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.textSubtle,
-    textTransform: "uppercase",
-  },
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  rowText: { flex: 1 },
-  rowLabel: { fontSize: 15, fontWeight: "600", color: colors.text },
-  rowDesc: { marginTop: 2, fontSize: 13, color: colors.textMuted },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: spacing.xl },
+    section: {
+      marginTop: spacing.md,
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.textSubtle,
+      textTransform: "uppercase",
+    },
+    card: {
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      padding: spacing.lg,
+      gap: spacing.md,
+    },
+    row: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+    rowText: { flex: 1 },
+    rowLabel: { fontSize: 15, fontWeight: "600", color: colors.text },
+    rowDesc: { marginTop: 2, fontSize: 13, color: colors.textMuted },
 
-  timeCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.brandLight,
-    backgroundColor: colors.brandLight,
-    padding: spacing.md,
-  },
-  pressed: { opacity: 0.7 },
-  clockBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.card,
-  },
-  time: {
-    fontSize: 30,
-    fontWeight: "800",
-    color: colors.brandDark,
-    fontVariant: ["tabular-nums"],
-  },
-  timeSub: { fontSize: 13, fontWeight: "600", color: colors.brandDark },
-  timeNext: { marginTop: 2, fontSize: 12, color: colors.textMuted },
-  editWrap: { flexDirection: "row", alignItems: "center", gap: 2 },
-  editText: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
+    timeCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.brandLight,
+      backgroundColor: colors.brandLight,
+      padding: spacing.md,
+    },
+    pressed: { opacity: 0.7 },
+    clockBadge: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.full,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.card,
+    },
+    time: {
+      fontSize: 30,
+      fontWeight: "800",
+      color: colors.brandDark,
+      fontVariant: ["tabular-nums"],
+    },
+    timeSub: { fontSize: 13, fontWeight: "600", color: colors.brandDark },
+    timeNext: { marginTop: 2, fontSize: 12, color: colors.textMuted },
+    editWrap: { flexDirection: "row", alignItems: "center", gap: 2 },
+    editText: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
 
-  hint: {
-    marginTop: spacing.sm,
-    fontSize: 12,
-    color: colors.textSubtle,
-    lineHeight: 18,
-  },
-});
+    hint: {
+      marginTop: spacing.sm,
+      fontSize: 12,
+      color: colors.textSubtle,
+      lineHeight: 18,
+    },
+  });

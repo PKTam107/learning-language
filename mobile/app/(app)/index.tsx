@@ -29,10 +29,13 @@ import { DailyChallenge } from "@/components/DailyChallenge";
 import { WeakWords } from "@/components/WeakWords";
 import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
 import { Button } from "@/components/ui/Button";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 import { Save, TrendingUp } from "lucide-react-native";
 
 export default function DecksScreen() {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const router = useRouter();
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,6 +240,7 @@ function Stat({
   value: number;
   accent?: boolean;
 }) {
+  const styles = useStyles(makeStyles);
   return (
     <View style={styles.stat}>
       <Text style={styles.statLabel}>{label}</Text>
@@ -245,65 +249,66 @@ function Stat({
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  statsCard: {
-    marginTop: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    gap: spacing.md,
-  },
-  statsRow: { flexDirection: "row", justifyContent: "space-between" },
-  statsBar: {},
-  stat: { alignItems: "center", flex: 1 },
-  statLabel: { fontSize: 11, color: colors.textSubtle, textTransform: "uppercase" },
-  statValue: { marginTop: 2, fontSize: 20, fontWeight: "700", color: colors.text },
-  statAccent: { color: "#d97706" },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bg,
-  },
-  list: { padding: spacing.lg, paddingBottom: 96, flexGrow: 1 },
-  header: { marginBottom: spacing.md },
-  progressBtn: { marginTop: spacing.md },
-  backupBtn: { marginTop: spacing.sm },
-  heading: { fontSize: 20, fontWeight: "700", color: colors.text },
-  error: { marginTop: spacing.sm, color: colors.danger, fontSize: 14 },
-  empty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 64,
-    paddingHorizontal: spacing.xl,
-  },
-  emptyTitle: { fontSize: 16, fontWeight: "600", color: colors.textMuted },
-  emptyText: {
-    marginTop: spacing.xs,
-    textAlign: "center",
-    color: colors.textSubtle,
-    lineHeight: 20,
-  },
-  fab: {
-    position: "absolute",
-    right: spacing.xl,
-    bottom: spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: radius.full,
-    backgroundColor: colors.brand,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-  },
-  fabPressed: { backgroundColor: colors.brandDark },
-  fabText: { color: "#fff", fontSize: 30, lineHeight: 34, fontWeight: "300" },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    statsCard: {
+      marginTop: spacing.md,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      gap: spacing.md,
+    },
+    statsRow: { flexDirection: "row", justifyContent: "space-between" },
+    statsBar: {},
+    stat: { alignItems: "center", flex: 1 },
+    statLabel: { fontSize: 11, color: colors.textSubtle, textTransform: "uppercase" },
+    statValue: { marginTop: 2, fontSize: 20, fontWeight: "700", color: colors.text },
+    statAccent: { color: colors.tints.amber.fg },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.bg,
+    },
+    list: { padding: spacing.lg, paddingBottom: 96, flexGrow: 1 },
+    header: { marginBottom: spacing.md },
+    progressBtn: { marginTop: spacing.md },
+    backupBtn: { marginTop: spacing.sm },
+    heading: { fontSize: 20, fontWeight: "700", color: colors.text },
+    error: { marginTop: spacing.sm, color: colors.danger, fontSize: 14 },
+    empty: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 64,
+      paddingHorizontal: spacing.xl,
+    },
+    emptyTitle: { fontSize: 16, fontWeight: "600", color: colors.textMuted },
+    emptyText: {
+      marginTop: spacing.xs,
+      textAlign: "center",
+      color: colors.textSubtle,
+      lineHeight: 20,
+    },
+    fab: {
+      position: "absolute",
+      right: spacing.xl,
+      bottom: spacing.xl,
+      width: 56,
+      height: 56,
+      borderRadius: radius.full,
+      backgroundColor: colors.brand,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 5,
+    },
+    fabPressed: { backgroundColor: colors.brandDark },
+    fabText: { color: "#fff", fontSize: 30, lineHeight: 34, fontWeight: "300" },
+  });
