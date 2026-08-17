@@ -232,6 +232,10 @@ Ngoài ra trang có 4 ô số nhanh: **chuỗi hiện tại** (kèm chuỗi dài
 ## 11. Cài đặt & nhắc học
 
 Trang **Cài đặt** cho phép mỗi người tùy chỉnh:
+- **Giao diện (web):** chọn **Sáng**, **Tối**, hoặc **Theo máy** (tự đổi theo cài đặt sáng/tối
+  của hệ điều hành — đây là mặc định). Đổi được ngay trên thanh điều hướng bằng nút hình
+  mặt trời/mặt trăng, hoặc trong trang Cài đặt. Lựa chọn được nhớ lại và áp dụng **trước khi
+  trang hiện ra**, nên không bị nháy nền trắng lúc tải. *(Bản điện thoại hiện chỉ có nền sáng.)*
 - **Tự phát âm khi lật thẻ / lộ đáp án:** bật/tắt việc tự đọc từ tiếng Anh khi học (mặc định bật).
 - **Nhắc học hằng ngày:** bật/tắt và chọn **giờ nhắc**. Khi bật, đến giờ mà hôm nay chưa ôn thì
   hệ thống hiển thị **lời nhắc ngay trong app** (trên trang chủ).
@@ -264,10 +268,26 @@ Cài đặt được lưu **trên từng thiết bị** (không đồng bộ qua
 
 ---
 
-## 13. Chưa có (dự kiến làm sau)
+## 13. Cài web ra màn hình chính
+
+Bản web là một **PWA**: mở trên điện thoại hoặc Chrome/Edge trên máy tính, trình duyệt sẽ
+mời **"Cài đặt LinguaCards"** (Safari trên iOS: nút Chia sẻ → *Thêm vào Màn hình chính*).
+Sau khi cài, app chạy **toàn màn hình, không có thanh địa chỉ**, có icon riêng, và mở thẳng
+vào trang chủ. Giữ icon còn có lối tắt nhanh tới **Bộ thẻ** và **Tiến độ học**.
+
+**Quy tắc offline:** app cần mạng để tải thẻ và lưu tiến độ. Khi mất mạng, app hiện một
+**trang báo ngoại tuyến** kèm nút thử lại thay vì màn hình lỗi trắng của trình duyệt.
+Giao diện (mã nguồn, phông, icon) được lưu sẵn ở máy nên mở lại rất nhanh, nhưng **nội dung
+bài học thì không lưu cache** — mỗi trang chứa dữ liệu riêng của tài khoản đang đăng nhập,
+lưu lại sẽ rò sang người khác nếu dùng chung máy.
+
+---
+
+## 14. Chưa có (dự kiến làm sau)
 
 - **Học nhiều ngôn ngữ** ngoài Anh → Việt.
 - **Nhập Anki** (`.apkg`) và **chia sẻ bộ thẻ** (đã có nhập Excel + xuất CSV/Excel/JSON).
-- **Dùng offline** (PWA).
+- **Học offline thật sự** — hiện web đã **cài được ra màn hình chính** (xem mục 14) nhưng
+  vẫn cần mạng để tải thẻ và lưu tiến độ; mất mạng chỉ hiện trang báo ngoại tuyến.
 - **Đồng bộ cài đặt qua tài khoản** (hiện lưu theo thiết bị) và **nhắc học khi đóng tab trên web**
   (cần hạ tầng push).

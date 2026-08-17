@@ -10,11 +10,11 @@ const WEEK_HEAD = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
 /** Ngưỡng đậm nhạt theo số thẻ tới hạn trong ngày. */
 function toneOf(count: number): string {
-  if (count === 0) return "bg-white text-slate-400";
-  if (count <= 3) return "bg-indigo-50 text-indigo-700";
-  if (count <= 10) return "bg-indigo-100 text-indigo-800";
-  if (count <= 25) return "bg-amber-100 text-amber-800";
-  return "bg-rose-100 text-rose-800";
+  if (count === 0) return "bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500";
+  if (count <= 3) return "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300";
+  if (count <= 10) return "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-800 dark:text-indigo-200";
+  if (count <= 25) return "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200";
+  return "bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-200";
 }
 
 /** Thứ trong tuần với Thứ 2 = 0 ... Chủ nhật = 6. */
@@ -68,12 +68,12 @@ export function ReviewCalendar({ due }: { due: DueCalendarData }) {
   const todayKey = dayKey(today);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <CalendarClock className="h-5 w-5 text-brand" /> Lịch ôn tập
+          <CalendarClock className="h-5 w-5 text-brand dark:text-indigo-400" /> Lịch ôn tập
         </h2>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-400 dark:text-slate-500">
           {due.dueNow} thẻ cần ôn ngay · {monthTotal} thẻ trong tháng này
         </p>
       </div>
@@ -83,19 +83,19 @@ export function ReviewCalendar({ due }: { due: DueCalendarData }) {
           onClick={() =>
             setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))
           }
-          className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
+          className="rounded-lg p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
           aria-label="Tháng trước"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <p className="text-sm font-semibold text-slate-700">
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
           {monthTitle(cursor)}
         </p>
         <button
           onClick={() =>
             setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))
           }
-          className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
+          className="rounded-lg p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
           aria-label="Tháng sau"
         >
           <ChevronRight className="h-4 w-4" />
@@ -104,7 +104,7 @@ export function ReviewCalendar({ due }: { due: DueCalendarData }) {
 
       <div className="grid grid-cols-7 gap-1 text-center">
         {WEEK_HEAD.map((w) => (
-          <span key={w} className="pb-1 text-[10px] font-medium text-slate-400">
+          <span key={w} className="pb-1 text-[10px] font-medium text-slate-400 dark:text-slate-500">
             {w}
           </span>
         ))}
@@ -124,8 +124,8 @@ export function ReviewCalendar({ due }: { due: DueCalendarData }) {
                   ? "border-brand ring-1 ring-brand"
                   : isToday
                     ? "border-brand/40"
-                    : "border-slate-100"
-              } ${past && count === 0 ? "bg-slate-50 text-slate-300" : toneOf(count)} hover:border-brand/60`}
+                    : "border-slate-100 dark:border-slate-800"
+              } ${past && count === 0 ? "bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600" : toneOf(count)} hover:border-brand/60`}
               title={
                 count > 0
                   ? `${count} thẻ tới hạn ngày ${fromDayKey(key).getDate()}/${fromDayKey(key).getMonth() + 1}`
@@ -145,17 +145,17 @@ export function ReviewCalendar({ due }: { due: DueCalendarData }) {
         })}
       </div>
 
-      <div className="mt-4 border-t border-slate-100 pt-3">
+      <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
         {selected === null ? (
-          <p className="text-sm text-slate-400">Chọn một ngày để xem chi tiết.</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">Chọn một ngày để xem chi tiết.</p>
         ) : selectedItems.length === 0 ? (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-400 dark:text-slate-500">
             Ngày {fromDayKey(selected).getDate()}/
             {fromDayKey(selected).getMonth() + 1}: không có thẻ nào tới hạn.
           </p>
         ) : (
           <>
-            <p className="mb-2 text-sm font-medium text-slate-700">
+            <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
               {selected === todayKey
                 ? `Cần ôn hôm nay (${selectedItems.length} thẻ)`
                 : `Tới hạn ngày ${fromDayKey(selected).getDate()}/${fromDayKey(selected).getMonth() + 1} (${selectedItems.length} thẻ)`}
@@ -165,13 +165,13 @@ export function ReviewCalendar({ due }: { due: DueCalendarData }) {
                 <Link
                   key={item.cardId}
                   href={`/decks/${item.deckId}`}
-                  className="rounded-full bg-slate-100 px-2.5 py-0.5 text-sm text-slate-700 hover:bg-brand-light hover:text-brand-dark"
+                  className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-brand-light dark:hover:bg-indigo-500/15 hover:text-brand-dark dark:hover:text-indigo-300"
                 >
                   {item.term}
                 </Link>
               ))}
               {selectedItems.length > 12 && (
-                <span className="px-1 py-0.5 text-sm text-slate-400">
+                <span className="px-1 py-0.5 text-sm text-slate-400 dark:text-slate-500">
                   và {selectedItems.length - 12} từ nữa…
                 </span>
               )}
@@ -180,7 +180,7 @@ export function ReviewCalendar({ due }: { due: DueCalendarData }) {
         )}
       </div>
 
-      <p className="mt-3 text-[11px] text-slate-400">
+      <p className="mt-3 text-[11px] text-slate-400 dark:text-slate-500">
         Thẻ chưa học và thẻ quá hạn được gom vào ô hôm nay. Lịch sẽ đổi sau mỗi
         lần bạn đánh giá một thẻ.
       </p>

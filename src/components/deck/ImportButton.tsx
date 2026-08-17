@@ -100,7 +100,7 @@ export function ImportButton({ deckId, onImported }: Props) {
         </Button>
         <button
           onClick={downloadTemplate}
-          className="inline-flex items-center gap-1 whitespace-nowrap text-sm text-brand hover:underline"
+          className="inline-flex items-center gap-1 whitespace-nowrap text-sm text-brand dark:text-indigo-400 hover:underline"
           type="button"
         >
           <Download size={14} />
@@ -112,13 +112,13 @@ export function ImportButton({ deckId, onImported }: Props) {
         <div className="space-y-4">
           {result ? (
             <div className="space-y-3">
-              <p className="text-sm text-slate-700">
-                Đã thêm <strong className="text-green-700">{result.inserted}</strong> từ
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                Đã thêm <strong className="text-green-700 dark:text-green-300">{result.inserted}</strong> từ
                 {result.skipped > 0 && (
                   <>
                     {" "}
                     · bỏ qua{" "}
-                    <strong className="text-amber-600">{result.skipped}</strong> từ
+                    <strong className="text-amber-600 dark:text-amber-400">{result.skipped}</strong> từ
                     trùng
                   </>
                 )}
@@ -131,37 +131,37 @@ export function ImportButton({ deckId, onImported }: Props) {
           ) : (
             <>
               {fileName && (
-                <p className="text-sm text-slate-500">
-                  File: <span className="font-medium text-slate-700">{fileName}</span>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  File: <span className="font-medium text-slate-700 dark:text-slate-300">{fileName}</span>
                 </p>
               )}
 
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
               {drafts.length > 0 && (
                 <>
-                  <p className="text-sm text-slate-700">
+                  <p className="text-sm text-slate-700 dark:text-slate-300">
                     Đọc được <strong>{drafts.length}</strong> từ. Xem trước:
                   </p>
-                  <ul className="max-h-56 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
+                  <ul className="max-h-56 divide-y divide-slate-100 dark:divide-slate-800 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800">
                     {drafts.slice(0, 50).map((d, i) => (
                       <li key={i} className="px-3 py-2 text-sm">
                         <span className="font-semibold">{d.term}</span>
                         {d.partOfSpeech && (
-                          <span className="ml-1 text-slate-400">({d.partOfSpeech})</span>
+                          <span className="ml-1 text-slate-400 dark:text-slate-500">({d.partOfSpeech})</span>
                         )}
                         {d.meaningVi && (
-                          <span className="text-slate-600"> — {d.meaningVi}</span>
+                          <span className="text-slate-600 dark:text-slate-400"> — {d.meaningVi}</span>
                         )}
                       </li>
                     ))}
                     {drafts.length > 50 && (
-                      <li className="px-3 py-2 text-xs text-slate-400">
+                      <li className="px-3 py-2 text-xs text-slate-400 dark:text-slate-500">
                         … và {drafts.length - 50} từ nữa
                       </li>
                     )}
                   </ul>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-400 dark:text-slate-500">
                     Từ đã tồn tại (trùng) trong bộ thẻ này sẽ được tự động bỏ qua.
                   </p>
                 </>
@@ -170,7 +170,7 @@ export function ImportButton({ deckId, onImported }: Props) {
               <div className="flex items-center justify-between gap-2">
                 <button
                   onClick={downloadTemplate}
-                  className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
+                  className="inline-flex items-center gap-1 text-sm text-brand dark:text-indigo-400 hover:underline"
                   type="button"
                 >
                   <Download size={14} />

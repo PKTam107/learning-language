@@ -62,9 +62,9 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
         <h1 className="text-center text-2xl font-bold">LinguaCards 🎴</h1>
-        <p className="mt-1 text-center text-sm text-slate-500">
+        <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">
           Đăng nhập để đồng bộ bộ thẻ của bạn
         </p>
 
@@ -78,10 +78,10 @@ export default function LoginPage() {
           {loading ? <Spinner /> : <LogIn className="h-[18px] w-[18px]" />} Tiếp tục với Google
         </Button>
 
-        <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
-          <div className="h-px flex-1 bg-slate-200" />
+        <div className="my-5 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
           hoặc dùng email
-          <div className="h-px flex-1 bg-slate-200" />
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
         </div>
 
         <form onSubmit={handleEmailAuth} className="space-y-3">
@@ -119,7 +119,7 @@ export default function LoginPage() {
 
         <button
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="mt-4 w-full text-center text-sm text-brand hover:underline"
+          className="mt-4 w-full text-center text-sm text-brand dark:text-indigo-400 hover:underline"
         >
           {mode === "signin"
             ? "Chưa có tài khoản? Đăng ký"

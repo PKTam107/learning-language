@@ -33,7 +33,7 @@ export function ProgressDashboard() {
 
   if (error) {
     return (
-      <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <p className="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
         Không tải được dữ liệu tiến độ: {error}
       </p>
     );
@@ -41,7 +41,7 @@ export function ProgressDashboard() {
 
   if (!data) {
     return (
-      <div className="flex justify-center py-16 text-slate-400">
+      <div className="flex justify-center py-16 text-slate-400 dark:text-slate-500">
         <Spinner className="h-6 w-6" />
       </div>
     );
@@ -60,13 +60,13 @@ export function ProgressDashboard() {
           hint={`Dài nhất: ${activity.bestStreak} ngày`}
         />
         <Tile
-          icon={<Repeat className="h-4 w-4 text-brand" />}
+          icon={<Repeat className="h-4 w-4 text-brand dark:text-indigo-400" />}
           label="Tổng lượt ôn"
           value={metrics.totalReviews}
           hint={`${activity.activeDays} ngày có học`}
         />
         <Tile
-          icon={<CalendarCheck className="h-4 w-4 text-amber-600" />}
+          icon={<CalendarCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />}
           label="Cần ôn ngay"
           value={due.dueNow}
           hint={`7 ngày tới: ${dueInNextDays(due, 7)} thẻ`}
@@ -105,12 +105,12 @@ function Tile({
   hint?: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-slate-400">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+      <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
         {icon} {label}
       </p>
-      <p className="mt-1 text-xl font-bold text-slate-900">{value}</p>
-      {hint && <p className="text-xs text-slate-400">{hint}</p>}
+      <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
+      {hint && <p className="text-xs text-slate-400 dark:text-slate-500">{hint}</p>}
     </div>
   );
 }

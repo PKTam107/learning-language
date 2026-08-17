@@ -114,7 +114,7 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
         <div className="space-y-4">
           {/* Chọn deck */}
           <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Lưu vào bộ thẻ
             </label>
             {decks.length === 0 ? (
@@ -125,7 +125,7 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
               <select
                 value={deckId}
                 onChange={(e) => setDeckId(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
               >
                 {decks.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -159,7 +159,7 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
 
           {draft && (
             <>
-              <div className="border-t border-slate-100 pt-4">
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
                 <DraftEditor draft={draft} onChange={setDraft} />
               </div>
               <div className="flex justify-end gap-2">

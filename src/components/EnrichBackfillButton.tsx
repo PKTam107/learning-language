@@ -74,10 +74,10 @@ export function EnrichBackfillButton({ deckId, onDone, banner }: Props) {
   if (!banner) return btn;
 
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3">
       <div className="flex items-center gap-3">
         <Sparkles className="h-5 w-5 shrink-0 text-indigo-500" />
-        <p className="text-sm text-indigo-900">
+        <p className="text-sm text-indigo-900 dark:text-indigo-200">
           <strong>{pending.length} thẻ cũ</strong> chưa có CEFR / họ từ /
           collocations. Bổ sung để bằng các thẻ tạo mới.
         </p>

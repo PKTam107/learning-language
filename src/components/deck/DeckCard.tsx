@@ -13,14 +13,14 @@ interface DeckCardProps {
 
 export function DeckCard({ deck, onEdit, onDelete }: DeckCardProps) {
   return (
-    <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 transition-shadow hover:shadow-md">
+    <div className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between">
         <Link href={`/decks/${deck.id}`} className="min-w-0 flex-1">
-          <h3 className="truncate text-lg font-semibold text-slate-900 hover:text-brand">
+          <h3 className="truncate text-lg font-semibold text-slate-900 dark:text-slate-100 hover:text-brand dark:hover:text-indigo-400">
             {deck.name}
           </h3>
           {deck.description && (
-            <p className="mt-0.5 line-clamp-2 text-sm text-slate-500">
+            <p className="mt-0.5 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
               {deck.description}
             </p>
           )}
@@ -28,14 +28,14 @@ export function DeckCard({ deck, onEdit, onDelete }: DeckCardProps) {
         <div className="ml-2 flex shrink-0 gap-1">
           <button
             onClick={() => onEdit(deck)}
-            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded p-1.5 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300"
             aria-label="Sửa"
           >
             <Pencil size={16} />
           </button>
           <button
             onClick={() => onDelete(deck)}
-            className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+            className="rounded p-1.5 text-slate-400 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
             aria-label="Xóa"
           >
             <Trash2 size={16} />
@@ -48,13 +48,13 @@ export function DeckCard({ deck, onEdit, onDelete }: DeckCardProps) {
       )}
 
       <div className="mt-4 flex items-center justify-between">
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-slate-500 dark:text-slate-400">
           {deck.card_count ?? 0} từ
           {deck.stats && deck.stats.total > 0 && (
             <> · {deck.stats.byStatus.easy} đã thuộc</>
           )}
           {deck.stats && deck.stats.due > 0 && (
-            <span className="text-amber-600"> · {deck.stats.due} cần ôn</span>
+            <span className="text-amber-600 dark:text-amber-400"> · {deck.stats.due} cần ôn</span>
           )}
         </span>
         <Link
