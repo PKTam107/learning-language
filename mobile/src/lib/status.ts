@@ -1,4 +1,5 @@
 import type { CardStatus, CardWithProgress, DeckStats } from "@/types";
+import type { ThemeColors } from "@/lib/theme";
 
 /** Thứ tự hiển thị: chưa học → chưa thuộc → đang thuộc → đã thuộc. */
 export const STATUS_ORDER: CardStatus[] = ["new", "hard", "good", "easy"];
@@ -10,6 +11,15 @@ export const STATUS_META: Record<CardStatus, { label: string; color: string }> =
   good: { label: "Đang thuộc", color: "#f59e0b" }, // amber-500
   easy: { label: "Đã thuộc", color: "#16a34a" }, // green-600
 };
+
+/**
+ * Màu trạng thái theo nền đang dùng. Đỏ/vàng/xanh nổi tốt trên cả hai nền nên
+ * giữ nguyên; riêng "Chưa học" là xám nhạt — trên nền tối nó lại nổi hơn cả các
+ * trạng thái khác, nên phải lấy từ bảng màu.
+ */
+export function statusColor(status: CardStatus, colors: ThemeColors): string {
+  return status === "new" ? colors.statusNew : STATUS_META[status].color;
+}
 
 export function emptyByStatus(): Record<CardStatus, number> {
   return { new: 0, hard: 0, good: 0, easy: 0 };

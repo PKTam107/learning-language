@@ -11,7 +11,8 @@ import * as WebBrowser from "expo-web-browser";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 import { LogIn } from "lucide-react-native";
 
 // Hoàn tất phiên auth còn treo (nếu app bị mở lại giữa chừng OAuth).
@@ -20,6 +21,8 @@ WebBrowser.maybeCompleteAuthSession();
 type Mode = "signin" | "signup";
 
 export default function LoginScreen() {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const { signInWithPassword, signUpWithPassword, signInWithGoogle } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
@@ -145,48 +148,49 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: spacing.xl,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xl,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    textAlign: "center",
-    color: colors.text,
-  },
-  subtitle: {
-    marginTop: spacing.xs,
-    textAlign: "center",
-    color: colors.textMuted,
-    fontSize: 14,
-  },
-  googleBtn: { marginTop: spacing.xl },
-  divider: {
-    marginVertical: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  line: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { color: colors.textSubtle, fontSize: 12 },
-  form: { gap: spacing.md },
-  error: { marginTop: spacing.md, color: colors.danger, fontSize: 14 },
-  info: { marginTop: spacing.md, color: colors.success, fontSize: 14 },
-  switch: {
-    marginTop: spacing.lg,
-    textAlign: "center",
-    color: colors.brand,
-    fontSize: 14,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    scroll: {
+      flexGrow: 1,
+      justifyContent: "center",
+      padding: spacing.xl,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.xl,
+    },
+    title: {
+      fontSize: 26,
+      fontWeight: "700",
+      textAlign: "center",
+      color: colors.text,
+    },
+    subtitle: {
+      marginTop: spacing.xs,
+      textAlign: "center",
+      color: colors.textMuted,
+      fontSize: 14,
+    },
+    googleBtn: { marginTop: spacing.xl },
+    divider: {
+      marginVertical: spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    line: { flex: 1, height: 1, backgroundColor: colors.border },
+    dividerText: { color: colors.textSubtle, fontSize: 12 },
+    form: { gap: spacing.md },
+    error: { marginTop: spacing.md, color: colors.danger, fontSize: 14 },
+    info: { marginTop: spacing.md, color: colors.success, fontSize: 14 },
+    switch: {
+      marginTop: spacing.lg,
+      textAlign: "center",
+      color: colors.brand,
+      fontSize: 14,
+    },
+  });

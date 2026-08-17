@@ -4,9 +4,12 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import { Settings as SettingsIcon, TrendingUp } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { configureNotificationHandler } from "@/lib/notifications";
-import { colors } from "@/lib/theme";
+import { type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 export default function AppLayout() {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const { session, initializing, signOut } = useAuth();
   const router = useRouter();
 
@@ -71,13 +74,14 @@ export default function AppLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bg,
-  },
-  signOut: { color: colors.textMuted, fontSize: 15 },
-  headerRight: { flexDirection: "row", alignItems: "center", gap: 16 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.bg,
+    },
+    signOut: { color: colors.textMuted, fontSize: 15 },
+    headerRight: { flexDirection: "row", alignItems: "center", gap: 16 },
+  });

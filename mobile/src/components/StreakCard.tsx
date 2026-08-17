@@ -1,12 +1,15 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Flame } from "lucide-react-native";
 import type { StudyStats } from "@/lib/stats";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 const WEEKDAY = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
 /** Thẻ hiển thị chuỗi ngày học (streak) + số từ ôn hôm nay + biểu đồ 7 ngày. */
 export function StreakCard({ stats }: { stats: StudyStats }) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const { streak, todayCount, weekCount, series } = stats;
   const active = streak > 0;
   const maxCount = Math.max(1, ...series.map((s) => s.count));
@@ -63,46 +66,47 @@ export function StreakCard({ stats }: { stats: StudyStats }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginTop: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    gap: spacing.md,
-  },
-  top: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  streakLeft: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  streakValue: { fontSize: 24, fontWeight: "800", color: colors.text },
-  streakUnit: { fontSize: 15, fontWeight: "600", color: colors.textMuted },
-  streakLabel: { fontSize: 12, color: colors.textMuted },
-  right: { alignItems: "flex-end" },
-  rightValue: { fontSize: 22, fontWeight: "700", color: colors.brandDark },
-  rightLabel: {
-    fontSize: 11,
-    color: colors.textSubtle,
-    textTransform: "uppercase",
-  },
-  chartRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-  },
-  chartCol: { flex: 1, alignItems: "center", gap: 4 },
-  barTrack: { height: 40, justifyContent: "flex-end" },
-  bar: {
-    width: 18,
-    borderRadius: radius.full,
-    backgroundColor: colors.border,
-  },
-  barDone: { backgroundColor: colors.brand },
-  barToday: { backgroundColor: "#f97316" },
-  barLabel: { fontSize: 10, color: colors.textSubtle },
-  footer: { fontSize: 12, color: colors.textSubtle },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      marginTop: spacing.md,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      gap: spacing.md,
+    },
+    top: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    streakLeft: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+    streakValue: { fontSize: 24, fontWeight: "800", color: colors.text },
+    streakUnit: { fontSize: 15, fontWeight: "600", color: colors.textMuted },
+    streakLabel: { fontSize: 12, color: colors.textMuted },
+    right: { alignItems: "flex-end" },
+    rightValue: { fontSize: 22, fontWeight: "700", color: colors.brandDark },
+    rightLabel: {
+      fontSize: 11,
+      color: colors.textSubtle,
+      textTransform: "uppercase",
+    },
+    chartRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+    },
+    chartCol: { flex: 1, alignItems: "center", gap: 4 },
+    barTrack: { height: 40, justifyContent: "flex-end" },
+    bar: {
+      width: 18,
+      borderRadius: radius.full,
+      backgroundColor: colors.border,
+    },
+    barDone: { backgroundColor: colors.brand },
+    barToday: { backgroundColor: "#f97316" },
+    barLabel: { fontSize: 10, color: colors.textSubtle },
+    footer: { fontSize: 12, color: colors.textSubtle },
+  });

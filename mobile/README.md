@@ -56,7 +56,8 @@ app/                  # expo-router (mỗi file = 1 route)
     index.tsx         # trang chủ (placeholder — Bộ thẻ sẽ thêm sau)
 src/
   lib/supabase.ts     # Supabase client (AsyncStorage + url polyfill)
-  lib/theme.ts        # màu / spacing đồng bộ với web
+  lib/theme.ts        # bảng màu sáng+tối / spacing, đồng bộ với web
+  contexts/ThemeContext.tsx  # provider giao diện + useStyles/useThemeColors
   contexts/AuthContext.tsx
   components/ui/       # Button, Input
   types.ts            # domain types (đồng bộ web src/types)

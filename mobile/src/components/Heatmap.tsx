@@ -2,10 +2,11 @@ import { useMemo, useRef } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { CalendarDays } from "lucide-react-native";
 import { fromDayKey, type DayCount } from "@/lib/streak";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 /** 5 mức đậm nhạt (0 = không học) — cùng thang indigo với web. */
-const LEVEL_COLOR = ["#f1f5f9", "#c7d2fe", "#a5b4fc", "#6366f1", "#4338ca"];
+
 
 const MONTH_LABEL = [
   "Th1", "Th2", "Th3", "Th4", "Th5", "Th6",
@@ -42,6 +43,8 @@ interface Props {
  * ô càng đậm = càng nhiều lượt ôn. Cuộn ngang, tự nhảy tới tuần gần nhất.
  */
 export function Heatmap({ data, busiest, totalReviews, activeDays }: Props) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const scroller = useRef<ScrollView>(null);
 
   const weeks = useMemo(() => {
@@ -148,7 +151,7 @@ export function Heatmap({ data, busiest, totalReviews, activeDays }: Props) {
                               backgroundColor:
                                 day === null
                                   ? "transparent"
-                                  : LEVEL_COLOR[levelOf(day.count, busiest)],
+                                  : colors.heatmap[levelOf(day.count, busiest)],
                             },
                           ]}
                         />
@@ -162,7 +165,7 @@ export function Heatmap({ data, busiest, totalReviews, activeDays }: Props) {
 
           <View style={styles.legend}>
             <Text style={styles.legendText}>Ít</Text>
-            {LEVEL_COLOR.map((c) => (
+            {colors.heatmap.map((c) => (
               <View key={c} style={[styles.cell, { backgroundColor: c }]} />
             ))}
             <Text style={styles.legendText}>Nhiều</Text>
@@ -173,56 +176,57 @@ export function Heatmap({ data, busiest, totalReviews, activeDays }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginTop: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  head: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  headLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  title: { fontSize: 16, fontWeight: "700", color: colors.text },
-  headMeta: { fontSize: 11, color: colors.textSubtle },
-  empty: {
-    paddingVertical: spacing.lg,
-    textAlign: "center",
-    fontSize: 13,
-    color: colors.textSubtle,
-  },
-  gridRow: { flexDirection: "row" },
-  rowLabels: { paddingTop: 18, marginRight: spacing.xs, gap: GAP },
-  rowLabel: {
-    height: CELL,
-    lineHeight: CELL,
-    fontSize: 9,
-    color: colors.textSubtle,
-  },
-  monthRow: { height: 14, marginBottom: 2 },
-  monthLabel: {
-    position: "absolute",
-    top: 0,
-    fontSize: 9,
-    lineHeight: 14,
-    color: colors.textSubtle,
-  },
-  weeks: { flexDirection: "row", gap: GAP },
-  week: { gap: GAP },
-  cell: { width: CELL, height: CELL, borderRadius: 2 },
-  legend: {
-    marginTop: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: GAP,
-  },
-  legendText: { fontSize: 10, color: colors.textSubtle },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      marginTop: spacing.md,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    head: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: spacing.md,
+      gap: spacing.sm,
+    },
+    headLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    title: { fontSize: 16, fontWeight: "700", color: colors.text },
+    headMeta: { fontSize: 11, color: colors.textSubtle },
+    empty: {
+      paddingVertical: spacing.lg,
+      textAlign: "center",
+      fontSize: 13,
+      color: colors.textSubtle,
+    },
+    gridRow: { flexDirection: "row" },
+    rowLabels: { paddingTop: 18, marginRight: spacing.xs, gap: GAP },
+    rowLabel: {
+      height: CELL,
+      lineHeight: CELL,
+      fontSize: 9,
+      color: colors.textSubtle,
+    },
+    monthRow: { height: 14, marginBottom: 2 },
+    monthLabel: {
+      position: "absolute",
+      top: 0,
+      fontSize: 9,
+      lineHeight: 14,
+      color: colors.textSubtle,
+    },
+    weeks: { flexDirection: "row", gap: GAP },
+    week: { gap: GAP },
+    cell: { width: CELL, height: CELL, borderRadius: 2 },
+    legend: {
+      marginTop: spacing.sm,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: GAP,
+    },
+    legendText: { fontSize: 10, color: colors.textSubtle },
+  });

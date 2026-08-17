@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { Audio } from "expo-av";
 import * as Speech from "expo-speech";
-import { colors, radius } from "@/lib/theme";
+import { radius, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 import { Volume2 } from "lucide-react-native";
 
 interface Props {
@@ -17,6 +18,8 @@ interface Props {
  * thì đọc bằng TTS (expo-speech) — giọng US/UK theo label. Ẩn nếu không có cả hai.
  */
 export function AudioButton({ url, text, label }: Props) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const soundRef = useRef<Audio.Sound | null>(null);
 
   // Giải phóng sound khi unmount.
@@ -62,16 +65,17 @@ export function AudioButton({ url, text, label }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  btn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.brandLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-  },
-  pressed: { opacity: 0.6 },
-  text: { color: colors.brandDark, fontSize: 13, fontWeight: "600" },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    btn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      backgroundColor: colors.brandLight,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: radius.full,
+    },
+    pressed: { opacity: 0.6 },
+    text: { color: colors.brandDark, fontSize: 13, fontWeight: "600" },
+  });

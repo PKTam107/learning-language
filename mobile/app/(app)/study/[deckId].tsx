@@ -19,7 +19,9 @@ import { FlashcardFlip } from "@/components/flashcard/FlashcardFlip";
 import { QuizCard } from "@/components/flashcard/QuizCard";
 import { StatusDot } from "@/components/status/StatusDot";
 import { Button } from "@/components/ui/Button";
-import { colors, radius, spacing } from "@/lib/theme";
+import { Confetti } from "@/components/ui/Confetti";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 import { PartyPopper } from "lucide-react-native";
 
 type Mode = "all" | "weak" | "due";
@@ -55,6 +57,8 @@ function shuffleArr<T>(a: T[]): T[] {
 const LIMIT_OPTIONS = [0, 10, 20, 30, 50];
 
 export default function StudyScreen() {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const { deckId } = useLocalSearchParams<{ deckId: string }>();
   const router = useRouter();
 
@@ -296,6 +300,8 @@ export default function StudyScreen() {
     const reviewed = counts.hard + counts.good + counts.easy;
     return (
       <Screen title="Hoàn thành">
+        {/* Chỉ ăn mừng khi thật sự có ôn — thoát ngay thì không bắn pháo. */}
+        {reviewed > 0 && <Confetti />}
         <View style={styles.center}>
           <PartyPopper size={48} color={colors.brand} />
           <Text style={styles.doneTitle}>Hoàn thành phiên học!</Text>
@@ -394,6 +400,7 @@ function Screen({
   title: string;
   children: React.ReactNode;
 }) {
+  const styles = useStyles(makeStyles);
   return (
     <View style={styles.flex}>
       <Stack.Screen options={{ title }} />
@@ -417,6 +424,7 @@ function ModeOption({
   disabled?: boolean;
   onPress: () => void;
 }) {
+  const styles = useStyles(makeStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -441,6 +449,7 @@ function ModeOption({
 }
 
 function SummaryRow({ status, value }: { status: Assessed; value: number }) {
+  const styles = useStyles(makeStyles);
   return (
     <View style={styles.summaryRow}>
       <View style={styles.summaryLeft}>
@@ -452,109 +461,110 @@ function SummaryRow({ status, value }: { status: Assessed; value: number }) {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  body: { flex: 1, padding: spacing.lg, gap: spacing.md },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    padding: spacing.xl,
-  },
-  progressLabel: { fontSize: 14, color: colors.textMuted },
-  progressTrack: {
-    height: 8,
-    borderRadius: radius.full,
-    backgroundColor: colors.border,
-    overflow: "hidden",
-  },
-  progressFill: { height: "100%", backgroundColor: colors.brand },
-  cardWrap: { flex: 1, justifyContent: "center" },
-  assessRow: { flexDirection: "row", gap: spacing.sm },
-  grow: { flex: 1 },
-  emptyTitle: { fontSize: 16, color: colors.textMuted },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    body: { flex: 1, padding: spacing.lg, gap: spacing.md },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.md,
+      padding: spacing.xl,
+    },
+    progressLabel: { fontSize: 14, color: colors.textMuted },
+    progressTrack: {
+      height: 8,
+      borderRadius: radius.full,
+      backgroundColor: colors.border,
+      overflow: "hidden",
+    },
+    progressFill: { height: "100%", backgroundColor: colors.brand },
+    cardWrap: { flex: 1, justifyContent: "center" },
+    assessRow: { flexDirection: "row", gap: spacing.sm },
+    grow: { flex: 1 },
+    emptyTitle: { fontSize: 16, color: colors.textMuted },
 
-  // setup
-  setup: { padding: spacing.lg, gap: spacing.sm },
-  setupHint: { fontSize: 14, color: colors.textMuted, marginBottom: spacing.xs },
-  mode: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  modeActive: { borderColor: colors.brand, backgroundColor: colors.brandLight },
-  modeDisabled: { opacity: 0.4 },
-  modeLabel: { fontSize: 16, fontWeight: "600", color: colors.text },
-  modeDesc: { marginTop: 2, fontSize: 12, color: colors.textMuted },
-  badge: {
-    minWidth: 32,
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-    backgroundColor: colors.border,
-  },
-  badgeActive: { backgroundColor: colors.brand },
-  badgeText: { fontSize: 14, fontWeight: "700", color: colors.textMuted },
-  badgeTextActive: { color: "#fff" },
-  optLabel: {
-    marginTop: spacing.md,
-    fontSize: 14,
-    color: colors.textMuted,
-    fontWeight: "600",
-  },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  chipActive: { borderColor: colors.brand, backgroundColor: colors.brandLight },
-  chipText: { fontSize: 14, color: colors.textMuted },
-  chipTextActive: { color: colors.brandDark, fontWeight: "600" },
-  shuffleRow: {
-    marginTop: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  setupActions: {
-    flexDirection: "row",
-    gap: spacing.md,
-    marginTop: spacing.xl,
-  },
+    // setup
+    setup: { padding: spacing.lg, gap: spacing.sm },
+    setupHint: { fontSize: 14, color: colors.textMuted, marginBottom: spacing.xs },
+    mode: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    modeActive: { borderColor: colors.brand, backgroundColor: colors.brandLight },
+    modeDisabled: { opacity: 0.4 },
+    modeLabel: { fontSize: 16, fontWeight: "600", color: colors.text },
+    modeDesc: { marginTop: 2, fontSize: 12, color: colors.textMuted },
+    badge: {
+      minWidth: 32,
+      alignItems: "center",
+      paddingHorizontal: 10,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+      backgroundColor: colors.border,
+    },
+    badgeActive: { backgroundColor: colors.brand },
+    badgeText: { fontSize: 14, fontWeight: "700", color: colors.textMuted },
+    badgeTextActive: { color: "#fff" },
+    optLabel: {
+      marginTop: spacing.md,
+      fontSize: 14,
+      color: colors.textMuted,
+      fontWeight: "600",
+    },
+    chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+    chip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    chipActive: { borderColor: colors.brand, backgroundColor: colors.brandLight },
+    chipText: { fontSize: 14, color: colors.textMuted },
+    chipTextActive: { color: colors.brandDark, fontWeight: "600" },
+    shuffleRow: {
+      marginTop: spacing.sm,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    setupActions: {
+      flexDirection: "row",
+      gap: spacing.md,
+      marginTop: spacing.xl,
+    },
 
-  // done
-  doneEmoji: { fontSize: 48 },
-  doneTitle: { fontSize: 22, fontWeight: "700", color: colors.text },
-  doneSub: { fontSize: 15, color: colors.textMuted },
-  summary: { alignSelf: "stretch", gap: spacing.sm, marginTop: spacing.md },
-  summaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  summaryLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  summaryLabel: { fontSize: 14, color: colors.text },
-  summaryValue: { fontSize: 15, fontWeight: "700", color: colors.text },
-  doneActions: {
-    flexDirection: "row",
-    gap: spacing.md,
-    marginTop: spacing.lg,
-    alignSelf: "stretch",
-  },
-});
+    // done
+    doneEmoji: { fontSize: 48 },
+    doneTitle: { fontSize: 22, fontWeight: "700", color: colors.text },
+    doneSub: { fontSize: 15, color: colors.textMuted },
+    summary: { alignSelf: "stretch", gap: spacing.sm, marginTop: spacing.md },
+    summaryRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    summaryLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    summaryLabel: { fontSize: 14, color: colors.text },
+    summaryValue: { fontSize: 15, fontWeight: "700", color: colors.text },
+    doneActions: {
+      flexDirection: "row",
+      gap: spacing.md,
+      marginTop: spacing.lg,
+      alignSelf: "stretch",
+    },
+  });

@@ -3,10 +3,12 @@ import type { Card } from "@/types";
 import { AudioButton } from "./AudioButton";
 import { CefrBadge, EnrichmentSections } from "./Enrichment";
 import { SheetScrollView } from "@/components/ui/Modal";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles } from "@/contexts/ThemeContext";
 
 /** Xem chi tiết 1 card đã lưu (read-only): phiên âm, audio US/UK, mọi nghĩa & ví dụ. */
 export function CardDetail({ card }: { card: Card }) {
+  const styles = useStyles(makeStyles);
   const noContent =
     !card.meaning_vi && !card.definitions?.length && !card.examples?.length;
 
@@ -97,59 +99,60 @@ export function CardDetail({ card }: { card: Card }) {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { maxHeight: 460 },
-  content: { gap: spacing.md, paddingBottom: spacing.sm },
-  header: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
-  term: { fontSize: 26, fontWeight: "700", color: colors.text },
-  pos: {
-    backgroundColor: colors.bg,
-    color: colors.textMuted,
-    fontSize: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radius.md,
-    overflow: "hidden",
-  },
-  audioRow: { flexDirection: "row", gap: spacing.sm },
-  ipaRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  ipa: { fontSize: 14, color: colors.textMuted },
-  ipaLabel: { fontWeight: "700", color: colors.textSubtle },
-  meaning: { fontSize: 18, fontWeight: "600", color: colors.brandDark },
-  note: {
-    backgroundColor: "#fffbeb",
-    borderWidth: 1,
-    borderColor: "#fde68a",
-    borderRadius: radius.md,
-    padding: spacing.md,
-    gap: 2,
-  },
-  noteLabel: { fontSize: 11, fontWeight: "700", color: "#d97706" },
-  noteText: { fontSize: 14, color: "#92400e" },
-  section: { gap: spacing.xs },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textSubtle,
-    letterSpacing: 0.5,
-  },
-  defItem: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    gap: 2,
-  },
-  defPos: { fontSize: 12, color: colors.textSubtle },
-  defText: { fontSize: 14, color: colors.text },
-  defSub: { fontSize: 12, color: colors.textSubtle },
-  exItem: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    gap: 2,
-  },
-  exText: { fontSize: 14, fontStyle: "italic", color: colors.text },
-  exVi: { fontSize: 13, color: colors.textMuted },
-  emptyText: { fontSize: 14, color: colors.textSubtle },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    scroll: { maxHeight: 460 },
+    content: { gap: spacing.md, paddingBottom: spacing.sm },
+    header: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
+    term: { fontSize: 26, fontWeight: "700", color: colors.text },
+    pos: {
+      backgroundColor: colors.bg,
+      color: colors.textMuted,
+      fontSize: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: radius.md,
+      overflow: "hidden",
+    },
+    audioRow: { flexDirection: "row", gap: spacing.sm },
+    ipaRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
+    ipa: { fontSize: 14, color: colors.textMuted },
+    ipaLabel: { fontWeight: "700", color: colors.textSubtle },
+    meaning: { fontSize: 18, fontWeight: "600", color: colors.brandDark },
+    note: {
+      backgroundColor: colors.tints.amber.bg,
+      borderWidth: 1,
+      borderColor: colors.tints.amber.border,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      gap: 2,
+    },
+    noteLabel: { fontSize: 11, fontWeight: "700", color: colors.tints.amber.fg },
+    noteText: { fontSize: 14, color: colors.tints.amber.fg },
+    section: { gap: spacing.xs },
+    sectionLabel: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textSubtle,
+      letterSpacing: 0.5,
+    },
+    defItem: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+      gap: 2,
+    },
+    defPos: { fontSize: 12, color: colors.textSubtle },
+    defText: { fontSize: 14, color: colors.text },
+    defSub: { fontSize: 12, color: colors.textSubtle },
+    exItem: {
+      backgroundColor: colors.bg,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+      gap: 2,
+    },
+    exText: { fontSize: 14, fontStyle: "italic", color: colors.text },
+    exVi: { fontSize: 13, color: colors.textMuted },
+    emptyText: { fontSize: 14, color: colors.textSubtle },
+  });

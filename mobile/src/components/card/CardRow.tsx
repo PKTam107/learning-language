@@ -2,7 +2,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Card, CardStatus } from "@/types";
 import { StatusDot } from "@/components/status/StatusDot";
 import { AudioButton } from "@/components/flashcard/AudioButton";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 import { Check, Trash2 } from "lucide-react-native";
 
 interface Props {
@@ -26,6 +27,8 @@ export function CardRow({
   selected = false,
   onToggleSelect,
 }: Props) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const info = (
     <View style={styles.info}>
       <View style={styles.termLine}>
@@ -83,37 +86,38 @@ export function CardRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.lg,
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  rowSelected: { borderColor: colors.brand, backgroundColor: colors.brandLight },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxOn: { borderColor: colors.brand, backgroundColor: colors.brand },
-  checkmark: { color: "#fff", fontSize: 14, fontWeight: "700" },
-  infoWrap: { flex: 1, minWidth: 0 },
-  info: { flex: 1, minWidth: 0 },
-  actions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  termLine: { flexDirection: "row", alignItems: "baseline", gap: spacing.sm },
-  term: { fontSize: 16, fontWeight: "700", color: colors.text },
-  phonetic: { fontSize: 14, color: colors.textSubtle },
-  meaning: { marginTop: 2, fontSize: 14, color: colors.textMuted },
-  pos: { color: colors.textSubtle },
-  iconBtn: { padding: 4 },
-  icon: { fontSize: 16 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      padding: spacing.lg,
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    rowSelected: { borderColor: colors.brand, backgroundColor: colors.brandLight },
+    checkbox: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      borderWidth: 2,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    checkboxOn: { borderColor: colors.brand, backgroundColor: colors.brand },
+    checkmark: { color: "#fff", fontSize: 14, fontWeight: "700" },
+    infoWrap: { flex: 1, minWidth: 0 },
+    info: { flex: 1, minWidth: 0 },
+    actions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+    termLine: { flexDirection: "row", alignItems: "baseline", gap: spacing.sm },
+    term: { fontSize: 16, fontWeight: "700", color: colors.text },
+    phonetic: { fontSize: 14, color: colors.textSubtle },
+    meaning: { marginTop: 2, fontSize: 14, color: colors.textMuted },
+    pos: { color: colors.textSubtle },
+    iconBtn: { padding: 4 },
+    icon: { fontSize: 16 },
+  });

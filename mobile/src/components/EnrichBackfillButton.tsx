@@ -8,7 +8,8 @@ import {
   type UnenrichedCard,
 } from "@/lib/enrich-backfill";
 import { Button } from "@/components/ui/Button";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles } from "@/contexts/ThemeContext";
 
 interface Props {
   /** Giới hạn theo 1 bộ thẻ; bỏ trống = toàn tài khoản. */
@@ -25,6 +26,7 @@ interface Props {
  * (enriched_at IS NULL). Tự ẩn khi không còn thẻ cần làm giàu.
  */
 export function EnrichBackfillButton({ deckId, onDone, banner, style }: Props) {
+  const styles = useStyles(makeStyles);
   const [pending, setPending] = useState<UnenrichedCard[] | null>(null);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -83,16 +85,17 @@ export function EnrichBackfillButton({ deckId, onDone, banner, style }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  banner: {
-    marginTop: spacing.md,
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: "#c7d2fe",
-    backgroundColor: "#eef2ff",
-    gap: spacing.sm,
-  },
-  bannerText: { fontSize: 13, color: "#3730a3" },
-  bannerStrong: { fontWeight: "700" },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    banner: {
+      marginTop: spacing.md,
+      padding: spacing.md,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.tints.indigo.border,
+      backgroundColor: colors.tints.indigo.bg,
+      gap: spacing.sm,
+    },
+    bannerText: { fontSize: 13, color: colors.tints.indigo.fg },
+    bannerStrong: { fontWeight: "700" },
+  });

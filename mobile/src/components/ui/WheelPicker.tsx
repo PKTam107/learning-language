@@ -9,7 +9,8 @@ import {
   type ScrollView,
 } from "react-native";
 import { useSheetDrag } from "./Modal";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles } from "@/contexts/ThemeContext";
 
 const ITEM_H = 44;
 /** Số dòng thấy được (lẻ để có 1 dòng ở giữa). */
@@ -36,6 +37,7 @@ export function WheelPicker({
   format = (v) => String(v).padStart(2, "0"),
   accessibilityLabel,
 }: Props) {
+  const styles = useStyles(makeStyles);
   const scrollRef = useRef<ScrollView | null>(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const index = Math.max(0, values.indexOf(value));
@@ -117,24 +119,25 @@ export function WheelPicker({
 
 export const WHEEL_HEIGHT = ITEM_H * VISIBLE;
 
-const styles = StyleSheet.create({
-  wrap: { height: WHEEL_HEIGHT, flex: 1, justifyContent: "center" },
-  band: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: PAD,
-    height: ITEM_H,
-    borderRadius: radius.md,
-    backgroundColor: colors.brandLight,
-  },
-  list: { paddingVertical: PAD },
-  item: { height: ITEM_H, alignItems: "center", justifyContent: "center" },
-  itemText: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: colors.text,
-    fontVariant: ["tabular-nums"],
-    paddingHorizontal: spacing.sm,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    wrap: { height: WHEEL_HEIGHT, flex: 1, justifyContent: "center" },
+    band: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      top: PAD,
+      height: ITEM_H,
+      borderRadius: radius.md,
+      backgroundColor: colors.brandLight,
+    },
+    list: { paddingVertical: PAD },
+    item: { height: ITEM_H, alignItems: "center", justifyContent: "center" },
+    itemText: {
+      fontSize: 26,
+      fontWeight: "700",
+      color: colors.text,
+      fontVariant: ["tabular-nums"],
+      paddingHorizontal: spacing.sm,
+    },
+  });

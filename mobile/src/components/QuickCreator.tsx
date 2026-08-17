@@ -14,7 +14,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { DraftEditor } from "@/components/flashcard/DraftEditor";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles } from "@/contexts/ThemeContext";
 
 interface Props {
   /** Deck để lưu thẻ vào. */
@@ -25,6 +26,7 @@ interface Props {
 
 /** FAB "+" + modal tạo thẻ nhanh: gõ từ → tra → sửa → lưu. */
 export function QuickCreator({ deckId, onSaved }: Props) {
+  const styles = useStyles(makeStyles);
   const [open, setOpen] = useState(false);
   const [word, setWord] = useState("");
   const [looking, setLooking] = useState(false);
@@ -141,29 +143,30 @@ export function QuickCreator({ deckId, onSaved }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  fab: {
-    position: "absolute",
-    right: spacing.xl,
-    bottom: spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: radius.full,
-    backgroundColor: colors.brand,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-  },
-  fabPressed: { backgroundColor: colors.brandDark },
-  fabText: { color: "#fff", fontSize: 30, lineHeight: 34, fontWeight: "300" },
-  lookupRow: { flexDirection: "row", gap: spacing.sm, alignItems: "flex-start" },
-  flex: { flex: 1 },
-  warn: { color: "#b45309", fontSize: 13 },
-  draftScroll: { maxHeight: Dimensions.get("window").height * 0.5 },
-  draftContent: { paddingVertical: spacing.sm },
-  actions: { flexDirection: "row", gap: spacing.md },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    fab: {
+      position: "absolute",
+      right: spacing.xl,
+      bottom: spacing.xl,
+      width: 56,
+      height: 56,
+      borderRadius: radius.full,
+      backgroundColor: colors.brand,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 5,
+    },
+    fabPressed: { backgroundColor: colors.brandDark },
+    fabText: { color: "#fff", fontSize: 30, lineHeight: 34, fontWeight: "300" },
+    lookupRow: { flexDirection: "row", gap: spacing.sm, alignItems: "flex-start" },
+    flex: { flex: 1 },
+    warn: { color: colors.tints.amber.fg, fontSize: 13 },
+    draftScroll: { maxHeight: Dimensions.get("window").height * 0.5 },
+    draftContent: { paddingVertical: spacing.sm },
+    actions: { flexDirection: "row", gap: spacing.md },
+  });

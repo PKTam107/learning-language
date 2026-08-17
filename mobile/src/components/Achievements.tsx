@@ -6,22 +6,18 @@ import {
   type Achievement,
   type AchievementMetrics,
 } from "@/lib/achievements";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors, type TintName } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
-/** Màu nền/viền theo bậc mốc trong nhóm (thấp → cao) — khớp bản web. */
-const TIER_TONE = [
-  { bg: "#ecfdf5", border: "#a7f3d0" },
-  { bg: "#f0f9ff", border: "#bae6fd" },
-  { bg: "#fffbeb", border: "#fde68a" },
-  { bg: "#fff7ed", border: "#fed7aa" },
-  { bg: "#faf5ff", border: "#e9d5ff" },
-];
+/** Mảng màu theo bậc mốc trong nhóm (thấp → cao) — khớp bản web. */
+const TIER_TINT: TintName[] = ["emerald", "sky", "amber", "orange", "purple"];
 
 /**
  * Huy hiệu: mốc theo số thẻ, số từ đã thuộc, chuỗi ngày học, lượt ôn và số ngày
  * có học. Mốc đã đạt hiện màu, chưa đạt hiện xám kèm tiến độ.
  */
 export function Achievements({ metrics }: { metrics: AchievementMetrics }) {
+  const styles = useStyles(makeStyles);
   const list = evaluateAchievements(metrics);
   const { unlocked, total, next } = summarize(list);
 
@@ -62,9 +58,11 @@ export function Achievements({ metrics }: { metrics: AchievementMetrics }) {
 }
 
 function Badge({ item }: { item: Achievement }) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   const tone = item.unlocked
-    ? TIER_TONE[Math.min(item.tier, TIER_TONE.length) - 1]
-    : { bg: "#f8fafc", border: colors.border };
+    ? colors.tints[TIER_TINT[Math.min(item.tier, TIER_TINT.length) - 1]]
+    : { bg: colors.sunken, border: colors.border };
 
   return (
     <View
@@ -106,78 +104,79 @@ function Badge({ item }: { item: Achievement }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginTop: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  head: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-  },
-  headLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  title: { fontSize: 16, fontWeight: "700", color: colors.text },
-  pill: {
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-    backgroundColor: "#fffbeb",
-  },
-  pillText: { fontSize: 12, fontWeight: "700", color: "#b45309" },
-  nextBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "#f8fafc",
-  },
-  nextIcon: { fontSize: 20, opacity: 0.5 },
-  nextMain: { flex: 1, minWidth: 0 },
-  nextTitle: { fontSize: 14, fontWeight: "600", color: colors.text },
-  nextDetail: { fontSize: 12, color: colors.textMuted },
-  nextPercent: { fontSize: 14, fontWeight: "700", color: colors.brand },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  badge: {
-    width: "48%",
-    flexGrow: 1,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-  },
-  badgeHead: { flexDirection: "row", gap: spacing.sm },
-  badgeIcon: { fontSize: 22 },
-  dim: { opacity: 0.35 },
-  badgeMain: { flex: 1, minWidth: 0 },
-  badgeTitle: { fontSize: 13, fontWeight: "700", color: colors.text },
-  badgeTitleLocked: { color: colors.textMuted },
-  badgeDetail: { fontSize: 11, color: colors.textMuted, lineHeight: 14 },
-  unlockedText: {
-    marginTop: spacing.sm,
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.success,
-  },
-  progressWrap: { marginTop: spacing.sm },
-  track: {
-    height: 6,
-    borderRadius: radius.full,
-    backgroundColor: "#e2e8f0",
-    overflow: "hidden",
-  },
-  fill: { height: "100%", backgroundColor: colors.brand, borderRadius: radius.full },
-  progressText: { marginTop: 2, fontSize: 11, color: colors.textSubtle },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      marginTop: spacing.md,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    head: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: spacing.md,
+    },
+    headLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    title: { fontSize: 16, fontWeight: "700", color: colors.text },
+    pill: {
+      paddingHorizontal: 10,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+      backgroundColor: colors.tints.amber.bg,
+    },
+    pillText: { fontSize: 12, fontWeight: "700", color: colors.tints.amber.fg },
+    nextBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.sunken,
+    },
+    nextIcon: { fontSize: 20, opacity: 0.5 },
+    nextMain: { flex: 1, minWidth: 0 },
+    nextTitle: { fontSize: 14, fontWeight: "600", color: colors.text },
+    nextDetail: { fontSize: 12, color: colors.textMuted },
+    nextPercent: { fontSize: 14, fontWeight: "700", color: colors.brand },
+    grid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    badge: {
+      width: "48%",
+      flexGrow: 1,
+      padding: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+    },
+    badgeHead: { flexDirection: "row", gap: spacing.sm },
+    badgeIcon: { fontSize: 22 },
+    dim: { opacity: 0.35 },
+    badgeMain: { flex: 1, minWidth: 0 },
+    badgeTitle: { fontSize: 13, fontWeight: "700", color: colors.text },
+    badgeTitleLocked: { color: colors.textMuted },
+    badgeDetail: { fontSize: 11, color: colors.textMuted, lineHeight: 14 },
+    unlockedText: {
+      marginTop: spacing.sm,
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.success,
+    },
+    progressWrap: { marginTop: spacing.sm },
+    track: {
+      height: 6,
+      borderRadius: radius.full,
+      backgroundColor: colors.border,
+      overflow: "hidden",
+    },
+    fill: { height: "100%", backgroundColor: colors.brand, borderRadius: radius.full },
+    progressText: { marginTop: 2, fontSize: 11, color: colors.textSubtle },
+  });

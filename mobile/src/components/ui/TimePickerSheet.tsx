@@ -4,7 +4,8 @@ import { Modal } from "./Modal";
 import { WheelPicker } from "./WheelPicker";
 import { Button } from "./Button";
 import { formatHm, partOfDay } from "@/lib/notifications";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors } from "@/lib/theme";
+import { useStyles } from "@/contexts/ThemeContext";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
@@ -34,6 +35,7 @@ export function TimePickerSheet({
   onClose,
   onConfirm,
 }: Props) {
+  const styles = useStyles(makeStyles);
   const [h, setH] = useState(hour);
   const [m, setM] = useState(minute);
 
@@ -107,51 +109,52 @@ export function TimePickerSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  previewWrap: { alignItems: "center", gap: 2 },
-  preview: {
-    fontSize: 40,
-    fontWeight: "800",
-    color: colors.brandDark,
-    fontVariant: ["tabular-nums"],
-  },
-  previewSub: { fontSize: 13, color: colors.textMuted },
-  wheels: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  colon: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: colors.textSubtle,
-    marginBottom: 2,
-  },
-  presetRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  preset: {
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  presetActive: { borderColor: colors.brand, backgroundColor: colors.brandLight },
-  presetTime: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.text,
-    fontVariant: ["tabular-nums"],
-  },
-  presetLabel: { fontSize: 11, color: colors.textMuted },
-  presetTextActive: { color: colors.brandDark },
-  actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.xs },
-  action: { flex: 1 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    previewWrap: { alignItems: "center", gap: 2 },
+    preview: {
+      fontSize: 40,
+      fontWeight: "800",
+      color: colors.brandDark,
+      fontVariant: ["tabular-nums"],
+    },
+    previewSub: { fontSize: 13, color: colors.textMuted },
+    wheels: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    colon: {
+      fontSize: 26,
+      fontWeight: "700",
+      color: colors.textSubtle,
+      marginBottom: 2,
+    },
+    presetRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    preset: {
+      alignItems: "center",
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    presetActive: { borderColor: colors.brand, backgroundColor: colors.brandLight },
+    presetTime: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.text,
+      fontVariant: ["tabular-nums"],
+    },
+    presetLabel: { fontSize: 11, color: colors.textMuted },
+    presetTextActive: { color: colors.brandDark },
+    actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.xs },
+    action: { flex: 1 },
+  });

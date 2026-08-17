@@ -1,20 +1,24 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radius, spacing } from "@/lib/theme";
+import { radius, spacing, type ThemeColors, type TintName } from "@/lib/theme";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
-/** Màu badge theo cấp CEFR (dễ → khó: xanh → cam → tím). */
-const CEFR_COLOR: Record<string, { bg: string; fg: string }> = {
-  A1: { bg: "#d1fae5", fg: "#047857" },
-  A2: { bg: "#dcfce7", fg: "#15803d" },
-  B1: { bg: "#fef3c7", fg: "#b45309" },
-  B2: { bg: "#ffedd5", fg: "#c2410c" },
-  C1: { bg: "#ffe4e6", fg: "#be123c" },
-  C2: { bg: "#f3e8ff", fg: "#7e22ce" },
+/** Mảng màu badge theo cấp CEFR (dễ → khó: xanh → cam → tím). */
+const CEFR_TINT: Record<string, TintName> = {
+  A1: "emerald",
+  A2: "green",
+  B1: "amber",
+  B2: "orange",
+  C1: "rose",
+  C2: "purple",
 };
 
 /** Badge cấp độ CEFR (A1..C2). Ẩn nếu không có. */
 export function CefrBadge({ level }: { level?: string | null }) {
+  const colors = useThemeColors();
+  const styles = useStyles(makeStyles);
   if (!level) return null;
-  const c = CEFR_COLOR[level] ?? { bg: colors.bg, fg: colors.textMuted };
+  const tint = CEFR_TINT[level];
+  const c = tint ? colors.tints[tint] : { bg: colors.bg, fg: colors.textMuted };
   return (
     <View style={[styles.badge, { backgroundColor: c.bg }]}>
       <Text style={[styles.badgeText, { color: c.fg }]}>{level}</Text>
@@ -30,6 +34,7 @@ export function EnrichmentSections({
   wordFamily?: string[] | null;
   collocations?: string[] | null;
 }) {
+  const styles = useStyles(makeStyles);
   const hasFamily = !!wordFamily && wordFamily.length > 0;
   const hasColloc = !!collocations && collocations.length > 0;
   if (!hasFamily && !hasColloc) return null;
@@ -64,26 +69,27 @@ export function EnrichmentSections({
   );
 }
 
-const styles = StyleSheet.create({
-  badge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radius.md,
-    overflow: "hidden",
-  },
-  badgeText: { fontSize: 12, fontWeight: "800" },
-  wrap: { gap: spacing.md },
-  section: { gap: spacing.xs },
-  label: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textSubtle,
-    letterSpacing: 0.5,
-  },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
-  chipFamily: { backgroundColor: "#eef2ff" },
-  chipFamilyText: { fontSize: 14, color: "#4338ca" },
-  chipColloc: { backgroundColor: "#ccfbf1" },
-  chipCollocText: { fontSize: 14, color: "#0f766e" },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    badge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: radius.md,
+      overflow: "hidden",
+    },
+    badgeText: { fontSize: 12, fontWeight: "800" },
+    wrap: { gap: spacing.md },
+    section: { gap: spacing.xs },
+    label: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textSubtle,
+      letterSpacing: 0.5,
+    },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
+    chipFamily: { backgroundColor: colors.tints.indigo.bg },
+    chipFamilyText: { fontSize: 14, color: colors.tints.indigo.fg },
+    chipColloc: { backgroundColor: colors.tints.teal.bg },
+    chipCollocText: { fontSize: 14, color: colors.tints.teal.fg },
+  });
