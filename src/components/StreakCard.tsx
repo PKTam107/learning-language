@@ -12,29 +12,32 @@ export function StreakCard({ stats }: { stats: StudyStats }) {
   const maxCount = Math.max(1, ...series.map((s) => s.count));
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {/* Màu đặt bằng class (không phải inline style) để nền tối chỉnh được:
+              ngọn lửa "đã tắt" phải chìm xuống, mà slate-300 trên nền tối lại nổi. */}
           <Flame
-            className="h-7 w-7"
-            style={{ color: active ? "#f97316" : "#cbd5e1" }}
+            className={`h-7 w-7 ${
+              active ? "text-orange-500" : "text-slate-300 dark:text-slate-600"
+            }`}
             fill={active ? "#fb923c" : "transparent"}
           />
           <div>
-            <p className="text-2xl font-extrabold text-slate-900">
+            <p className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
               {streak}{" "}
-              <span className="text-base font-semibold text-slate-500">
+              <span className="text-base font-semibold text-slate-500 dark:text-slate-400">
                 ngày
               </span>
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {active ? "chuỗi ngày học 🔥" : "bắt đầu chuỗi hôm nay!"}
             </p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xl font-bold text-brand-dark">{todayCount}</p>
-          <p className="text-[11px] uppercase tracking-wide text-slate-400">
+          <p className="text-xl font-bold text-brand-dark dark:text-indigo-300">{todayCount}</p>
+          <p className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
             hôm nay
           </p>
         </div>
@@ -55,12 +58,12 @@ export function StreakCard({ stats }: { stats: StudyStats }) {
                       ? isToday
                         ? "bg-orange-500"
                         : "bg-brand"
-                      : "bg-slate-200"
+                      : "bg-slate-200 dark:bg-slate-700"
                   }`}
                   style={{ height: done ? h : 4 }}
                 />
               </div>
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">
                 {WEEKDAY[d.getDay()]}
               </span>
             </div>
@@ -68,7 +71,7 @@ export function StreakCard({ stats }: { stats: StudyStats }) {
         })}
       </div>
 
-      <p className="mt-3 text-xs text-slate-400">
+      <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
         Đã ôn {weekCount} lượt trong 7 ngày qua.
       </p>
     </div>

@@ -25,7 +25,7 @@ export function WeakWords({ limit }: { limit?: number }) {
   }, [limit]);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           <Brain className="h-5 w-5 text-rose-500" /> Bạn hay quên
@@ -33,7 +33,7 @@ export function WeakWords({ limit }: { limit?: number }) {
         {limit && words && words.length >= limit && (
           <Link
             href="/weak"
-            className="inline-flex items-center text-sm text-brand hover:underline"
+            className="inline-flex items-center text-sm text-brand dark:text-indigo-400 hover:underline"
           >
             Xem tất cả <ChevronRight className="h-4 w-4" />
           </Link>
@@ -41,42 +41,42 @@ export function WeakWords({ limit }: { limit?: number }) {
       </div>
 
       {words === null ? (
-        <div className="flex justify-center py-8 text-slate-400">
+        <div className="flex justify-center py-8 text-slate-400 dark:text-slate-500">
           <Spinner className="h-5 w-5" />
         </div>
       ) : words.length === 0 ? (
-        <p className="py-6 text-center text-sm text-slate-400">
+        <p className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
           Chưa có dữ liệu. Học vài phiên và đánh giá <strong>Chưa thuộc</strong>{" "}
           để biết từ nào bạn hay quên.
         </p>
       ) : (
-        <ul className="divide-y divide-slate-100">
+        <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {words.map((w) => (
             <li key={w.cardId}>
               <Link
                 href={`/decks/${w.deckId}`}
-                className="flex items-center gap-3 py-2.5 hover:bg-slate-50"
+                className="flex items-center gap-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate font-medium text-slate-900">
+                    <span className="truncate font-medium text-slate-900 dark:text-slate-100">
                       {w.term}
                     </span>
                     <CefrBadge level={w.cefrLevel} />
                     {w.partOfSpeech && (
-                      <span className="shrink-0 text-xs text-slate-400">
+                      <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">
                         {w.partOfSpeech}
                       </span>
                     )}
                   </div>
                   {w.meaningVi && (
-                    <p className="truncate text-sm text-slate-500">
+                    <p className="truncate text-sm text-slate-500 dark:text-slate-400">
                       {w.meaningVi}
                     </p>
                   )}
                 </div>
                 <span
-                  className="shrink-0 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-600"
+                  className="shrink-0 rounded-full bg-rose-50 dark:bg-rose-500/10 px-2.5 py-0.5 text-xs font-semibold text-rose-600 dark:text-rose-400"
                   title={`Quên ${w.hardCount}/${w.totalCount} lượt ôn`}
                 >
                   quên {w.hardCount}×

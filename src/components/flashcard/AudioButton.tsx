@@ -26,7 +26,7 @@ export function AudioButton({ url, text, label }: AudioButtonProps) {
     <button
       type="button"
       onClick={play}
-      className="inline-flex items-center gap-1 rounded-full bg-brand-light px-2.5 py-1 text-xs font-medium text-brand-dark hover:bg-brand/20"
+      className="inline-flex items-center gap-1 rounded-full bg-brand-light dark:bg-indigo-500/15 px-2.5 py-1 text-xs font-medium text-brand-dark dark:text-indigo-300 hover:bg-brand/20"
       aria-label={`Nghe phát âm ${label ?? ""}`}
     >
       <Volume2 className="h-3.5 w-3.5" />

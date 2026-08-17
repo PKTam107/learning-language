@@ -10,6 +10,8 @@ import { REVIEW_TYPES, type ReviewType } from "@/lib/quiz";
 import { useSettings } from "@/lib/settings";
 import { speak } from "@/lib/speak";
 import { Button } from "@/components/ui/Button";
+import { Confetti } from "@/components/ui/Confetti";
+import { CountUp } from "@/components/ui/CountUp";
 import { Spinner } from "@/components/ui/Spinner";
 import { FlashcardFlip } from "./FlashcardFlip";
 import { QuizCard } from "./QuizCard";
@@ -180,7 +182,7 @@ export function StudySession({ deckId }: { deckId: string }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20 text-slate-400">
+      <div className="flex justify-center py-20 text-slate-400 dark:text-slate-500">
         <Spinner className="h-6 w-6" />
       </div>
     );
@@ -188,11 +190,11 @@ export function StudySession({ deckId }: { deckId: string }) {
 
   if (all.length === 0) {
     return (
-      <div className="py-20 text-center text-slate-500">
+      <div className="py-20 text-center text-slate-500 dark:text-slate-400">
         <p>Bộ thẻ này chưa có từ nào để học.</p>
         <Link
           href={`/decks/${deckId}`}
-          className="mt-3 inline-flex items-center gap-1 text-brand hover:underline"
+          className="mt-3 inline-flex items-center gap-1 text-brand dark:text-indigo-400 hover:underline"
         >
           <ArrowLeft size={16} />
           Quay lại thêm từ
@@ -206,7 +208,7 @@ export function StudySession({ deckId }: { deckId: string }) {
     return (
       <div className="mx-auto max-w-md">
         <h1 className="mb-1 text-xl font-bold">Bắt đầu học</h1>
-        <p className="mb-6 text-sm text-slate-500">Chọn cách ôn tập.</p>
+        <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">Chọn cách ôn tập.</p>
 
         <div className="space-y-2">
           <ModeOption
@@ -235,7 +237,7 @@ export function StudySession({ deckId }: { deckId: string }) {
         </div>
 
         <div className="mt-6">
-          <p className="mb-2 text-sm font-medium text-slate-600">Kiểu ôn</p>
+          <p className="mb-2 text-sm font-medium text-slate-600 dark:text-slate-400">Kiểu ôn</p>
           <div className="flex flex-wrap gap-2">
             {REVIEW_TYPES.map((rt) => {
               const disabled = rt.value === "mcq" && all.length < 4;
@@ -247,8 +249,8 @@ export function StudySession({ deckId }: { deckId: string }) {
                   disabled={disabled}
                   className={`rounded-full border px-3 py-1.5 text-sm transition-colors disabled:opacity-40 ${
                     active
-                      ? "border-brand bg-brand-light font-semibold text-brand-dark"
-                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                      ? "border-brand bg-brand-light dark:bg-indigo-500/15 font-semibold text-brand-dark dark:text-indigo-300"
+                      : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                   }`}
                 >
                   {rt.label}
@@ -260,11 +262,11 @@ export function StudySession({ deckId }: { deckId: string }) {
 
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
           <label className="flex items-center gap-2 text-sm">
-            <span className="text-slate-600">Số thẻ/phiên</span>
+            <span className="text-slate-600 dark:text-slate-400">Số thẻ/phiên</span>
             <select
               value={limit}
               onChange={(e) => setLimit(Number(e.target.value))}
-              className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 px-2 py-1.5 text-sm"
             >
               {LIMIT_OPTIONS.map((n) => (
                 <option key={n} value={n}>
@@ -273,12 +275,12 @@ export function StudySession({ deckId }: { deckId: string }) {
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-2 text-sm text-slate-600">
+          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
             <input
               type="checkbox"
               checked={shuffle}
               onChange={(e) => setShuffle(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
+              className="h-4 w-4 rounded border-slate-300 dark:border-slate-700"
             />
             Xáo trộn
           </label>
@@ -311,11 +313,22 @@ export function StudySession({ deckId }: { deckId: string }) {
     const reviewed = counts.hard + counts.good + counts.easy;
     return (
       <div className="mx-auto max-w-md py-10 text-center">
-        <p className="flex items-center justify-center gap-2 text-2xl font-bold">
-          <PartyPopper className="h-6 w-6 text-brand" />
-          Hoàn thành phiên học!
+        {/* Chỉ ăn mừng khi thật sự có ôn — thoát ngay lúc đầu thì không bắn pháo. */}
+        {reviewed > 0 && <Confetti />}
+
+        <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-lg shadow-brand/30">
+          <PartyPopper className="h-9 w-9" />
+        </span>
+
+        <h2 className="mt-5 text-2xl font-bold">Hoàn thành phiên học!</h2>
+        <p className="mt-1 text-slate-500 dark:text-slate-400">
+          Bạn đã ôn{" "}
+          <CountUp
+            value={reviewed}
+            className="text-lg font-bold text-brand dark:text-indigo-300"
+          />{" "}
+          từ trong phiên này.
         </p>
-        <p className="mt-2 text-slate-500">Bạn đã ôn {reviewed} từ.</p>
 
         <div className="mx-auto mt-6 max-w-xs space-y-2 text-left">
           <SummaryRow status="hard" value={counts.hard} />
@@ -337,15 +350,15 @@ export function StudySession({ deckId }: { deckId: string }) {
   return (
     <div className="mx-auto max-w-xl">
       <div className="mb-4">
-        <div className="mb-1 flex justify-between text-sm text-slate-500">
+        <div className="mb-1 flex justify-between text-sm text-slate-500 dark:text-slate-400">
           <span>
             Đang học: {index + 1}/{queue.length} từ
           </span>
-          <button onClick={backToSetup} className="hover:text-brand">
+          <button onClick={backToSetup} className="hover:text-brand dark:hover:text-indigo-400">
             Thoát
           </button>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+        <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
           <div
             className="h-full bg-brand transition-all"
             style={{ width: `${progressPct}%` }}
@@ -435,17 +448,17 @@ function ModeOption({
       disabled={disabled}
       className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition-colors disabled:opacity-40 ${
         active
-          ? "border-brand bg-brand-light"
-          : "border-slate-200 bg-white hover:bg-slate-50"
+          ? "border-brand bg-brand-light dark:bg-indigo-500/15"
+          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800"
       }`}
     >
       <div>
-        <p className="font-medium text-slate-900">{label}</p>
-        <p className="text-xs text-slate-500">{desc}</p>
+        <p className="font-medium text-slate-900 dark:text-slate-100">{label}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{desc}</p>
       </div>
       <span
         className={`rounded-full px-2.5 py-0.5 text-sm font-semibold ${
-          active ? "bg-brand text-white" : "bg-slate-100 text-slate-600"
+          active ? "bg-brand text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
         }`}
       >
         {count}
@@ -463,12 +476,12 @@ function SummaryRow({
 }) {
   const m = STATUS_META[status];
   return (
-    <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
+    <div className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2">
       <span className="inline-flex items-center gap-2 text-sm">
         <span className={`h-2.5 w-2.5 rounded-full ${m.dot}`} />
         <span className={m.text}>{m.label}</span>
       </span>
-      <span className="font-semibold text-slate-800">{value}</span>
+      <span className="font-semibold text-slate-800 dark:text-slate-100">{value}</span>
     </div>
   );
 }

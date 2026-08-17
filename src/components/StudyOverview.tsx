@@ -41,7 +41,7 @@ export function StudyOverview() {
       {showReminder && (
         <Link
           href="/decks"
-          className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 transition-colors hover:bg-amber-100"
+          className="flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-amber-800 dark:text-amber-200 transition-colors hover:bg-amber-100 dark:hover:bg-amber-500/20"
         >
           <AlarmClock className="h-5 w-5 shrink-0 text-amber-500" />
           <span className="text-sm font-medium">

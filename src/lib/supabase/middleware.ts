@@ -42,7 +42,13 @@ export async function updateSession(request: NextRequest) {
   const isPublic =
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
-    pathname.startsWith("/api"); // API tự kiểm tra auth riêng
+    pathname.startsWith("/api") || // API tự kiểm tra auth riêng
+    // Hạ tầng PWA: service worker và manifest phải tải được kể cả khi chưa đăng
+    // nhập, nếu không trình duyệt sẽ nhận về trang /login và bỏ qua cài đặt app.
+    // Trang offline cũng vậy — lúc mất mạng thì không xác thực lại được.
+    pathname === "/sw.js" ||
+    pathname === "/manifest.webmanifest" ||
+    pathname === "/offline";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

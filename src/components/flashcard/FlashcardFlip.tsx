@@ -21,15 +21,15 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
     >
       <div className={`flip-inner h-full w-full ${flipped ? "flipped" : ""}`}>
         {/* Mặt trước */}
-        <div className="flip-face flex h-full w-full flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flip-face flex h-full w-full flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-center text-4xl font-bold sm:text-5xl">
             {card.term}
           </h2>
           {card.phonetic && (
-            <p className="text-lg text-slate-500">{card.phonetic}</p>
+            <p className="text-lg text-slate-500 dark:text-slate-400">{card.phonetic}</p>
           )}
           {(card.phonetic_uk || card.phonetic_us) && (
-            <div className="flex gap-x-4 text-sm text-slate-400">
+            <div className="flex gap-x-4 text-sm text-slate-400 dark:text-slate-500">
               {card.phonetic_uk && <span>UK {card.phonetic_uk}</span>}
               {card.phonetic_us && <span>US {card.phonetic_us}</span>}
             </div>
@@ -38,36 +38,36 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
             <AudioButton url={card.audio_us} text={card.term} label="US" />
             <AudioButton url={card.audio_uk} text={card.term} label="UK" />
           </div>
-          <p className="absolute bottom-4 text-xs text-slate-400">
+          <p className="absolute bottom-4 text-xs text-slate-400 dark:text-slate-500">
             Nhấn để lật (Space)
           </p>
         </div>
 
         {/* Mặt sau */}
-        <div className="flip-face flip-back flex h-full w-full flex-col gap-3 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flip-face flip-back flex h-full w-full flex-col gap-3 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-bold">{card.term}</span>
             {card.part_of_speech && (
-              <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+              <span className="rounded bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-500 dark:text-slate-400">
                 {card.part_of_speech}
               </span>
             )}
           </div>
           {card.meaning_vi && (
-            <p className="text-lg font-medium text-brand-dark">
+            <p className="text-lg font-medium text-brand-dark dark:text-indigo-300">
               {card.meaning_vi}
             </p>
           )}
 
           {card.note && (
-            <p className="flex items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-sm text-amber-900">
+            <p className="flex items-start gap-1.5 rounded-md bg-amber-50 dark:bg-amber-500/10 px-2 py-1 text-sm text-amber-900 dark:text-amber-200">
               <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {card.note}
             </p>
           )}
 
           {card.definitions?.length > 0 && (
-            <ul className="space-y-1 text-sm text-slate-600">
+            <ul className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
               {card.definitions.slice(0, 3).map((d, i) => (
                 <li key={i}>• {d.definitionVi || d.definition}</li>
               ))}
@@ -75,12 +75,12 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
           )}
 
           {card.examples?.length > 0 && (
-            <div className="mt-auto space-y-1 border-t border-slate-100 pt-2 text-sm">
+            <div className="mt-auto space-y-1 border-t border-slate-100 dark:border-slate-800 pt-2 text-sm">
               {card.examples.slice(0, 2).map((ex, i) => (
                 <div key={i}>
-                  <p className="italic text-slate-700">“{ex.text}”</p>
+                  <p className="italic text-slate-700 dark:text-slate-300">“{ex.text}”</p>
                   {ex.textVi && (
-                    <p className="text-slate-400">→ {ex.textVi}</p>
+                    <p className="text-slate-400 dark:text-slate-500">→ {ex.textVi}</p>
                   )}
                 </div>
               ))}

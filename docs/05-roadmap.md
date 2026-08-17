@@ -25,7 +25,10 @@
 - [x] Tìm kiếm / lọc card trong deck (P1).
 - [ ] Thống kê dashboard chi tiết (streak, số từ theo trạng thái).
 - [ ] Phím tắt đầy đủ + animation lật thẻ mượt.
-- [ ] PWA (cài lên màn hình điện thoại, offline cơ bản).
+- [x] Dark mode (web): Sáng / Tối / Theo máy, nhớ theo thiết bị, không nháy nền khi tải.
+- [x] PWA (cài lên màn hình chính + trang dự phòng khi mất mạng). *Học offline thật sự
+      — cache dữ liệu bài học — vẫn còn ở backlog.*
+- [ ] Dark mode cho bản mobile (cần chuyển 31 file StyleSheet sang theme động).
 
 ## Milestone 3 — Spaced Repetition thật
 - [ ] Triển khai SM-2 dùng `next_due_at`, `ease_factor` (đã để sẵn cột).

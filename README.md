@@ -7,7 +7,8 @@ MVP: **English → Vietnamese**, kiến trúc DB đã sẵn sàng cho đa ngôn 
 ## Tech stack
 
 - **Next.js 14 (App Router) + TypeScript** — frontend + API route handlers
-- **Tailwind CSS** — UI responsive (mobile-first)
+- **Tailwind CSS** — UI responsive (mobile-first), có **dark mode** (Sáng / Tối / Theo máy)
+- **PWA** — cài được ra màn hình chính, có trang dự phòng khi mất mạng
 - **Supabase** — Postgres + Auth (Google OAuth) + RLS
 - **DictionaryAPI.dev** — phiên âm / audio / nghĩa tiếng Anh / ví dụ
 - **OpenAI / Gemini** — dịch nghĩa & ví dụ sang tiếng Việt (qua provider abstraction)
@@ -93,6 +94,10 @@ Chi tiết (đăng nhập, tạo env, keystore, tra từ): xem [`mobile/docs/cha
 | `npm run start` | Chạy bản build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Kiểm tra TypeScript |
+| `node scripts/generate-icons.mjs` | Sinh lại bộ icon PWA (chỉ khi đổi nhận diện) |
+
+> Icon đã được commit sẵn trong `public/` và `src/app/apple-icon.png` nên build bình thường
+> không cần chạy lệnh cuối.
 
 ## Cấu trúc thư mục
 
@@ -100,4 +105,5 @@ Xem [docs/02-architecture.md §3](./docs/02-architecture.md).
 
 ## Định hướng tiếp theo
 
-Xem [Roadmap](./docs/05-roadmap.md): Spaced Repetition (SM-2), mở khóa đa ngôn ngữ, PWA, import/export Anki.
+Xem [Roadmap](./docs/05-roadmap.md): mở khóa đa ngôn ngữ, dark mode cho bản mobile,
+học offline thật sự, import Anki.

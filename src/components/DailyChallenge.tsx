@@ -25,17 +25,17 @@ export function DailyChallenge() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <Target className="h-5 w-5 text-brand" /> Thử thách hôm nay
+          <Target className="h-5 w-5 text-brand dark:text-indigo-400" /> Thử thách hôm nay
         </h2>
         {challenge && (
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
               challenge.allDone
-                ? "bg-green-100 text-green-700"
-                : "bg-slate-100 text-slate-600"
+                ? "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
             }`}
           >
             {challenge.doneCount}/{challenge.quests.length} nhiệm vụ
@@ -44,12 +44,12 @@ export function DailyChallenge() {
       </div>
 
       {!challenge ? (
-        <div className="flex justify-center py-8 text-slate-400">
+        <div className="flex justify-center py-8 text-slate-400 dark:text-slate-500">
           <Spinner className="h-5 w-5" />
         </div>
       ) : (
         <>
-          <div className="mb-4 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="mb-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
             <div
               className={`h-full rounded-full transition-all ${
                 challenge.allDone ? "bg-green-500" : "bg-brand"
@@ -63,11 +63,11 @@ export function DailyChallenge() {
               <li key={q.id} className="flex items-center gap-3">
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base ${
-                    q.done ? "bg-green-100" : "bg-slate-100"
+                    q.done ? "bg-green-100 dark:bg-green-500/20" : "bg-slate-100 dark:bg-slate-800"
                   }`}
                 >
                   {q.done ? (
-                    <Check className="h-4 w-4 text-green-600" strokeWidth={3} />
+                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" strokeWidth={3} />
                   ) : (
                     q.icon
                   )}
@@ -75,16 +75,16 @@ export function DailyChallenge() {
                 <div className="min-w-0 flex-1">
                   <p
                     className={`text-sm font-medium ${
-                      q.done ? "text-slate-400 line-through" : "text-slate-900"
+                      q.done ? "text-slate-400 dark:text-slate-500 line-through" : "text-slate-900 dark:text-slate-100"
                     }`}
                   >
                     {q.title}
                   </p>
-                  <p className="truncate text-xs text-slate-400">{q.hint}</p>
+                  <p className="truncate text-xs text-slate-400 dark:text-slate-500">{q.hint}</p>
                 </div>
                 <span
                   className={`shrink-0 text-xs font-semibold ${
-                    q.done ? "text-green-600" : "text-slate-500"
+                    q.done ? "text-green-600 dark:text-green-400" : "text-slate-500 dark:text-slate-400"
                   }`}
                 >
                   {Math.min(q.current, q.target)}/{q.target} {q.unit}
@@ -94,14 +94,14 @@ export function DailyChallenge() {
           </ul>
 
           <div className="mt-4 flex items-center justify-between">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-400 dark:text-slate-500">
               {challenge.allDone
                 ? "Xong hết thử thách hôm nay — quá đỉnh! 🎉"
                 : "Nhiệm vụ tự đổi mỗi ngày lúc 0h."}
             </p>
             <Link
               href="/decks"
-              className="inline-flex items-center text-sm font-medium text-brand hover:underline"
+              className="inline-flex items-center text-sm font-medium text-brand dark:text-indigo-400 hover:underline"
             >
               Ôn ngay <ChevronRight className="h-4 w-4" />
             </Link>

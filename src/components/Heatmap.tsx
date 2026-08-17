@@ -4,13 +4,17 @@ import { useMemo } from "react";
 import { CalendarDays } from "lucide-react";
 import { fromDayKey, type DayCount } from "@/lib/streak";
 
-/** 5 mức đậm nhạt (0 = không học) — cùng thang màu với brand. */
+/**
+ * 5 mức đậm nhạt (0 = không học) — cùng thang màu với brand.
+ * Nền tối phải **đảo chiều thang**: ở nền sáng "nhiều lượt ôn" = màu đậm dần,
+ * còn trên nền tối thì đậm lại thành chìm — nên mức cao dùng indigo sáng dần.
+ */
 const LEVEL_CLASS = [
-  "bg-slate-100",
-  "bg-indigo-200",
-  "bg-indigo-300",
-  "bg-indigo-500",
-  "bg-indigo-700",
+  "bg-slate-100 dark:bg-slate-800",
+  "bg-indigo-200 dark:bg-indigo-900",
+  "bg-indigo-300 dark:bg-indigo-700",
+  "bg-indigo-500 dark:bg-indigo-500",
+  "bg-indigo-700 dark:bg-indigo-300",
 ];
 
 const MONTH_LABEL = [
@@ -102,9 +106,9 @@ export function Heatmap({ data, busiest, totalReviews, activeDays }: Props) {
 
   if (weeks.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
         <Header totalReviews={totalReviews} activeDays={activeDays} />
-        <p className="py-6 text-center text-sm text-slate-400">
+        <p className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
           Chưa có lượt ôn nào. Học một phiên để bắt đầu tô màu lịch nhé!
         </p>
       </div>
@@ -112,7 +116,7 @@ export function Heatmap({ data, busiest, totalReviews, activeDays }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
       <Header totalReviews={totalReviews} activeDays={activeDays} />
 
       <div className="overflow-x-auto pb-1">
@@ -122,7 +126,7 @@ export function Heatmap({ data, busiest, totalReviews, activeDays }: Props) {
             {ROW_LABEL.map((label, i) => (
               <span
                 key={i}
-                className="h-[11px] text-[9px] leading-[11px] text-slate-400"
+                className="h-[11px] text-[9px] leading-[11px] text-slate-400 dark:text-slate-500"
               >
                 {label}
               </span>
@@ -142,7 +146,7 @@ export function Heatmap({ data, busiest, totalReviews, activeDays }: Props) {
                 return (
                   <span
                     key={i}
-                    className="whitespace-nowrap text-[9px] leading-[14px] text-slate-400"
+                    className="whitespace-nowrap text-[9px] leading-[14px] text-slate-400 dark:text-slate-500"
                   >
                     {label?.text ?? ""}
                   </span>
@@ -177,7 +181,7 @@ export function Heatmap({ data, busiest, totalReviews, activeDays }: Props) {
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-end gap-1.5 text-[10px] text-slate-400">
+      <div className="mt-3 flex items-center justify-end gap-1.5 text-[10px] text-slate-400 dark:text-slate-500">
         <span>Ít</span>
         {LEVEL_CLASS.map((cls) => (
           <span key={cls} className={`h-[11px] w-[11px] rounded-[2px] ${cls}`} />
@@ -198,10 +202,10 @@ function Header({
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
       <h2 className="flex items-center gap-2 text-lg font-semibold">
-        <CalendarDays className="h-5 w-5 text-brand" /> Lịch học 1 năm
+        <CalendarDays className="h-5 w-5 text-brand dark:text-indigo-400" /> Lịch học 1 năm
       </h2>
       {(totalReviews !== undefined || activeDays !== undefined) && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-400 dark:text-slate-500">
           {totalReviews !== undefined && <>{totalReviews} lượt ôn</>}
           {totalReviews !== undefined && activeDays !== undefined && " · "}
           {activeDays !== undefined && <>{activeDays} ngày có học</>}

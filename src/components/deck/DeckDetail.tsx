@@ -248,7 +248,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20 text-slate-400">
+      <div className="flex justify-center py-20 text-slate-400 dark:text-slate-500">
         <Spinner className="h-6 w-6" />
       </div>
     );
@@ -256,7 +256,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
 
   if (!deck) {
     return (
-      <p className="py-20 text-center text-slate-500">Không tìm thấy bộ thẻ.</p>
+      <p className="py-20 text-center text-slate-500 dark:text-slate-400">Không tìm thấy bộ thẻ.</p>
     );
   }
 
@@ -268,13 +268,13 @@ export function DeckDetail({ deckId }: { deckId: string }) {
         <div>
           <h1 className="text-2xl font-bold">{deck.name}</h1>
           {deck.description && (
-            <p className="text-sm text-slate-500">{deck.description}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{deck.description}</p>
           )}
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">
             {cards.length} từ
             {cards.length > 0 && ` · ${masteredPercent(stats)}% đã thuộc`}
             {stats.due > 0 && (
-              <span className="text-amber-600"> · {stats.due} cần ôn</span>
+              <span className="text-amber-600 dark:text-amber-400"> · {stats.due} cần ôn</span>
             )}
           </p>
         </div>
@@ -331,16 +331,16 @@ export function DeckDetail({ deckId }: { deckId: string }) {
       )}
 
       {selectMode && cards.length > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand/30 bg-brand-light/50 px-3 py-2">
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand/30 bg-brand-light/50 dark:bg-indigo-500/10 px-3 py-2">
           <button
             onClick={toggleSelectAll}
-            className="text-sm font-medium text-brand-dark hover:underline"
+            className="text-sm font-medium text-brand-dark dark:text-indigo-300 hover:underline"
           >
             {selected.size === filtered.length && filtered.length > 0
               ? "Bỏ chọn tất cả"
               : "Chọn tất cả"}
           </button>
-          <span className="text-sm text-slate-500">Đã chọn {selected.size}</span>
+          <span className="text-sm text-slate-500 dark:text-slate-400">Đã chọn {selected.size}</span>
           <div className="ml-auto flex gap-2">
             <Button
               variant="ghost"
@@ -369,19 +369,19 @@ export function DeckDetail({ deckId }: { deckId: string }) {
       )}
 
       {cards.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 py-16 text-center text-slate-500">
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 py-16 text-center text-slate-500 dark:text-slate-400">
           Chưa có từ nào. Bấm nút <strong>+</strong> góc dưới phải để thêm.
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 py-12 text-center text-slate-500">
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 py-12 text-center text-slate-500 dark:text-slate-400">
           Không có từ nào khớp bộ lọc hiện tại.
         </div>
       ) : (
-        <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <ul className="divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           {filtered.map((card) => (
             <li
               key={card.id}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               {selectMode && (
                 <input
@@ -403,14 +403,14 @@ export function DeckDetail({ deckId }: { deckId: string }) {
                   <StatusDot status={statusOf(card)} />
                   <span className="font-semibold">{card.term}</span>
                   {card.phonetic && (
-                    <span className="text-sm text-slate-400">
+                    <span className="text-sm text-slate-400 dark:text-slate-500">
                       {card.phonetic}
                     </span>
                   )}
                 </div>
-                <p className="truncate text-sm text-slate-600">
+                <p className="truncate text-sm text-slate-600 dark:text-slate-400">
                   {card.part_of_speech && (
-                    <span className="mr-1 text-slate-400">
+                    <span className="mr-1 text-slate-400 dark:text-slate-500">
                       ({card.part_of_speech})
                     </span>
                   )}
@@ -455,7 +455,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
         {draft && (
           <div className="space-y-4">
             <DraftEditor draft={draft} onChange={setDraft} />
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={close}>
                 Hủy
@@ -472,18 +472,18 @@ export function DeckDetail({ deckId }: { deckId: string }) {
       <Modal open={active?.mode === "move"} onClose={close} title="Chuyển bộ thẻ">
         {active && (
           <div className="space-y-4">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Chuyển “<strong>{active.card.term}</strong>” sang bộ thẻ:
             </p>
             {otherDecks.length === 0 ? (
-              <p className="text-sm text-amber-600">
+              <p className="text-sm text-amber-600 dark:text-amber-400">
                 Bạn chưa có bộ thẻ nào khác để chuyển tới.
               </p>
             ) : (
               <select
                 value={moveTarget}
                 onChange={(e) => setMoveTarget(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
               >
                 {otherDecks.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -492,7 +492,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
                 ))}
               </select>
             )}
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={close}>
                 Hủy
@@ -515,18 +515,18 @@ export function DeckDetail({ deckId }: { deckId: string }) {
         title="Chuyển nhiều thẻ"
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Chuyển <strong>{selected.size}</strong> từ đã chọn sang bộ thẻ:
           </p>
           {otherDecks.length === 0 ? (
-            <p className="text-sm text-amber-600">
+            <p className="text-sm text-amber-600 dark:text-amber-400">
               Bạn chưa có bộ thẻ nào khác để chuyển tới.
             </p>
           ) : (
             <select
               value={moveTarget}
               onChange={(e) => setMoveTarget(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
             >
               {otherDecks.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -535,10 +535,10 @@ export function DeckDetail({ deckId }: { deckId: string }) {
               ))}
             </select>
           )}
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 dark:text-slate-500">
             Những từ đã tồn tại (trùng) ở bộ thẻ đích sẽ được bỏ qua.
           </p>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setBulkMoveOpen(false)}>
               Hủy
@@ -576,8 +576,8 @@ function FilterChip({
       disabled={disabled}
       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors disabled:opacity-40 ${
         active
-          ? "border-brand bg-brand-light text-brand-dark"
-          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+          ? "border-brand bg-brand-light dark:bg-indigo-500/15 text-brand-dark dark:text-indigo-300"
+          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
       }`}
     >
       {children}
@@ -601,8 +601,8 @@ function IconBtn({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className={`rounded p-1.5 text-slate-400 hover:bg-slate-100 ${
-        danger ? "hover:bg-red-50 hover:text-red-600" : "hover:text-slate-700"
+      className={`rounded p-1.5 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 ${
+        danger ? "hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400" : "hover:text-slate-700 dark:hover:text-slate-300"
       }`}
     >
       {children}

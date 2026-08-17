@@ -14,7 +14,7 @@ export function StatusBar({ stats, showLegend = true, className = "" }: StatusBa
 
   return (
     <div className={className}>
-      <div className="flex h-2 overflow-hidden rounded-full bg-slate-100">
+      <div className="flex h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
         {total > 0 &&
           STATUS_ORDER.map((s) => {
             const n = byStatus[s];
@@ -36,7 +36,7 @@ export function StatusBar({ stats, showLegend = true, className = "" }: StatusBa
             <span key={s} className="inline-flex items-center gap-1.5">
               <span className={`h-2 w-2 rounded-full ${STATUS_META[s].dot}`} />
               <span className={STATUS_META[s].text}>{STATUS_META[s].label}</span>
-              <span className="font-semibold text-slate-700">{byStatus[s]}</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">{byStatus[s]}</span>
             </span>
           ))}
         </div>

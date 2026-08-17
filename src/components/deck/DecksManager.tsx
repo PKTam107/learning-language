@@ -73,7 +73,7 @@ export function DecksManager({ showStats }: DecksManagerProps) {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20 text-slate-400">
+      <div className="flex justify-center py-20 text-slate-400 dark:text-slate-500">
         <Spinner className="h-6 w-6" />
       </div>
     );
@@ -90,7 +90,7 @@ export function DecksManager({ showStats }: DecksManagerProps) {
             <Stat label="Ôn hôm nay" value={agg.due} accent={agg.due > 0} />
           </div>
           {agg.total > 0 && (
-            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
               <StatusBar stats={agg} />
             </div>
           )}
@@ -122,7 +122,7 @@ export function DecksManager({ showStats }: DecksManagerProps) {
       </div>
 
       {decks.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 py-16 text-center text-slate-500">
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 py-16 text-center text-slate-500 dark:text-slate-400">
           <p>Chưa có bộ thẻ nào.</p>
           <p className="mt-1 text-sm">
             Tạo bộ thẻ đầu tiên, rồi bấm nút <strong>+</strong> để thêm từ.
@@ -164,11 +164,11 @@ function Stat({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+      <p className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
       <p
         className={`mt-1 text-2xl font-bold ${
-          accent ? "text-amber-600" : "text-slate-900"
+          accent ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-slate-100"
         }`}
       >
         {value}

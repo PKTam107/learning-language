@@ -6,13 +6,19 @@
   color-scheme: light;
 }
 
+/* Class `dark` do script bootstrap ở layout gắn — báo cho trình duyệt đổi màu
+   mặc định của scrollbar, ô input, date picker... theo nền tối. */
+html.dark {
+  color-scheme: dark;
+}
+
 html,
 body {
   height: 100%;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
 }
 
 /* Flip animation cho flashcard */
@@ -37,4 +43,12 @@ body {
 }
 .flip-back {
   transform: rotateY(180deg);
+}
+
+/* Người dùng tắt hiệu ứng chuyển động ở hệ điều hành thì bỏ luôn animation lật
+   thẻ (confetti cũng tự tắt — xem components/ui/Confetti.tsx). */
+@media (prefers-reduced-motion: reduce) {
+  .flip-inner {
+    transition: none;
+  }
 }

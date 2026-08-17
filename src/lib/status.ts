@@ -13,27 +13,27 @@ export const STATUS_META: Record<
 > = {
   new: {
     label: "Chưa học",
-    dot: "bg-slate-300",
-    bar: "bg-slate-300",
-    text: "text-slate-500",
+    dot: "bg-slate-300 dark:bg-slate-600",
+    bar: "bg-slate-300 dark:bg-slate-600",
+    text: "text-slate-500 dark:text-slate-400",
   },
   hard: {
     label: "Chưa thuộc",
     dot: "bg-red-500",
     bar: "bg-red-500",
-    text: "text-red-600",
+    text: "text-red-600 dark:text-red-400",
   },
   good: {
     label: "Đang thuộc",
     dot: "bg-amber-500",
     bar: "bg-amber-500",
-    text: "text-amber-600",
+    text: "text-amber-600 dark:text-amber-400",
   },
   easy: {
     label: "Đã thuộc",
     dot: "bg-green-600",
     bar: "bg-green-600",
-    text: "text-green-700",
+    text: "text-green-700 dark:text-green-300",
   },
 };
 

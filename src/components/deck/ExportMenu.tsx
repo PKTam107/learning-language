@@ -54,12 +54,12 @@ export function ExportMenu({ cards, baseName, label = "Xuất" }: Props) {
         {label}
       </Button>
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+        <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-lg">
           {OPTIONS.map((o) => (
             <button
               key={o.format}
               onClick={() => handle(o.format)}
-              className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+              className="block w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               {o.label}
             </button>
