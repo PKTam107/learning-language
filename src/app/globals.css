@@ -21,6 +21,16 @@ body {
   @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
 }
 
+/* Lưới an toàn cho tràn ngang: một phần tử lỡ rộng hơn viewport thì bị cắt,
+   thay vì cho cả trang cuộn ngang — trên điện thoại việc đó làm chữ bị lệch ra
+   ngoài lề và thanh điều hướng trông như bị hỏng.
+   Dùng `clip` chứ KHÔNG dùng `hidden`: `hidden` tạo scroll container mới và làm
+   `position: sticky` của navbar mất tác dụng, còn `clip` thì không. */
+html,
+body {
+  overflow-x: clip;
+}
+
 /* Flip animation cho flashcard */
 .flip-card {
   perspective: 1200px;

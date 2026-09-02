@@ -101,11 +101,12 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
 
   return (
     <>
-      {/* FAB cố định góc dưới phải — trên điện thoại nâng lên khỏi thanh tab đáy. */}
+      {/* FAB cố định góc dưới phải. Không còn thanh tab đáy nên về sát đáy,
+          chỉ chừa safe-area cho vạch home của iPhone. */}
       <button
         onClick={() => setOpen(true)}
-        style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
-        className="fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-3xl text-white shadow-lg shadow-brand/30 transition-transform hover:bg-brand-dark active:scale-95 md:!bottom-8 md:right-8"
+        style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+        className="fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-3xl text-white shadow-lg shadow-brand/30 transition-transform hover:bg-brand-dark active:scale-95 md:right-8"
         aria-label="Thêm từ mới"
       >
         +

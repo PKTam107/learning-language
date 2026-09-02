@@ -25,10 +25,15 @@ export function DailyChallenge() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <Target className="h-5 w-5 text-brand dark:text-indigo-400" /> Thử thách hôm nay
+    /* min-w-0 là bắt buộc khi thẻ này nằm trong grid: grid item mặc định
+    có min-width:auto nên KHÔNG co được xuống dưới min-content, mà bên trong có
+    truncate (white-space:nowrap) làm min-content bằng cả chuỗi text → track bị
+    nong rộng hơn viewport và cả trang tràn ngang. */
+    <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="flex min-w-0 items-center gap-2 text-lg font-semibold">
+          <Target className="h-5 w-5 shrink-0 text-brand dark:text-indigo-400" />
+          <span className="truncate">Thử thách hôm nay</span>
         </h2>
         {challenge && (
           <span
@@ -100,8 +105,8 @@ export function DailyChallenge() {
                 : "Nhiệm vụ tự đổi mỗi ngày lúc 0h."}
             </p>
             <Link
-              href="/decks"
-              className="inline-flex items-center text-sm font-medium text-brand dark:text-indigo-400 hover:underline"
+              href="/study/today"
+              className="inline-flex shrink-0 items-center text-sm font-medium text-brand hover:underline dark:text-indigo-400"
             >
               Ôn ngay <ChevronRight className="h-4 w-4" />
             </Link>
