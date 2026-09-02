@@ -10,11 +10,17 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import type { CardStatus, CardWithProgress } from "@/types";
-import { fetchCardsWithProgress, recordProgress } from "@/lib/cards";
+import {
+  fetchCardsByIds,
+  fetchCardsWithProgress,
+  fetchDueCardsAllDecks,
+  recordProgress,
+} from "@/lib/cards";
+import { fetchWeakWords, WEAK_SESSION_SIZE } from "@/lib/weak";
 import { STATUS_META, isDue } from "@/lib/status";
 import { useSettings } from "@/lib/settings";
 import { playPronunciation } from "@/lib/audio";
-import { REVIEW_TYPES, type ReviewType } from "@/lib/quiz";
+import { MCQ_TYPES, REVIEW_TYPES, type ReviewType } from "@/lib/quiz";
 import { FlashcardFlip } from "@/components/flashcard/FlashcardFlip";
 import { QuizCard } from "@/components/flashcard/QuizCard";
 import { StatusDot } from "@/components/status/StatusDot";
@@ -70,6 +76,35 @@ function shuffleArr<T>(a: T[]): T[] {
 
 const LIMIT_OPTIONS = [0, 10, 20, 30, 50];
 
+/**
+ * Nguồn thẻ của phiên học, suy ra từ tham số route.
+ *
+ * Route vẫn là `/study/[deckId]`, nhưng hai giá trị đặc biệt `today` và `weak`
+ * mở phiên gộp nhiều bộ thẻ. Không đụng deckId thật vì id luôn là UUID.
+ */
+type SourceKind = "deck" | "due" | "weak";
+
+const SOURCE_META: Record<
+  SourceKind,
+  { title: string; hint: string; empty: string }
+> = {
+  deck: {
+    title: "Bắt đầu học",
+    hint: "Chọn cách ôn tập.",
+    empty: "Bộ thẻ này chưa có từ nào.",
+  },
+  due: {
+    title: "Ôn hôm nay",
+    hint: "Thẻ đến hạn ôn từ mọi bộ thẻ, gộp vào một phiên.",
+    empty: "Hôm nay không còn thẻ nào đến hạn. Quay lại mai nhé!",
+  },
+  weak: {
+    title: "Ôn từ hay quên",
+    hint: "Những từ bạn đánh giá “Chưa thuộc” nhiều nhất.",
+    empty: "Chưa có từ nào bị đánh giá “Chưa thuộc”. Học vài phiên rồi quay lại.",
+  },
+};
+
 export default function StudyScreen() {
   const colors = useThemeColors();
   const styles = useStyles(makeStyles);
@@ -97,10 +132,24 @@ export default function StudyScreen() {
 
   const { settings } = useSettings();
 
-  const load = useCallback(() => {
-    if (!deckId) return Promise.resolve();
-    return fetchCardsWithProgress(deckId).then(setAll);
-  }, [deckId]);
+  const kind: SourceKind =
+    deckId === "today" ? "due" : deckId === "weak" ? "weak" : "deck";
+  const meta = SOURCE_META[kind];
+
+  const load = useCallback(async () => {
+    if (kind === "due") {
+      setAll(await fetchDueCardsAllDecks());
+      return;
+    }
+    if (kind === "weak") {
+      // Xếp hạng theo số lần quên rồi lấy thẻ đầy đủ theo đúng thứ tự đó.
+      const ranked = await fetchWeakWords(WEAK_SESSION_SIZE);
+      setAll(await fetchCardsByIds(ranked.map((w) => w.cardId)));
+      return;
+    }
+    if (!deckId) return;
+    setAll(await fetchCardsWithProgress(deckId));
+  }, [kind, deckId]);
 
   useEffect(() => {
     load().finally(() => setLoading(false));
@@ -113,18 +162,21 @@ export default function StudyScreen() {
   );
 
   useEffect(() => {
-    if (inited || all.length === 0) return;
+    if (kind !== "deck" || inited || all.length === 0) return;
     setInited(true);
     if (all.some((c) => isDue(c.progress?.next_due_at))) setMode("due");
-  }, [all, inited]);
+  }, [all, inited, kind]);
 
   function start() {
+    // Chỉ nguồn "deck" mới lọc theo Mode; due/weak đã được lọc từ lúc nạp.
     const pool =
-      mode === "weak"
-        ? all.filter(isWeak)
-        : mode === "due"
-          ? all.filter((c) => isDue(c.progress?.next_due_at))
-          : all;
+      kind !== "deck"
+        ? all
+        : mode === "weak"
+          ? all.filter(isWeak)
+          : mode === "due"
+            ? all.filter((c) => isDue(c.progress?.next_due_at))
+            : all;
     let list = shuffle ? shuffleArr(pool) : orderCards(pool);
     if (limit > 0) list = list.slice(0, limit);
     setQueue(list);
@@ -196,7 +248,7 @@ export default function StudyScreen() {
     return (
       <Screen title="Học">
         <View style={styles.center}>
-          <Text style={styles.emptyTitle}>Bộ thẻ này chưa có từ nào.</Text>
+          <Text style={styles.emptyTitle}>{meta.empty}</Text>
           <Button
             title="← Quay lại"
             variant="secondary"
@@ -210,40 +262,55 @@ export default function StudyScreen() {
   // ---------- Pha 1: Chọn chế độ ----------
   if (phase === "setup") {
     const canStart =
-      !(mode === "weak" && weakCount === 0) && !(mode === "due" && dueCount === 0);
+      kind !== "deck" ||
+      (!(mode === "weak" && weakCount === 0) &&
+        !(mode === "due" && dueCount === 0));
     return (
-      <Screen title="Bắt đầu học">
+      <Screen title={meta.title}>
         <ScrollView contentContainerStyle={styles.setup}>
-          <Text style={styles.setupHint}>Chọn cách ôn tập.</Text>
+          <Text style={styles.setupHint}>{meta.hint}</Text>
 
-          <ModeOption
-            label="Ôn hôm nay"
-            desc="Thẻ đến hạn ôn (spaced repetition)"
-            count={dueCount}
-            active={mode === "due"}
-            disabled={dueCount === 0}
-            onPress={() => setMode("due")}
-          />
-          <ModeOption
-            label="Ôn tất cả"
-            desc="Toàn bộ từ trong bộ thẻ"
-            count={all.length}
-            active={mode === "all"}
-            onPress={() => setMode("all")}
-          />
-          <ModeOption
-            label="Chỉ từ chưa thuộc"
-            desc="Từ chưa học hoặc đánh giá khó"
-            count={weakCount}
-            active={mode === "weak"}
-            disabled={weakCount === 0}
-            onPress={() => setMode("weak")}
-          />
+          {kind === "deck" ? (
+            <>
+              <ModeOption
+                label="Ôn hôm nay"
+                desc="Thẻ đến hạn ôn (spaced repetition)"
+                count={dueCount}
+                active={mode === "due"}
+                disabled={dueCount === 0}
+                onPress={() => setMode("due")}
+              />
+              <ModeOption
+                label="Ôn tất cả"
+                desc="Toàn bộ từ trong bộ thẻ"
+                count={all.length}
+                active={mode === "all"}
+                onPress={() => setMode("all")}
+              />
+              <ModeOption
+                label="Chỉ từ chưa thuộc"
+                desc="Từ chưa học hoặc đánh giá khó"
+                count={weakCount}
+                active={mode === "weak"}
+                disabled={weakCount === 0}
+                onPress={() => setMode("weak")}
+              />
+            </>
+          ) : (
+            /* due/weak: tập thẻ đã cố định, chỉ cho biết có bao nhiêu từ. */
+            <View style={styles.poolCard}>
+              <Text style={styles.poolText}>
+                <Text style={styles.poolCount}>{all.length}</Text> từ trong phiên
+                này.
+              </Text>
+            </View>
+          )}
 
           <Text style={styles.optLabel}>Kiểu ôn</Text>
           <View style={styles.chipRow}>
             {REVIEW_TYPES.map((rt) => {
-              const disabled = rt.value === "mcq" && all.length < 4;
+              // Cả hai chiều trắc nghiệm đều cần đủ thẻ để dựng đáp án nhiễu.
+              const disabled = MCQ_TYPES.includes(rt.value) && all.length < 4;
               return (
                 <Pressable
                   key={rt.value}
@@ -502,6 +569,16 @@ const makeStyles = (colors: ThemeColors) =>
     // setup
     setup: { padding: spacing.lg, gap: spacing.sm },
     setupHint: { fontSize: 14, color: colors.textMuted, marginBottom: spacing.xs },
+    // Khối tóm tắt tập thẻ cho phiên due/weak (thay chỗ 3 ô chọn Mode).
+    poolCard: {
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.brand,
+      backgroundColor: colors.brandLight,
+      padding: spacing.lg,
+    },
+    poolText: { fontSize: 14, color: colors.text },
+    poolCount: { fontWeight: "800", color: colors.brandDark },
     mode: {
       flexDirection: "row",
       alignItems: "center",

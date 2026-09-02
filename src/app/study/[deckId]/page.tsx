@@ -10,7 +10,7 @@ export default function StudyPage({
     <>
       <Navbar />
       <main className="mx-auto max-w-3xl px-4 pb-28 pt-8 md:pb-12">
-        <StudySession deckId={params.deckId} />
+        <StudySession source={{ kind: "deck", deckId: params.deckId }} />
       </main>
     </>
   );

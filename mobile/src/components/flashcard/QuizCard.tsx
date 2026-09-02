@@ -30,8 +30,14 @@ interface Props {
 export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
   const colors = useThemeColors();
   const styles = useStyles(makeStyles);
+  // "Việt → Anh" dùng chung cơ chế trắc nghiệm, chỉ đảo chiều đề/đáp án.
+  const isMcq = type === "mcq" || type === "mcq_reverse";
+  const reverse = type === "mcq_reverse";
   const mcq = useMemo(
-    () => (type === "mcq" ? buildMcq(card, pool) : null),
+    () =>
+      isMcq
+        ? buildMcq(card, pool, reverse ? "meaningToTerm" : "termToMeaning")
+        : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [card.id, type]
   );
@@ -70,6 +76,9 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
   }
 
   const answered = result !== null;
+  // Đáp án đúng để hiện lúc phản hồi: chỉ chiều nhận diện (mcq) mới là nghĩa
+  // tiếng Việt; ba kiểu còn lại đáp án đều là từ tiếng Anh.
+  const correctAnswer = type === "mcq" ? card.meaning_vi : card.term;
 
   return (
     <ScrollView
@@ -78,7 +87,18 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
       keyboardShouldPersistTaps="handled"
     >
       {/* ----- Đề bài ----- */}
-      {type === "mcq" ? (
+      {type === "mcq_reverse" ? (
+        <View style={styles.prompt}>
+          <Text style={styles.qLabel}>Nghĩa</Text>
+          <Text style={styles.meaning}>
+            {card.meaning_vi || "(không có nghĩa)"}
+          </Text>
+          {!!card.part_of_speech && (
+            <Text style={styles.pos}>({card.part_of_speech})</Text>
+          )}
+          <Text style={styles.ask}>Chọn từ tiếng Anh đúng:</Text>
+        </View>
+      ) : type === "mcq" ? (
         <View style={styles.prompt}>
           <Text style={styles.term}>{card.term}</Text>
           {!!card.phonetic && <Text style={styles.phonetic}>{card.phonetic}</Text>}
@@ -104,7 +124,7 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
       )}
 
       {/* ----- Ô trả lời ----- */}
-      {type === "mcq" && mcq ? (
+      {isMcq && mcq ? (
         <View style={styles.options}>
           {mcq.options.map((opt, i) => {
             const isAnswer = i === mcq.answerIndex;
@@ -129,10 +149,11 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
             );
           })}
         </View>
-      ) : type === "mcq" ? (
+      ) : isMcq ? (
         // Không dựng được trắc nghiệm cho thẻ này → hiện đáp án để tự đánh giá.
         <Text style={styles.fallback}>
-          Không đủ dữ liệu để tạo trắc nghiệm. Đáp án: {card.meaning_vi}
+          Không đủ dữ liệu để tạo trắc nghiệm. Đáp án:{" "}
+          {reverse ? card.term : card.meaning_vi}
         </Text>
       ) : (
         <TextInput
@@ -155,8 +176,9 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
       {answered && (
         <View style={[styles.feedback, result ? styles.fbOk : styles.fbBad]}>
           <Text style={[styles.fbText, result ? styles.fbTextOk : styles.fbTextBad]}>
-            {result ? "✓ Chính xác!" : `✗ Đáp án: ${card.term}`}
+            {result ? "✓ Chính xác!" : `✗ Đáp án: ${correctAnswer}`}
           </Text>
+          {/* Chiều nhận diện đã hiện nghĩa ngay trong đáp án → không nhắc lại. */}
           {type !== "mcq" && (
             <Text style={styles.fbMeaning}>{card.meaning_vi}</Text>
           )}
@@ -165,7 +187,7 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
 
       {/* ----- Hành động ----- */}
       <View style={styles.actions}>
-        {!answered && type !== "mcq" && (
+        {!answered && !isMcq && (
           <Button
             title="Kiểm tra"
             onPress={submitText}
@@ -175,7 +197,7 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
         {answered && (
           <Button title="Câu tiếp →" onPress={() => onAnswered(!!result)} />
         )}
-        {!answered && type === "mcq" && !mcq && (
+        {!answered && isMcq && !mcq && (
           <Button title="Câu tiếp →" onPress={() => onAnswered(false)} />
         )}
       </View>

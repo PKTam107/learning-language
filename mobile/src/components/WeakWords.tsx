@@ -1,17 +1,24 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Brain } from "lucide-react-native";
+import { Brain, GraduationCap } from "lucide-react-native";
 import type { WeakWord } from "@/lib/weak";
 import { CefrBadge } from "@/components/flashcard/Enrichment";
+import { Button } from "@/components/ui/Button";
 import { radius, spacing, type ThemeColors } from "@/lib/theme";
-import { useStyles } from "@/contexts/ThemeContext";
+import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 /**
  * "Bạn hay quên": các từ bị đánh giá "Chưa thuộc" nhiều nhất. Ẩn nếu rỗng.
  * Chạm một từ → mở bộ thẻ chứa nó.
+ *
+ * Kèm nút mở phiên ôn đúng những từ này — trước đây khối này chỉ để đọc, tức
+ * app chỉ ra từ yếu của bạn rồi không cho làm gì với nó. Danh sách ở trang chủ
+ * chỉ là bản xem trước nên nhãn nút không nêu con số (phiên lấy tối đa
+ * WEAK_SESSION_SIZE từ, xem lib/weak.ts).
  */
 export function WeakWords({ words }: { words: WeakWord[] }) {
   const styles = useStyles(makeStyles);
+  const colors = useThemeColors();
   const router = useRouter();
   if (!words || words.length === 0) return null;
 
@@ -53,6 +60,13 @@ export function WeakWords({ words }: { words: WeakWord[] }) {
           </View>
         </Pressable>
       ))}
+      <Button
+        title="Ôn những từ này"
+        icon={<GraduationCap size={16} color={colors.text} />}
+        variant="secondary"
+        onPress={() => router.push("/study/weak")}
+        style={styles.studyBtn}
+      />
     </View>
   );
 }
@@ -94,4 +108,5 @@ const makeStyles = (colors: ThemeColors) =>
       backgroundColor: colors.tints.rose.bg,
     },
     badgeText: { fontSize: 12, fontWeight: "700", color: colors.tints.rose.fg },
+    studyBtn: { marginTop: spacing.md },
   });

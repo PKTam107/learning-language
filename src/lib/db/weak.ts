@@ -5,6 +5,12 @@ import { currentUserId } from "@/lib/supabase/currentUser";
 
 const supabase = () => createClient();
 
+/**
+ * Số từ "hay quên" tối đa đưa vào một phiên ôn. Nhãn nút và tập thẻ thật phải
+ * cùng đọc hằng số này, nếu không nút sẽ hứa một số khác với số thực học.
+ */
+export const WEAK_SESSION_SIZE = 30;
+
 export interface WeakWord {
   cardId: string;
   term: string;

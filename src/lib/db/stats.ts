@@ -13,6 +13,26 @@ import {
 
 const supabase = () => createClient();
 
+/**
+ * Số thẻ đến hạn ôn trên toàn tài khoản, đếm **phía server** (head: true →
+ * không tải dòng nào).
+ *
+ * "Đến hạn" = chưa có dòng progress HOẶC next_due_at đã qua (xem `isDue`), nên
+ * đếm ngược: tổng thẻ − số thẻ còn hạn ở tương lai. Dùng index
+ * card_progress_user_due (migration 0008).
+ */
+export async function fetchDueCount(): Promise<number> {
+  const sb = supabase();
+  const [totalRes, notDueRes] = await Promise.all([
+    sb.from("cards").select("id", { count: "exact", head: true }),
+    sb
+      .from("card_progress")
+      .select("id", { count: "exact", head: true })
+      .gt("next_due_at", new Date().toISOString()),
+  ]);
+  return Math.max(0, (totalRes.count ?? 0) - (notDueRes.count ?? 0));
+}
+
 export interface StudyStats {
   /** Số ngày học liên tiếp tính đến hôm nay (nếu hôm nay chưa học thì tính đến hôm qua). */
   streak: number;

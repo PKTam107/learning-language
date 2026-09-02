@@ -2,14 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Brain, ChevronRight } from "lucide-react";
-import { fetchWeakWords, type WeakWord } from "@/lib/db/weak";
+import { Brain, ChevronRight, GraduationCap } from "lucide-react";
+import {
+  fetchWeakWords,
+  WEAK_SESSION_SIZE,
+  type WeakWord,
+} from "@/lib/db/weak";
 import { CefrBadge } from "@/components/flashcard/Enrichment";
 import { Spinner } from "@/components/ui/Spinner";
+import { Button } from "@/components/ui/Button";
 
 /**
  * "Bạn hay quên": các từ bị đánh giá "Chưa thuộc" nhiều nhất.
  * `limit` giới hạn số dòng; khi đủ `limit` sẽ hiện link "Xem tất cả".
+ *
+ * Kèm nút mở phiên ôn đúng những từ này — trước đây khối này chỉ để đọc, tức
+ * app chỉ ra từ yếu của bạn rồi không cho làm gì với nó.
  */
 export function WeakWords({ limit }: { limit?: number }) {
   const [words, setWords] = useState<WeakWord[] | null>(null);
@@ -85,6 +93,20 @@ export function WeakWords({ limit }: { limit?: number }) {
             </li>
           ))}
         </ul>
+      )}
+
+      {!!words?.length && (
+        <Link href="/study/weak" className="mt-4 block">
+          <Button variant="secondary" className="w-full">
+            <GraduationCap size={16} />
+            {/* Ở trang chủ, `limit` khiến danh sách chỉ là bản xem trước (6
+                dòng) nên KHÔNG biết tổng thật — không được suy số từ đó. Chỉ
+                trang /weak (không limit) mới nêu con số. */}
+            {limit
+              ? "Ôn những từ này"
+              : `Ôn ${Math.min(words.length, WEAK_SESSION_SIZE)} từ hay quên`}
+          </Button>
+        </Link>
       )}
     </div>
   );
