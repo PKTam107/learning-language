@@ -93,7 +93,7 @@ export function DailyChallenge() {
             ))}
           </ul>
 
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-slate-400 dark:text-slate-500">
               {challenge.allDone
                 ? "Xong hết thử thách hôm nay — quá đỉnh! 🎉"

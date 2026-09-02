@@ -6,6 +6,7 @@ import { AlarmClock } from "lucide-react";
 import { fetchStudyStats, type StudyStats } from "@/lib/db/stats";
 import { useSettings } from "@/lib/settings";
 import { minutesOfDay } from "@/lib/reminder";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { StreakCard } from "./StreakCard";
 
 /**
@@ -26,7 +27,24 @@ export function StudyOverview() {
     };
   }, []);
 
-  if (!stats) return null;
+  // Giữ chỗ đúng chiều cao thẻ streak để phần dưới không bị đẩy xuống khi số về.
+  if (!stats)
+    return (
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-7 w-7 rounded-full" />
+            <div>
+              <Skeleton className="h-7 w-24" />
+              <Skeleton className="mt-1.5 h-3 w-28" />
+            </div>
+          </div>
+          <Skeleton className="h-9 w-12" />
+        </div>
+        <Skeleton className="mt-4 h-14 w-full" />
+        <Skeleton className="mt-3 h-3 w-48" />
+      </div>
+    );
 
   const now = new Date();
   const showReminder =

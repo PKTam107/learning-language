@@ -264,9 +264,9 @@ export function DeckDetail({ deckId }: { deckId: string }) {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">{deck.name}</h1>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="break-words text-xl font-bold sm:text-2xl">{deck.name}</h1>
           {deck.description && (
             <p className="text-sm text-slate-500 dark:text-slate-400">{deck.description}</p>
           )}
@@ -278,7 +278,8 @@ export function DeckDetail({ deckId }: { deckId: string }) {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        {/* Màn hẹp: nút phụ tự xuống hàng, "Học ngay" tràn hàng cho dễ bấm. */}
+        <div className="flex flex-wrap items-center gap-2">
           <EnrichBackfillButton deckId={deck.id} onDone={load} />
           <ImportButton deckId={deck.id} onImported={load} />
           {cards.length > 0 && (
@@ -287,8 +288,10 @@ export function DeckDetail({ deckId }: { deckId: string }) {
               <Button variant="ghost" onClick={toggleSelectMode}>
                 {selectMode ? "Xong" : "Chọn"}
               </Button>
-              <Link href={`/study/${deck.id}`}>
-                <Button size="lg">Học ngay</Button>
+              <Link href={`/study/${deck.id}`} className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto">
+                  Học ngay
+                </Button>
               </Link>
             </>
           )}
@@ -341,7 +344,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
               : "Chọn tất cả"}
           </button>
           <span className="text-sm text-slate-500 dark:text-slate-400">Đã chọn {selected.size}</span>
-          <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex flex-wrap gap-2">
             <Button
               variant="ghost"
               onClick={openBulkMove}
@@ -399,11 +402,12 @@ export function DeckDetail({ deckId }: { deckId: string }) {
                 className="min-w-0 flex-1 text-left"
                 aria-label={`Xem chi tiết ${card.term}`}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <StatusDot status={statusOf(card)} />
-                  <span className="font-semibold">{card.term}</span>
+                  <span className="truncate font-semibold">{card.term}</span>
+                  {/* Phiên âm là phụ — màn hẹp ẩn đi, nhường chỗ cho từ chính. */}
                   {card.phonetic && (
-                    <span className="text-sm text-slate-400 dark:text-slate-500">
+                    <span className="hidden shrink-0 text-sm text-slate-400 sm:inline dark:text-slate-500">
                       {card.phonetic}
                     </span>
                   )}
@@ -483,7 +487,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
               <select
                 value={moveTarget}
                 onChange={(e) => setMoveTarget(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base dark:border-slate-700 sm:text-sm"
               >
                 {otherDecks.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -526,7 +530,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
             <select
               value={moveTarget}
               onChange={(e) => setMoveTarget(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base dark:border-slate-700 sm:text-sm"
             >
               {otherDecks.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -574,7 +578,7 @@ function FilterChip({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors disabled:opacity-40 ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors disabled:opacity-40 ${
         active
           ? "border-brand bg-brand-light dark:bg-indigo-500/15 text-brand-dark dark:text-indigo-300"
           : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -601,7 +605,7 @@ function IconBtn({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className={`rounded p-1.5 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 ${
+      className={`rounded p-2 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 ${
         danger ? "hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400" : "hover:text-slate-700 dark:hover:text-slate-300"
       }`}
     >

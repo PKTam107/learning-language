@@ -14,7 +14,7 @@ interface FlashcardFlipProps {
 export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
   return (
     <div
-      className="flip-card h-80 w-full cursor-pointer select-none sm:h-96"
+      className="flip-card h-72 w-full cursor-pointer select-none sm:h-96"
       onClick={onFlip}
       role="button"
       aria-label="Lật thẻ"

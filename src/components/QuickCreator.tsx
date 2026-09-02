@@ -101,10 +101,11 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
 
   return (
     <>
-      {/* FAB cố định góc dưới phải */}
+      {/* FAB cố định góc dưới phải — trên điện thoại nâng lên khỏi thanh tab đáy. */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-3xl text-white shadow-lg hover:bg-brand-dark"
+        style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
+        className="fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-3xl text-white shadow-lg shadow-brand/30 transition-transform hover:bg-brand-dark active:scale-95 md:!bottom-8 md:right-8"
         aria-label="Thêm từ mới"
       >
         +
@@ -125,7 +126,7 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
               <select
                 value={deckId}
                 onChange={(e) => setDeckId(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base dark:border-slate-700 sm:text-sm"
               >
                 {decks.map((d) => (
                   <option key={d.id} value={d.id}>

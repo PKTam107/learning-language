@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import * as XLSX from "xlsx";
 import type { DraftCard } from "@/types";
 import { parseCardRows, TEMPLATE_HEADERS } from "@/lib/import/xlsx";
 import { importCards } from "@/lib/db/cards";
@@ -24,11 +23,14 @@ export function ImportButton({ deckId, onImported }: Props) {
   const [drafts, setDrafts] = useState<DraftCard[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [templateBusy, setTemplateBusy] = useState(false);
   const [result, setResult] = useState<{ inserted: number; skipped: number } | null>(
     null
   );
 
   function reset() {
+    setParsing(false);
     setDrafts([]);
     setError(null);
     setResult(null);
@@ -42,15 +44,18 @@ export function ImportButton({ deckId, onImported }: Props) {
     reset();
     setFileName(file.name);
     setOpen(true);
+    setParsing(true);
     try {
       const buf = await file.arrayBuffer();
-      const parsed = parseCardRows(buf, "array");
+      const parsed = await parseCardRows(buf, "array");
       if (parsed.length === 0) {
         setError("Không đọc được từ nào trong file.");
       }
       setDrafts(parsed);
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setParsing(false);
     }
   }
 
@@ -74,14 +79,23 @@ export function ImportButton({ deckId, onImported }: Props) {
     reset();
   }
 
-  function downloadTemplate() {
-    const ws = XLSX.utils.aoa_to_sheet([
-      TEMPLATE_HEADERS,
-      ["example", "ví dụ", "/ɪɡˈzɑːmpəl/", "noun", "ghi chú tuỳ chọn"],
-    ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "cards");
-    XLSX.writeFile(wb, "linguacards-template.xlsx");
+  async function downloadTemplate() {
+    setTemplateBusy(true);
+    try {
+      // Nạp xlsx ngay lúc bấm — xem ghi chú ở lib/import/xlsx.ts.
+      const XLSX = await import("xlsx");
+      const ws = XLSX.utils.aoa_to_sheet([
+        TEMPLATE_HEADERS,
+        ["example", "ví dụ", "/ɪɡˈzɑːmpəl/", "noun", "ghi chú tuỳ chọn"],
+      ]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "cards");
+      XLSX.writeFile(wb, "linguacards-template.xlsx");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setTemplateBusy(false);
+    }
   }
 
   return (
@@ -93,17 +107,18 @@ export function ImportButton({ deckId, onImported }: Props) {
         className="hidden"
         onChange={handleFile}
       />
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button variant="secondary" onClick={() => inputRef.current?.click()}>
           <Upload size={16} />
           Nhập Excel
         </Button>
         <button
           onClick={downloadTemplate}
-          className="inline-flex items-center gap-1 whitespace-nowrap text-sm text-brand dark:text-indigo-400 hover:underline"
+          disabled={templateBusy}
+          className="inline-flex items-center gap-1 whitespace-nowrap text-sm text-brand hover:underline disabled:opacity-50 dark:text-indigo-400"
           type="button"
         >
-          <Download size={14} />
+          {templateBusy ? <Spinner className="h-3.5 w-3.5" /> : <Download size={14} />}
           Tải file mẫu
         </button>
       </div>
@@ -138,6 +153,12 @@ export function ImportButton({ deckId, onImported }: Props) {
 
               {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
+              {parsing && (
+                <p className="flex items-center gap-2 py-4 text-sm text-slate-500 dark:text-slate-400">
+                  <Spinner /> Đang đọc file…
+                </p>
+              )}
+
               {drafts.length > 0 && (
                 <>
                   <p className="text-sm text-slate-700 dark:text-slate-300">
@@ -170,17 +191,21 @@ export function ImportButton({ deckId, onImported }: Props) {
               <div className="flex items-center justify-between gap-2">
                 <button
                   onClick={downloadTemplate}
-                  className="inline-flex items-center gap-1 text-sm text-brand dark:text-indigo-400 hover:underline"
+                  disabled={templateBusy}
+                  className="inline-flex items-center gap-1 text-sm text-brand hover:underline disabled:opacity-50 dark:text-indigo-400"
                   type="button"
                 >
-                  <Download size={14} />
+                  {templateBusy ? <Spinner className="h-3.5 w-3.5" /> : <Download size={14} />}
                   Tải file mẫu
                 </button>
                 <div className="flex gap-2">
                   <Button variant="ghost" onClick={close}>
                     Hủy
                   </Button>
-                  <Button onClick={handleConfirm} disabled={busy || drafts.length === 0}>
+                  <Button
+                    onClick={handleConfirm}
+                    disabled={busy || parsing || drafts.length === 0}
+                  >
                     {busy && <Spinner />}
                     Nhập {drafts.length > 0 ? `${drafts.length} từ` : ""}
                   </Button>
