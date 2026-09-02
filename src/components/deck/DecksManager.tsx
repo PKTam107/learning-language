@@ -13,13 +13,6 @@ import { Save, Sparkles, Search, CalendarCheck } from "lucide-react";
 import { DeckCard } from "./DeckCard";
 import { DeckForm } from "./DeckForm";
 
-/**
- * `[&>*]:min-w-0` trên các grid: grid item mặc định có `min-width: auto` nên
- * KHÔNG co được xuống dưới min-content của nó. Tên/mô tả bộ thẻ dài nhất trong
- * danh sách (có `truncate`/`line-clamp` nên min-content bằng cả chuỗi) sẽ nong
- * track rộng hơn viewport và làm **cả trang cuộn ngang** — kéo theo cả thanh
- * điều hướng `position: fixed` bị giãn theo layout viewport.
- */
 interface DecksManagerProps {
   /** Hiển thị thanh thống kê phía trên (dùng ở dashboard). */
   showStats?: boolean;
@@ -102,7 +95,7 @@ export function DecksManager({ showStats }: DecksManagerProps) {
           <Skeleton className="h-6 w-44" />
           <Skeleton className="h-9 w-32" />
         </div>
-        <div className="grid gap-4 [&>*]:min-w-0 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }, (_, i) => (
             <div
               key={i}
@@ -207,7 +200,7 @@ export function DecksManager({ showStats }: DecksManagerProps) {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 [&>*]:min-w-0 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((deck) => (
             <DeckCard
               key={deck.id}
