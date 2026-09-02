@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/currentUser";
 import type { Card, CardStatus, CardWithProgress, DraftCard } from "@/types";
 
 const supabase = () => createClient();
@@ -39,10 +40,8 @@ export async function saveCard(
   deckId: string,
   draft: DraftCard
 ): Promise<Card> {
-  const {
-    data: { user },
-  } = await supabase().auth.getUser();
-  if (!user) throw new Error("Chưa đăng nhập");
+  const userId = await currentUserId();
+  if (!userId) throw new Error("Chưa đăng nhập");
 
   const term = draft.term.trim();
   if (!term) throw new Error("Từ không được để trống");
@@ -51,7 +50,7 @@ export async function saveCard(
   const { data, error } = await supabase()
     .from("cards")
     .insert({
-      user_id: user.id,
+      user_id: userId,
       deck_id: deckId,
       term,
       phonetic: draft.phonetic ?? null,
@@ -87,10 +86,8 @@ export async function updateCard(
   deckId: string,
   draft: DraftCard
 ): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase().auth.getUser();
-  if (!user) throw new Error("Chưa đăng nhập");
+  const userId = await currentUserId();
+  if (!userId) throw new Error("Chưa đăng nhập");
 
   const term = draft.term.trim();
   if (!term) throw new Error("Từ không được để trống");
@@ -115,7 +112,7 @@ export async function updateCard(
       collocations: draft.collocations ?? [],
     })
     .eq("id", id)
-    .eq("user_id", user.id); // chỉ sửa thẻ của chính mình
+    .eq("user_id", userId); // chỉ sửa thẻ của chính mình
   if (error) {
     if (isUniqueViolation(error))
       throw new Error(`Từ “${term}” đã có trong bộ thẻ này.`);
@@ -154,10 +151,8 @@ export async function importCards(
   deckId: string,
   drafts: DraftCard[]
 ): Promise<{ inserted: number; skipped: number }> {
-  const {
-    data: { user },
-  } = await supabase().auth.getUser();
-  if (!user) throw new Error("Chưa đăng nhập");
+  const userId = await currentUserId();
+  if (!userId) throw new Error("Chưa đăng nhập");
   if (drafts.length === 0) return { inserted: 0, skipped: 0 };
 
   const { data: existing, error: exErr } = await supabase()
@@ -175,7 +170,7 @@ export async function importCards(
     if (taken.has(norm)) continue; // trùng (đã có hoặc lặp trong lô) → bỏ qua
     taken.add(norm);
     rows.push({
-      user_id: user.id,
+      user_id: userId,
       deck_id: deckId,
       term,
       phonetic: d.phonetic ?? null,
@@ -231,11 +226,9 @@ export async function fetchCardsWithProgress(
 
 /** Lấy id user hiện tại; ném lỗi nếu chưa đăng nhập. */
 async function requireUserId(): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase().auth.getUser();
-  if (!user) throw new Error("Chưa đăng nhập");
-  return user.id;
+  const userId = await currentUserId();
+  if (!userId) throw new Error("Chưa đăng nhập");
+  return userId;
 }
 
 export async function deleteCard(id: string): Promise<void> {
@@ -316,14 +309,12 @@ export async function moveCards(
 /** Reset tiến độ nhiều thẻ về "chưa học" (xóa dòng card_progress tương ứng). */
 export async function resetProgress(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
-  const {
-    data: { user },
-  } = await supabase().auth.getUser();
-  if (!user) throw new Error("Chưa đăng nhập");
+  const userId = await currentUserId();
+  if (!userId) throw new Error("Chưa đăng nhập");
   const { error } = await supabase()
     .from("card_progress")
     .delete()
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .in("card_id", ids);
   if (error) throw error;
 }
@@ -358,15 +349,13 @@ export async function recordProgress(
   cardId: string,
   status: CardStatus
 ): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase().auth.getUser();
-  if (!user) throw new Error("Chưa đăng nhập");
+  const userId = await currentUserId();
+  if (!userId) throw new Error("Chưa đăng nhập");
 
   const { data: existing } = await supabase()
     .from("card_progress")
     .select("review_count, ease_factor, last_reviewed_at, next_due_at")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("card_id", cardId)
     .maybeSingle();
 
@@ -393,7 +382,7 @@ export async function recordProgress(
 
   const { error } = await supabase().from("card_progress").upsert(
     {
-      user_id: user.id,
+      user_id: userId,
       card_id: cardId,
       status,
       review_count: (existing?.review_count ?? 0) + 1,
@@ -409,7 +398,7 @@ export async function recordProgress(
   // (vd migration review_events chưa chạy) — nuốt lỗi im lặng.
   void supabase()
     .from("review_events")
-    .insert({ user_id: user.id, card_id: cardId, status })
+    .insert({ user_id: userId, card_id: cardId, status })
     .then(({ error: logErr }) => {
       if (logErr) console.warn("review_events:", logErr.message);
     });

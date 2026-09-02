@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/currentUser";
 
 const supabase = () => createClient();
 
@@ -23,10 +24,8 @@ export interface WeakWord {
  * Trả [] nếu chưa đăng nhập hoặc chưa có dữ liệu.
  */
 export async function fetchWeakWords(limit = 20): Promise<WeakWord[]> {
-  const {
-    data: { user },
-  } = await supabase().auth.getUser();
-  if (!user) return [];
+  const userId = await currentUserId();
+  if (!userId) return [];
 
   const since = new Date();
   since.setDate(since.getDate() - 180);

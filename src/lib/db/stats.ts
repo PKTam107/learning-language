@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/currentUser";
 import {
   buildSeries,
   countByDay,
@@ -35,10 +36,8 @@ export const EMPTY_STATS: StudyStats = {
  * Trả về EMPTY_STATS nếu chưa đăng nhập hoặc bảng chưa có (migration chưa chạy).
  */
 export async function fetchStudyStats(): Promise<StudyStats> {
-  const {
-    data: { user },
-  } = await supabase().auth.getUser();
-  if (!user) return EMPTY_STATS;
+  const userId = await currentUserId();
+  if (!userId) return EMPTY_STATS;
 
   const since = startOfDay();
   since.setDate(since.getDate() - 59);

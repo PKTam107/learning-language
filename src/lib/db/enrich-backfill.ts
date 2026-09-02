@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/currentUser";
 
 const supabase = () => createClient();
 
@@ -21,10 +22,8 @@ const norm = (s: string) => s.trim().toLowerCase();
 export async function fetchUnenriched(
   deckId?: string
 ): Promise<UnenrichedCard[]> {
-  const {
-    data: { user },
-  } = await supabase().auth.getUser();
-  if (!user) return [];
+  const userId = await currentUserId();
+  if (!userId) return [];
 
   let q = supabase().from("cards").select("id, term").is("enriched_at", null);
   if (deckId) q = q.eq("deck_id", deckId);

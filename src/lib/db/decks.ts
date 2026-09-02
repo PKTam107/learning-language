@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/currentUser";
 import type { CardStatus, Deck, DeckStats } from "@/types";
 import { emptyByStatus, isDue } from "@/lib/status";
 
@@ -62,15 +63,13 @@ export async function createDeck(input: {
   name: string;
   description?: string;
 }): Promise<Deck> {
-  const {
-    data: { user },
-  } = await supabase().auth.getUser();
-  if (!user) throw new Error("Chưa đăng nhập");
+  const userId = await currentUserId();
+  if (!userId) throw new Error("Chưa đăng nhập");
 
   const { data, error } = await supabase()
     .from("decks")
     .insert({
-      user_id: user.id,
+      user_id: userId,
       name: input.name,
       description: input.description ?? null,
       source_language: "en",

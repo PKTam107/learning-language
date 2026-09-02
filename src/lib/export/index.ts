@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { currentUserId } from "@/lib/supabase/currentUser";
 import type { Card } from "@/types";
 
 // xlsx (~170KB) chỉ nạp khi thực sự xuất Excel → không làm nặng dashboard/decks.
@@ -102,13 +103,11 @@ export interface AccountBackup {
 /** Lấy toàn bộ dữ liệu của user hiện tại (RLS tự lọc theo user). */
 export async function buildAccountBackup(): Promise<AccountBackup> {
   const sb = supabase();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) throw new Error("Chưa đăng nhập");
+  const userId = await currentUserId();
+  if (!userId) throw new Error("Chưa đăng nhập");
 
   const [profileRes, decksRes, cardsRes, progressRes] = await Promise.all([
-    sb.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    sb.from("profiles").select("*").eq("id", userId).maybeSingle(),
     sb.from("decks").select("*"),
     sb.from("cards").select("*"),
     sb.from("card_progress").select("*"),
