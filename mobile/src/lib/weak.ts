@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/paginate";
 
 /**
  * Số từ "hay quên" tối đa đưa vào một phiên ôn. Nhãn nút và tập thẻ thật phải
@@ -33,16 +34,27 @@ export async function fetchWeakWords(limit = 20): Promise<WeakWord[]> {
   const since = new Date();
   since.setDate(since.getDate() - 180);
 
-  const { data, error } = await supabase
-    .from("review_events")
-    .select("card_id, status")
-    .gte("reviewed_at", since.toISOString())
-    .not("card_id", "is", null);
-  if (error || !data) return [];
+  // 180 ngày nhật ký ôn gần như chắc chắn vượt 1000 dòng với người dùng đều
+  // đặn — thiếu dòng là xếp hạng "hay quên" sai.
+  let events: { card_id: string; status: string }[];
+  try {
+    events = await fetchAllRows<{ card_id: string; status: string }>(
+      (from, to) =>
+        supabase
+          .from("review_events")
+          .select("card_id, status")
+          .gte("reviewed_at", since.toISOString())
+          .not("card_id", "is", null)
+          .order("id")
+          .range(from, to)
+    );
+  } catch {
+    return [];
+  }
 
   const hard = new Map<string, number>();
   const total = new Map<string, number>();
-  for (const r of data as { card_id: string; status: string }[]) {
+  for (const r of events) {
     const id = r.card_id;
     total.set(id, (total.get(id) ?? 0) + 1);
     if (r.status === "hard") hard.set(id, (hard.get(id) ?? 0) + 1);

@@ -25,17 +25,19 @@ export function DeckCard({ deck, onEdit, onDelete }: DeckCardProps) {
             </p>
           )}
         </Link>
-        <div className="ml-2 flex shrink-0 gap-1">
+        {/* Vùng chạm 40px: icon 16px với padding cũ chỉ ra ~28px, quá nhỏ cho
+            ngón tay và hai nút lại nằm sát nhau (dễ bấm Xóa khi muốn Sửa). */}
+        <div className="-mr-1.5 -mt-1.5 ml-1 flex shrink-0">
           <button
             onClick={() => onEdit(deck)}
-            className="rounded p-1.5 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
             aria-label="Sửa"
           >
             <Pencil size={16} />
           </button>
           <button
             onClick={() => onDelete(deck)}
-            className="rounded p-1.5 text-slate-400 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
             aria-label="Xóa"
           >
             <Trash2 size={16} />
@@ -47,8 +49,8 @@ export function DeckCard({ deck, onEdit, onDelete }: DeckCardProps) {
         <StatusBar stats={deck.stats} showLegend={false} className="mt-4" />
       )}
 
-      <div className="mt-4 flex items-center justify-between">
-        <span className="text-sm text-slate-500 dark:text-slate-400">
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <span className="min-w-0 text-sm text-slate-500 dark:text-slate-400">
           {deck.card_count ?? 0} từ
           {deck.stats && deck.stats.total > 0 && (
             <> · {deck.stats.byStatus.easy} đã thuộc</>
@@ -59,7 +61,7 @@ export function DeckCard({ deck, onEdit, onDelete }: DeckCardProps) {
         </span>
         <Link
           href={`/study/${deck.id}`}
-          className="rounded-lg bg-brand px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
+          className="shrink-0 rounded-lg bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-dark"
         >
           Học ngay
         </Link>

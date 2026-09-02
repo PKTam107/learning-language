@@ -10,16 +10,3 @@ export function Skeleton({ className = "" }: { className?: string }) {
     />
   );
 }
-
-/** Khung một thẻ (ô số, thẻ bộ từ...) — viền + nền giống thẻ thật. */
-export function SkeletonCard({ className = "" }: { className?: string }) {
-  return (
-    <div
-      aria-hidden
-      className={`rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 ${className}`}
-    >
-      <Skeleton className="h-3 w-20" />
-      <Skeleton className="mt-3 h-7 w-14" />
-    </div>
-  );
-}

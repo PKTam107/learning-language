@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/currentUser";
+import { fetchAllRows } from "@/lib/db/paginate";
 import type { Card } from "@/types";
 
 // xlsx (~170KB) chỉ nạp khi thực sự xuất Excel → không làm nặng dashboard/decks.
@@ -106,23 +107,29 @@ export async function buildAccountBackup(): Promise<AccountBackup> {
   const userId = await currentUserId();
   if (!userId) throw new Error("Chưa đăng nhập");
 
-  const [profileRes, decksRes, cardsRes, progressRes] = await Promise.all([
+  // Sao lưu BẮT BUỘC phải phân trang: `select()` trần bị cắt ở 1000 dòng mà
+  // không báo lỗi, nên file backup trông vẫn "thành công" nhưng thiếu thẻ —
+  // đúng loại mất dữ liệu chỉ phát hiện ra lúc cần phục hồi.
+  const [profileRes, decks, cards, progress] = await Promise.all([
     sb.from("profiles").select("*").eq("id", userId).maybeSingle(),
-    sb.from("decks").select("*"),
-    sb.from("cards").select("*"),
-    sb.from("card_progress").select("*"),
+    fetchAllRows<unknown>((f, t) =>
+      sb.from("decks").select("*").order("id").range(f, t)
+    ),
+    fetchAllRows<unknown>((f, t) =>
+      sb.from("cards").select("*").order("id").range(f, t)
+    ),
+    fetchAllRows<unknown>((f, t) =>
+      sb.from("card_progress").select("*").order("id").range(f, t)
+    ),
   ]);
-  for (const r of [decksRes, cardsRes, progressRes]) {
-    if (r.error) throw r.error;
-  }
 
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
     profile: profileRes.data ?? null,
-    decks: decksRes.data ?? [],
-    cards: cardsRes.data ?? [],
-    progress: progressRes.data ?? [],
+    decks,
+    cards,
+    progress,
   };
 }
 

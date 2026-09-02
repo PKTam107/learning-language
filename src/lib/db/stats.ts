@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/currentUser";
+import { fetchAllRows } from "@/lib/db/paginate";
 import {
   buildSeries,
   countByDay,
@@ -62,14 +63,24 @@ export async function fetchStudyStats(): Promise<StudyStats> {
   const since = startOfDay();
   since.setDate(since.getDate() - 59);
 
-  const { data, error } = await supabase()
-    .from("review_events")
-    .select("reviewed_at")
-    .gte("reviewed_at", since.toISOString());
-  if (error || !data) return EMPTY_STATS;
+  // Người ôn nhiều thì 60 ngày dễ vượt 1000 lượt — không phân trang là streak
+  // bị tính thiếu (mất hẳn những ngày cũ nhất trong cửa sổ).
+  let rows: { reviewed_at: string }[];
+  try {
+    rows = await fetchAllRows<{ reviewed_at: string }>((from, to) =>
+      supabase()
+        .from("review_events")
+        .select("reviewed_at")
+        .gte("reviewed_at", since.toISOString())
+        .order("id")
+        .range(from, to)
+    );
+  } catch {
+    return EMPTY_STATS; // bảng chưa migrate → coi như chưa có lịch sử
+  }
 
   const today = new Date();
-  const byDay = countByDay(data.map((r) => r.reviewed_at as string));
+  const byDay = countByDay(rows.map((r) => r.reviewed_at));
   const series = buildSeries(byDay, 7, today);
 
   return {

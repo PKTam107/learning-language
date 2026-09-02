@@ -2,6 +2,7 @@ import * as XLSX from "xlsx";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/paginate";
 import type { Card } from "@/types";
 
 /** Cột phẳng cho CSV/Excel (5 cột đầu tương thích ngược với import). */
@@ -98,23 +99,29 @@ export async function buildAccountBackup(): Promise<AccountBackup> {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Chưa đăng nhập");
 
-  const [profileRes, decksRes, cardsRes, progressRes] = await Promise.all([
+  // Sao lưu BẮT BUỘC phải phân trang: `select()` trần bị cắt ở 1000 dòng mà
+  // không báo lỗi, nên file backup trông vẫn "thành công" nhưng thiếu thẻ —
+  // đúng loại mất dữ liệu chỉ phát hiện ra lúc cần phục hồi.
+  const [profileRes, decks, cards, progress] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-    supabase.from("decks").select("*"),
-    supabase.from("cards").select("*"),
-    supabase.from("card_progress").select("*"),
+    fetchAllRows<unknown>((f, t) =>
+      supabase.from("decks").select("*").order("id").range(f, t)
+    ),
+    fetchAllRows<unknown>((f, t) =>
+      supabase.from("cards").select("*").order("id").range(f, t)
+    ),
+    fetchAllRows<unknown>((f, t) =>
+      supabase.from("card_progress").select("*").order("id").range(f, t)
+    ),
   ]);
-  for (const r of [decksRes, cardsRes, progressRes]) {
-    if (r.error) throw r.error;
-  }
 
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
     profile: profileRes.data ?? null,
-    decks: decksRes.data ?? [],
-    cards: cardsRes.data ?? [],
-    progress: progressRes.data ?? [],
+    decks,
+    cards,
+    progress,
   };
 }
 

@@ -7,7 +7,7 @@ import { exportAccountBackup } from "@/lib/export";
 import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
-import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { StatusBar } from "@/components/status/StatusBar";
 import { Save, Sparkles, Search, CalendarCheck } from "lucide-react";
 import { DeckCard } from "./DeckCard";
@@ -78,16 +78,17 @@ export function DecksManager({ showStats }: DecksManagerProps) {
     return (
       <div>
         {showStats && (
-          <div className="mb-6">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
               {Array.from({ length: 4 }, (_, i) => (
-                <SkeletonCard key={i} />
+                <div key={i}>
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="mt-1.5 h-6 w-12" />
+                </div>
               ))}
             </div>
-            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-              <Skeleton className="h-2.5 w-full rounded-full" />
-              <Skeleton className="mt-3 h-3 w-2/3" />
-            </div>
+            <Skeleton className="mt-4 h-2.5 w-full rounded-full" />
+            <Skeleton className="mt-3 h-3 w-2/3" />
           </div>
         )}
         <div className="mb-4 flex items-center justify-between">
@@ -114,17 +115,18 @@ export function DecksManager({ showStats }: DecksManagerProps) {
   return (
     <div>
       {showStats && (
-        <div className="mb-6">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
             <Stat label="Bộ thẻ" value={decks.length} />
             <Stat label="Tổng số từ" value={agg.total} />
             <Stat label="Đã thuộc" value={agg.byStatus.easy} />
             <Stat label="Ôn hôm nay" value={agg.due} accent={agg.due > 0} />
           </div>
           {agg.total > 0 && (
-            <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-              <StatusBar stats={agg} />
-            </div>
+            <StatusBar
+              stats={agg}
+              className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800"
+            />
           )}
         </div>
       )}
@@ -233,10 +235,12 @@ function Stat({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-      <p className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
+    <div>
+      <p className="truncate text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
+        {label}
+      </p>
       <p
-        className={`mt-1 text-2xl font-bold ${
+        className={`text-xl font-bold sm:text-2xl ${
           accent ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-slate-100"
         }`}
       >

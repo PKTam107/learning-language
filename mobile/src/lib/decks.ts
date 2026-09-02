@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import type { CardStatus, Deck, DeckStats } from "@/types";
 import { emptyByStatus, isDue } from "@/lib/status";
+import { fetchAllRows } from "@/lib/paginate";
 
 /** Lấy danh sách deck của user hiện tại kèm số lượng card. */
 export async function fetchDecks(): Promise<Deck[]> {
@@ -18,16 +19,23 @@ export async function fetchDecks(): Promise<Deck[]> {
 
 /** Danh sách deck kèm thống kê trạng thái (2 query, không N+1). */
 export async function fetchDecksWithStats(): Promise<Deck[]> {
-  const [decksRes, cardsRes] = await Promise.all([
+  const [decksRes, cardRows] = await Promise.all([
     supabase.from("decks").select("*").order("created_at", { ascending: false }),
-    supabase.from("cards").select("deck_id, card_progress(status, next_due_at)"),
+    // Phải phân trang: tài khoản trên 1000 thẻ thì `select()` trần bị cắt im
+    // lặng ở 1000 dòng, làm mọi con số thống kê thiếu hụt mà không báo lỗi.
+    fetchAllRows<any>((from, to) =>
+      supabase
+        .from("cards")
+        .select("deck_id, card_progress(status, next_due_at)")
+        .order("id")
+        .range(from, to)
+    ),
   ]);
   if (decksRes.error) throw decksRes.error;
-  if (cardsRes.error) throw cardsRes.error;
 
   const now = Date.now();
   const statsByDeck = new Map<string, DeckStats>();
-  for (const c of (cardsRes.data ?? []) as any[]) {
+  for (const c of cardRows) {
     const progress = c.card_progress?.[0];
     const status = (progress?.status ?? "new") as CardStatus;
     let s = statsByDeck.get(c.deck_id);
