@@ -20,8 +20,14 @@ interface Props {
 
 /** Một câu ôn dạng trắc nghiệm / gõ từ / nghe. Tự chấm rồi báo kết quả về cha. */
 export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
+  // "Việt → Anh" dùng chung cơ chế trắc nghiệm, chỉ đảo chiều đề/đáp án.
+  const isMcq = type === "mcq" || type === "mcq_reverse";
+  const reverse = type === "mcq_reverse";
   const mcq = useMemo(
-    () => (type === "mcq" ? buildMcq(card, pool) : null),
+    () =>
+      isMcq
+        ? buildMcq(card, pool, reverse ? "meaningToTerm" : "termToMeaning")
+        : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [card.id, type]
   );
@@ -64,11 +70,31 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
   }
 
   const answered = result !== null;
+  // Đáp án đúng để hiện lúc phản hồi: chỉ chiều nhận diện (mcq) mới là nghĩa
+  // tiếng Việt; ba kiểu còn lại đáp án đều là từ tiếng Anh.
+  const correctAnswer = type === "mcq" ? card.meaning_vi : card.term;
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       {/* ----- Đề bài ----- */}
-      {type === "mcq" ? (
+      {type === "mcq_reverse" ? (
+        <div className="flex flex-col items-center gap-1 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+            Nghĩa
+          </p>
+          <p className="text-2xl font-bold text-brand-dark dark:text-indigo-300">
+            {card.meaning_vi || "(không có nghĩa)"}
+          </p>
+          {!!card.part_of_speech && (
+            <p className="text-sm text-slate-400 dark:text-slate-500">
+              ({card.part_of_speech})
+            </p>
+          )}
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Chọn từ tiếng Anh đúng:
+          </p>
+        </div>
+      ) : type === "mcq" ? (
         <div className="flex flex-col items-center gap-2 text-center">
           <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{card.term}</p>
           {!!card.phonetic && (
@@ -108,7 +134,7 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
 
       {/* ----- Ô trả lời ----- */}
       <div className="mt-5">
-        {type === "mcq" && mcq ? (
+        {isMcq && mcq ? (
           <div className="space-y-2">
             {mcq.options.map((opt, i) => {
               const isAnswer = i === mcq.answerIndex;
@@ -137,10 +163,11 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
               );
             })}
           </div>
-        ) : type === "mcq" ? (
+        ) : isMcq ? (
           // Không dựng được trắc nghiệm cho thẻ này → hiện đáp án để tự đánh giá.
           <p className="text-center text-slate-500 dark:text-slate-400">
-            Không đủ dữ liệu để tạo trắc nghiệm. Đáp án: {card.meaning_vi}
+            Không đủ dữ liệu để tạo trắc nghiệm. Đáp án:{" "}
+            {reverse ? card.term : card.meaning_vi}
           </p>
         ) : (
           <input
@@ -178,8 +205,9 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
               result ? "text-green-600 dark:text-green-400" : "text-red-500"
             }`}
           >
-            {result ? "✓ Chính xác!" : `✗ Đáp án: ${card.term}`}
+            {result ? "✓ Chính xác!" : `✗ Đáp án: ${correctAnswer}`}
           </p>
+          {/* Chiều nhận diện đã hiện nghĩa ngay trong đáp án → không nhắc lại. */}
           {type !== "mcq" && !!card.meaning_vi && (
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{card.meaning_vi}</p>
           )}
@@ -188,7 +216,7 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
 
       {/* ----- Hành động ----- */}
       <div className="mt-5">
-        {!answered && type !== "mcq" && (
+        {!answered && !isMcq && (
           <Button
             size="lg"
             className="w-full"
@@ -207,7 +235,7 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
             Câu tiếp →
           </Button>
         )}
-        {!answered && type === "mcq" && !mcq && (
+        {!answered && isMcq && !mcq && (
           <Button
             size="lg"
             className="w-full"

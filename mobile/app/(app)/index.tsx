@@ -31,7 +31,7 @@ import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
 import { Button } from "@/components/ui/Button";
 import { radius, spacing, type ThemeColors } from "@/lib/theme";
 import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
-import { Save, TrendingUp } from "lucide-react-native";
+import { GraduationCap, PartyPopper, Save, TrendingUp } from "lucide-react-native";
 
 export default function DecksScreen() {
   const colors = useThemeColors();
@@ -149,11 +149,42 @@ export default function DecksScreen() {
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.heading}>Bộ từ vựng của bạn</Text>
+            {/* Thứ tự có chủ ý: việc cần làm hôm nay lên trên hết, rồi mới tới
+                các khối tham khảo (thử thách, hay quên, thống kê). Trước đây
+                phải cuộn qua hết mấy khối đó mới tới chỗ bắt đầu học. */}
+            {agg.due > 0 ? (
+              <Pressable
+                onPress={() => router.push("/study/today")}
+                style={({ pressed }) => [
+                  styles.todayCard,
+                  pressed && styles.todayPressed,
+                ]}
+              >
+                <View style={styles.todayIcon}>
+                  <GraduationCap size={24} color="#fff" />
+                </View>
+                <View style={styles.todayBody}>
+                  <Text style={styles.todayTitle}>
+                    {agg.due} từ cần ôn hôm nay
+                  </Text>
+                  <Text style={styles.todaySub}>
+                    Gộp tất cả bộ thẻ vào một phiên.
+                  </Text>
+                </View>
+                <Text style={styles.todayCta}>Ôn ngay →</Text>
+              </Pressable>
+            ) : (
+              stats.todayCount > 0 && (
+                <View style={styles.doneCard}>
+                  <PartyPopper size={18} color={colors.success} />
+                  <Text style={styles.doneText}>
+                    Xong hết thẻ đến hạn hôm nay. Nghỉ ngơi thôi!
+                  </Text>
+                </View>
+              )
+            )}
             {decks.length > 0 && <StreakCard stats={stats} />}
-            <EnrichBackfillButton banner onDone={load} />
-            <DailyChallenge challenge={challenge} />
-            <WeakWords words={weak} />
+            <Text style={styles.heading}>Bộ từ vựng của bạn</Text>
             {agg.total > 0 && (
               <View style={styles.statsCard}>
                 <View style={styles.statsRow}>
@@ -167,6 +198,9 @@ export default function DecksScreen() {
                 </View>
               </View>
             )}
+            <DailyChallenge challenge={challenge} />
+            <WeakWords words={weak} />
+            <EnrichBackfillButton banner onDone={load} />
             {decks.length > 0 && (
               <>
                 <Button
@@ -275,6 +309,43 @@ const makeStyles = (colors: ThemeColors) =>
     },
     list: { padding: spacing.lg, paddingBottom: 96, flexGrow: 1 },
     header: { marginBottom: spacing.md },
+    // Khối hành động chính của ngày, đặt trên cùng trang chủ.
+    todayCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.brand,
+      backgroundColor: colors.brandLight,
+      marginBottom: spacing.md,
+    },
+    todayPressed: { opacity: 0.75 },
+    todayIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.md,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.brand,
+    },
+    todayBody: { flex: 1, minWidth: 0 },
+    todayTitle: { fontSize: 16, fontWeight: "700", color: colors.text },
+    todaySub: { fontSize: 13, color: colors.textMuted, marginTop: 1 },
+    todayCta: { fontSize: 14, fontWeight: "700", color: colors.brandDark },
+    doneCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.success,
+      backgroundColor: colors.tints.green.bg,
+      marginBottom: spacing.md,
+    },
+    doneText: { flex: 1, fontSize: 13, fontWeight: "600", color: colors.text },
     progressBtn: { marginTop: spacing.md },
     backupBtn: { marginTop: spacing.sm },
     heading: { fontSize: 20, fontWeight: "700", color: colors.text },

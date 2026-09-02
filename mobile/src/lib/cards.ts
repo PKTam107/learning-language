@@ -6,6 +6,7 @@ import type {
   Deck,
   DraftCard,
 } from "@/types";
+import { isDue } from "@/lib/status";
 
 /** Chuẩn hóa từ để so trùng: bỏ khoảng trắng đầu/cuối, gộp khoảng trắng giữa, hạ thường. */
 export function normalizeTerm(term: string): string {
@@ -269,6 +270,51 @@ export async function fetchCardsWithProgress(
     ...c,
     progress: c.card_progress?.[0] ?? null,
   }));
+}
+
+/**
+ * Thẻ đến hạn ôn trên **toàn tài khoản** (mọi bộ thẻ), cho phiên "Ôn hôm nay".
+ *
+ * Điều kiện "đến hạn" (xem `isDue`) là *chưa có dòng progress* HOẶC
+ * `next_due_at` đã qua — vế đầu không diễn đạt được bằng filter trên bảng
+ * `cards`, nên lọc phía client. RLS đã giới hạn theo user.
+ */
+export async function fetchDueCardsAllDecks(): Promise<CardWithProgress[]> {
+  const { data, error } = await supabase
+    .from("cards")
+    .select("*, card_progress(*)")
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (error) throw error;
+
+  const now = Date.now();
+  return (data ?? [])
+    .map((c: any) => ({ ...c, progress: c.card_progress?.[0] ?? null }))
+    .filter((c: CardWithProgress) => isDue(c.progress?.next_due_at, now));
+}
+
+/**
+ * Lấy thẻ theo danh sách id, **giữ đúng thứ tự id truyền vào** — dùng cho phiên
+ * ôn "Bạn hay quên", nơi thứ tự đã được xếp theo số lần quên. Id không còn thẻ
+ * (đã xóa) thì bỏ qua.
+ */
+export async function fetchCardsByIds(
+  ids: string[]
+): Promise<CardWithProgress[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("cards")
+    .select("*, card_progress(*)")
+    .in("id", ids);
+  if (error) throw error;
+
+  const byId = new Map(
+    (data ?? []).map((c: any) => [
+      c.id as string,
+      { ...c, progress: c.card_progress?.[0] ?? null } as CardWithProgress,
+    ])
+  );
+  return ids.map((id) => byId.get(id)).filter(Boolean) as CardWithProgress[];
 }
 
 const DAY_MS = 86_400_000;
