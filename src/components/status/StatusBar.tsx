@@ -31,12 +31,18 @@ export function StatusBar({ stats, showLegend = true, className = "" }: StatusBa
       </div>
 
       {showLegend && (
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+        /* Lưới 2 cột trên màn hẹp: `flex-wrap` cho 4 nhãn dài không đều nhau
+           thì các mục xuống dòng lệch nhau, đọc rất rối. */
+        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs sm:flex sm:flex-wrap">
           {STATUS_ORDER.map((s) => (
-            <span key={s} className="inline-flex items-center gap-1.5">
-              <span className={`h-2 w-2 rounded-full ${STATUS_META[s].dot}`} />
-              <span className={STATUS_META[s].text}>{STATUS_META[s].label}</span>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">{byStatus[s]}</span>
+            <span key={s} className="inline-flex min-w-0 items-center gap-1.5">
+              <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_META[s].dot}`} />
+              <span className={`truncate ${STATUS_META[s].text}`}>
+                {STATUS_META[s].label}
+              </span>
+              <span className="ml-auto font-semibold text-slate-700 sm:ml-0 dark:text-slate-300">
+                {byStatus[s]}
+              </span>
             </span>
           ))}
         </div>

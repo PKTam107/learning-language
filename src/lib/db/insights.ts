@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/currentUser";
 import { isDue } from "@/lib/status";
+import { fetchAllRows } from "@/lib/db/paginate";
 import {
   activeDayCount,
   bestStreak,
@@ -136,17 +137,33 @@ export async function fetchProgressData(): Promise<ProgressData> {
   const since = startOfDay(now);
   since.setDate(since.getDate() - (HEATMAP_DAYS - 1));
 
-  const [historyRes, totalRes, cardsRes] = await Promise.all([
-    sb.from("review_events").select("reviewed_at").gte("reviewed_at", since.toISOString()),
+  // Cả hai truy vấn này đều vượt 1000 dòng rất dễ: 364 ngày nhật ký ôn, và
+  // toàn bộ thẻ của tài khoản. Không phân trang thì heatmap, chuỗi ngày dài
+  // nhất, số ngày có học và lịch ôn đều thiếu dữ liệu mà không báo lỗi.
+  const [history, totalRes, cardRows] = await Promise.all([
+    // review_events có thể chưa được migrate → coi như chưa có lịch sử.
+    fetchAllRows<{ reviewed_at: string }>((from, to) =>
+      sb
+        .from("review_events")
+        .select("reviewed_at")
+        .gte("reviewed_at", since.toISOString())
+        .order("id")
+        .range(from, to)
+    ).catch(() => [] as { reviewed_at: string }[]),
     sb.from("review_events").select("id", { count: "exact", head: true }),
-    sb.from("cards").select("id, term, deck_id, card_progress(status, next_due_at)"),
+    fetchAllRows<CardRow>((from, to) =>
+      sb
+        .from("cards")
+        .select("id, term, deck_id, card_progress(status, next_due_at)")
+        .order("id")
+        .range(from, to)
+    ),
   ]);
 
-  // review_events có thể chưa được migrate → coi như chưa có lịch sử, không chặn trang.
-  const timestamps = (historyRes.data ?? []).map((r) => r.reviewed_at as string);
-  const activity = buildActivity(timestamps, now);
-
-  const cardRows = (cardsRes.data ?? []) as unknown as CardRow[];
+  const activity = buildActivity(
+    history.map((r) => r.reviewed_at),
+    now
+  );
   const due = buildDueCalendar(cardRows, now);
   const masteredCards = cardRows.filter(
     (c) => c.card_progress?.[0]?.status === "easy"
@@ -183,8 +200,15 @@ export async function fetchChallengeMetrics(): Promise<ChallengeMetrics> {
   // isDue trong lib/status.ts: thiếu next_due_at nghĩa là chưa học → tới hạn),
   // nên dueToday = tổng thẻ − số thẻ chưa tới hạn. Dùng index
   // card_progress_user_due ở migration 0008.
-  const [todayRes, newRes, totalRes, notDueRes] = await Promise.all([
-    sb.from("review_events").select("card_id, status").gte("reviewed_at", dayStart),
+  const [events, newRes, totalRes, notDueRes] = await Promise.all([
+    fetchAllRows<{ card_id: string | null; status: string }>((from, to) =>
+      sb
+        .from("review_events")
+        .select("card_id, status")
+        .gte("reviewed_at", dayStart)
+        .order("id")
+        .range(from, to)
+    ).catch(() => [] as { card_id: string | null; status: string }[]),
     sb.from("cards").select("id", { count: "exact", head: true }).gte("created_at", dayStart),
     sb.from("cards").select("id", { count: "exact", head: true }),
     sb
@@ -193,7 +217,6 @@ export async function fetchChallengeMetrics(): Promise<ChallengeMetrics> {
       .gt("next_due_at", new Date().toISOString()),
   ]);
 
-  const events = todayRes.data ?? [];
   const distinct = new Set<string>();
   const mastered = new Set<string>();
   for (const e of events) {

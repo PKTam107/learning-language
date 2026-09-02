@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/paginate";
 import { enrichWords, type WordEnrichment } from "@/lib/api";
 
 export interface UnenrichedCard {
@@ -17,14 +18,17 @@ export async function fetchUnenriched(
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  let q = supabase.from("cards").select("id, term").is("enriched_at", null);
-  if (deckId) q = q.eq("deck_id", deckId);
-  const { data, error } = await q;
-  if (error || !data) return [];
-  return (data as { id: string; term: string }[]).map((c) => ({
-    id: c.id,
-    term: c.term,
-  }));
+  // Phân trang để nút "Làm giàu N thẻ" nêu đúng số còn thiếu — trước đây trên
+  // 1000 thẻ chưa làm giàu thì nút dừng ở 1000 và không bao giờ tự ẩn.
+  try {
+    return await fetchAllRows<UnenrichedCard>((from, to) => {
+      let q = supabase.from("cards").select("id, term").is("enriched_at", null);
+      if (deckId) q = q.eq("deck_id", deckId);
+      return q.order("id").range(from, to);
+    });
+  } catch {
+    return [];
+  }
 }
 
 const CHUNK = 5;

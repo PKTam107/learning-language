@@ -7,6 +7,7 @@ import type {
   DraftCard,
 } from "@/types";
 import { isDue } from "@/lib/status";
+import { fetchAllRows } from "@/lib/paginate";
 
 /** Chuẩn hóa từ để so trùng: bỏ khoảng trắng đầu/cuối, gộp khoảng trắng giữa, hạ thường. */
 export function normalizeTerm(term: string): string {
@@ -24,11 +25,13 @@ async function assertNoDuplicate(
   excludeId?: string
 ): Promise<void> {
   const normalized = normalizeTerm(term);
-  let q = supabase.from("cards").select("id, term").eq("deck_id", deckId);
-  if (excludeId) q = q.neq("id", excludeId);
-  const { data, error } = await q;
-  if (error) throw error;
-  if ((data ?? []).some((c: any) => normalizeTerm(c.term) === normalized)) {
+  // So trùng phải quét ĐỦ bộ thẻ: thiếu dòng là để lọt từ trùng.
+  const rows = await fetchAllRows<any>((from, to) => {
+    let q = supabase.from("cards").select("id, term").eq("deck_id", deckId);
+    if (excludeId) q = q.neq("id", excludeId);
+    return q.order("id").range(from, to);
+  });
+  if (rows.some((c: any) => normalizeTerm(c.term) === normalized)) {
     throw new Error(`Từ “${term.trim()}” đã có trong bộ thẻ này.`);
   }
 }
@@ -105,13 +108,18 @@ export async function importCards(
   if (!user) throw new Error("Chưa đăng nhập");
   if (drafts.length === 0) return { inserted: 0, skipped: 0 };
 
-  const { data: existing, error: exErr } = await supabase
-    .from("cards")
-    .select("term")
-    .eq("deck_id", deckId);
-  if (exErr) throw exErr;
+  // Phải lấy ĐỦ danh sách từ đã có: thiếu dòng là chặn trùng hụt, bộ thẻ trên
+  // 1000 từ sẽ nhận thêm bản trùng khi nhập Excel.
+  const existing = await fetchAllRows<any>((from, to) =>
+    supabase
+      .from("cards")
+      .select("term")
+      .eq("deck_id", deckId)
+      .order("id")
+      .range(from, to)
+  );
 
-  const taken = new Set((existing ?? []).map((c: any) => normalizeTerm(c.term)));
+  const taken = new Set(existing.map((c: any) => normalizeTerm(c.term)));
   const rows: Record<string, unknown>[] = [];
   for (const d of drafts) {
     const term = d.term.trim();
@@ -150,13 +158,15 @@ export async function importCards(
 
 /** Danh sách card trong 1 deck, mới nhất trước. */
 export async function fetchCards(deckId: string): Promise<Card[]> {
-  const { data, error } = await supabase
-    .from("cards")
-    .select("*")
-    .eq("deck_id", deckId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Card[];
+  return (await fetchAllRows<Card>((from, to) =>
+    supabase
+      .from("cards")
+      .select("*")
+      .eq("deck_id", deckId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, to)
+  )) as Card[];
 }
 
 /** Lấy id user hiện tại; ném lỗi nếu chưa đăng nhập. */
@@ -203,20 +213,30 @@ export async function moveCards(
   if (ids.length === 0) return { moved: 0, skipped: 0 };
 
   const userId = await requireUserId();
-  const [{ data: moving, error: e1 }, { data: existing, error: e2 }] =
-    await Promise.all([
-      supabase.from("cards").select("id, term").in("id", ids).eq("user_id", userId),
+  const [moving, existing] = await Promise.all([
+    fetchAllRows<any>((from, to) =>
+      supabase
+        .from("cards")
+        .select("id, term")
+        .in("id", ids)
+        .eq("user_id", userId)
+        .order("id")
+        .range(from, to)
+    ),
+    // Danh sách từ ở bộ đích — thiếu dòng là chuyển vào gây trùng.
+    fetchAllRows<any>((from, to) =>
       supabase
         .from("cards")
         .select("term")
         .eq("deck_id", targetDeckId)
-        .eq("user_id", userId),
-    ]);
-  if (e1) throw e1;
-  if (e2) throw e2;
+        .eq("user_id", userId)
+        .order("id")
+        .range(from, to)
+    ),
+  ]);
 
-  const taken = new Set((existing ?? []).map((c: any) => normalizeTerm(c.term)));
-  const okIds = (moving ?? [])
+  const taken = new Set(existing.map((c: any) => normalizeTerm(c.term)));
+  const okIds = moving
     .filter((c: any) => !taken.has(normalizeTerm(c.term)))
     .map((c: any) => c.id);
   const skipped = ids.length - okIds.length;
@@ -251,10 +271,11 @@ export async function resetProgress(ids: string[]): Promise<void> {
 export async function fetchCardsWithProgress(
   deckId: string
 ): Promise<CardWithProgress[]> {
-  const { data, error } = await supabase
-    .from("cards")
-    .select("*, card_progress(*)")
-    .eq("deck_id", deckId)
+  const rows = await fetchAllRows<any>((from, to) =>
+    supabase
+      .from("cards")
+      .select("*, card_progress(*)")
+      .eq("deck_id", deckId)
     // Bắt buộc phải có ORDER BY: không có thì Postgres trả về theo thứ tự tùy ý,
     // và thứ tự đó *đổi thật* mỗi khi hàng bị ghi lại (vd "Làm giàu thẻ" set
     // enriched_at) — khiến danh sách từ tự xáo và phiên học "không xáo trộn"
@@ -262,11 +283,12 @@ export async function fetchCardsWithProgress(
     //
     // Chốt thêm bằng `id` vì importCards insert cả lô trong MỘT câu lệnh, nên
     // mọi thẻ nhập từ Excel có created_at giống hệt nhau.
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false });
-  if (error) throw error;
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, to)
+  );
 
-  return (data ?? []).map((c: any) => ({
+  return rows.map((c: any) => ({
     ...c,
     progress: c.card_progress?.[0] ?? null,
   }));
@@ -280,15 +302,17 @@ export async function fetchCardsWithProgress(
  * `cards`, nên lọc phía client. RLS đã giới hạn theo user.
  */
 export async function fetchDueCardsAllDecks(): Promise<CardWithProgress[]> {
-  const { data, error } = await supabase
-    .from("cards")
-    .select("*, card_progress(*)")
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false });
-  if (error) throw error;
+  const rows = await fetchAllRows<any>((from, to) =>
+    supabase
+      .from("cards")
+      .select("*, card_progress(*)")
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, to)
+  );
 
   const now = Date.now();
-  return (data ?? [])
+  return rows
     .map((c: any) => ({ ...c, progress: c.card_progress?.[0] ?? null }))
     .filter((c: CardWithProgress) => isDue(c.progress?.next_due_at, now));
 }

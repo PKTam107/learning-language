@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/currentUser";
+import { fetchAllRows } from "@/lib/db/paginate";
 
 const supabase = () => createClient();
 
@@ -25,11 +26,20 @@ export async function fetchUnenriched(
   const userId = await currentUserId();
   if (!userId) return [];
 
-  let q = supabase().from("cards").select("id, term").is("enriched_at", null);
-  if (deckId) q = q.eq("deck_id", deckId);
-  const { data, error } = await q;
-  if (error || !data) return [];
-  return data.map((c) => ({ id: c.id as string, term: c.term as string }));
+  // Phân trang để nút "Làm giàu N thẻ" nêu đúng số còn thiếu — trước đây trên
+  // 1000 thẻ chưa làm giàu thì nút dừng ở 1000 và không bao giờ tự ẩn.
+  try {
+    return await fetchAllRows<UnenrichedCard>((from, to) => {
+      let q = supabase()
+        .from("cards")
+        .select("id, term")
+        .is("enriched_at", null);
+      if (deckId) q = q.eq("deck_id", deckId);
+      return q.order("id").range(from, to);
+    });
+  } catch {
+    return [];
+  }
 }
 
 /** Gọi server tính enrichment cho một lô từ. */
