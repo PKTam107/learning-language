@@ -33,7 +33,16 @@ const isWeak = (c: CardWithProgress) => {
   return s === "new" || s === "hard";
 };
 
-/** Ưu tiên thẻ "hard" rồi "new", sau đó "good", cuối cùng "easy". */
+/**
+ * Ưu tiên thẻ "hard" rồi "new", sau đó "good", cuối cùng "easy"; trong cùng
+ * một hạng thì theo thứ tự đã thêm (cũ trước).
+ *
+ * Phần so sánh phải là **thứ tự toàn phần** — chỉ so `weight` thì mọi thẻ cùng
+ * hạng đều "bằng nhau", và thứ tự cuối cùng rơi về thứ tự đầu vào. Bộ thẻ mới
+ * toàn từ "Chưa học" thì cả hàm thành vô nghĩa, nên phiên "không xáo trộn"
+ * trông y như đã xáo. Chốt thêm `id` vì thẻ nhập từ Excel dùng chung một
+ * created_at (insert cả lô trong một câu lệnh).
+ */
 function orderCards(cards: CardWithProgress[]): CardWithProgress[] {
   const weight = (c: CardWithProgress) => {
     const s = c.progress?.status ?? "new";
@@ -42,7 +51,12 @@ function orderCards(cards: CardWithProgress[]): CardWithProgress[] {
     if (s === "good") return 2;
     return 3;
   };
-  return [...cards].sort((a, b) => weight(a) - weight(b));
+  return [...cards].sort(
+    (a, b) =>
+      weight(a) - weight(b) ||
+      a.created_at.localeCompare(b.created_at) ||
+      a.id.localeCompare(b.id)
+  );
 }
 
 function shuffleArr<T>(a: T[]): T[] {

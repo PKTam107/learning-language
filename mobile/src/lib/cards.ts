@@ -253,7 +253,16 @@ export async function fetchCardsWithProgress(
   const { data, error } = await supabase
     .from("cards")
     .select("*, card_progress(*)")
-    .eq("deck_id", deckId);
+    .eq("deck_id", deckId)
+    // Bắt buộc phải có ORDER BY: không có thì Postgres trả về theo thứ tự tùy ý,
+    // và thứ tự đó *đổi thật* mỗi khi hàng bị ghi lại (vd "Làm giàu thẻ" set
+    // enriched_at) — khiến danh sách từ tự xáo và phiên học "không xáo trộn"
+    // trông như đã xáo.
+    //
+    // Chốt thêm bằng `id` vì importCards insert cả lô trong MỘT câu lệnh, nên
+    // mọi thẻ nhập từ Excel có created_at giống hệt nhau.
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
   if (error) throw error;
 
   return (data ?? []).map((c: any) => ({
