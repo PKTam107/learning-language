@@ -266,7 +266,7 @@ export function StudySession({ deckId }: { deckId: string }) {
             <select
               value={limit}
               onChange={(e) => setLimit(Number(e.target.value))}
-              className="rounded-lg border border-slate-300 dark:border-slate-700 px-2 py-1.5 text-sm"
+              className="rounded-lg border border-slate-300 px-2 py-1.5 text-base dark:border-slate-700 sm:text-sm"
             >
               {LIMIT_OPTIONS.map((n) => (
                 <option key={n} value={n}>
@@ -298,7 +298,7 @@ export function StudySession({ deckId }: { deckId: string }) {
           >
             Bắt đầu
           </Button>
-          <Link href={`/decks/${deckId}`}>
+          <Link href={`/decks/${deckId}`} className="shrink-0">
             <Button size="lg" variant="secondary">
               Thoát
             </Button>
@@ -379,21 +379,21 @@ export function StudySession({ deckId }: { deckId: string }) {
               <div className="grid grid-cols-3 gap-3">
                 <Button
                   size="lg"
-                  className="bg-red-500 text-white hover:bg-red-600"
+                  className="!px-2 !text-sm bg-red-500 text-white hover:bg-red-600 sm:!px-6 sm:!text-base"
                   onClick={() => assess("hard")}
                 >
                   Chưa thuộc
                 </Button>
                 <Button
                   size="lg"
-                  className="bg-amber-500 text-white hover:bg-amber-600"
+                  className="!px-2 !text-sm bg-amber-500 text-white hover:bg-amber-600 sm:!px-6 sm:!text-base"
                   onClick={() => assess("good")}
                 >
                   Tạm nhớ
                 </Button>
                 <Button
                   size="lg"
-                  className="bg-green-600 text-white hover:bg-green-700"
+                  className="!px-2 !text-sm bg-green-600 text-white hover:bg-green-700 sm:!px-6 sm:!text-base"
                   onClick={() => assess("easy")}
                 >
                   Đã thuộc

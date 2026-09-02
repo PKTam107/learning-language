@@ -1,4 +1,6 @@
-import * as XLSX from "xlsx";
+// xlsx (~400KB) chỉ nạp khi người dùng thật sự chọn file — giữ nguyên bundle
+// trang chi tiết bộ thẻ cho thao tác thường ngày (xem/sửa/học thẻ).
+const loadXlsx = () => import("xlsx");
 import type { DraftCard } from "@/types";
 
 /**
@@ -62,10 +64,11 @@ function cell(v: unknown): string {
  * Parse workbook (.xlsx) → danh sách DraftCard. Chỉ đọc sheet đầu tiên.
  * Bỏ qua các dòng không có `term`. Ném lỗi nếu không tìm thấy cột `term`.
  */
-export function parseCardRows(
+export async function parseCardRows(
   input: ArrayBuffer | Uint8Array | string,
   type: "array" | "base64" = "array"
-): DraftCard[] {
+): Promise<DraftCard[]> {
+  const XLSX = await loadXlsx();
   const wb = XLSX.read(input, { type });
   const sheetName = wb.SheetNames[0];
   if (!sheetName) throw new Error("File không có sheet nào.");

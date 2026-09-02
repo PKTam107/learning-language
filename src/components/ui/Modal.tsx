@@ -34,7 +34,7 @@ export function Modal({ open, onClose, title, children, wide }: ModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4 dark:border-slate-800 dark:bg-slate-900">
             <h2 className="text-lg font-semibold">{title}</h2>
             <button
               onClick={onClose}
@@ -45,7 +45,10 @@ export function Modal({ open, onClose, title, children, wide }: ModalProps) {
             </button>
           </div>
         )}
-        <div className="p-5">{children}</div>
+        {/* Sheet tràn đáy trên điện thoại — đệm thêm cho vạch home của iPhone. */}
+        <div className="p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-5">
+          {children}
+        </div>
       </div>
     </div>
   );

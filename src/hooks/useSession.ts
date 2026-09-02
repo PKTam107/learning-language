@@ -12,8 +12,11 @@ export function useSession() {
   useEffect(() => {
     const supabase = createClient();
 
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+    // getSession() đọc phiên có sẵn ở trình duyệt — không tốn round-trip như
+    // getUser(). Navbar hiện ở mọi trang nên đây là request nằm trên đường
+    // găng của mọi lần tải trang. Chi tiết: lib/supabase/currentUser.ts.
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
       setLoading(false);
     });
 
