@@ -100,12 +100,33 @@ Mở một bộ thẻ, người dùng thấy danh sách các từ và có thể:
 
 Một phiên học gồm ba bước: **chọn chế độ → học → xem tóm tắt**.
 
+**Ba lối vào phiên học:**
+
+| Lối vào | Tập thẻ | Mở từ đâu |
+|---|---|---|
+| **Một bộ thẻ** | thẻ trong bộ đó (còn chọn được chế độ bên dưới) | nút "Học ngay" ở mỗi bộ thẻ |
+| **Ôn hôm nay** | thẻ đến hạn của **mọi bộ thẻ**, gộp một phiên | nút "Ôn ngay" ở đầu trang chủ |
+| **Ôn từ hay quên** | tối đa **30 từ** bị đánh giá "Chưa thuộc" nhiều nhất | nút trong khối "Bạn hay quên" |
+
+Hai lối sau **không có bước chọn chế độ** (tập thẻ đã là lựa chọn rồi) — chỉ còn chọn kiểu ôn,
+số thẻ mỗi phiên và xáo trộn.
+
 **Bước chọn chế độ** — người dùng chọn học theo cách nào:
 - **Ôn hôm nay:** chỉ những từ đã đến hạn ôn (theo lịch nhớ). *Mặc định chọn sẵn nếu có từ tới hạn.*
 - **Ôn tất cả:** toàn bộ thẻ trong bộ.
 - **Chỉ từ chưa thuộc:** những từ chưa học và những từ đã bị đánh giá "chưa thuộc".
-- **Kiểu ôn:** chọn cách kiểm tra — **Lật thẻ**, **Trắc nghiệm** (chọn nghĩa đúng), **Gõ từ**
-  (gõ lại từ tiếng Anh), hoặc **Nghe** (nghe rồi gõ lại). *Trắc nghiệm cần bộ thẻ có ít nhất 4 từ.*
+- **Kiểu ôn:** chọn cách kiểm tra. Năm kiểu, chia theo **chiều** kiểm tra:
+  - *Nhận diện* (thấy từ Anh → nhớ nghĩa): **Lật thẻ**, **Trắc nghiệm** (chọn nghĩa đúng).
+  - *Sản sinh* (thấy nghĩa Việt → nhớ ra từ Anh — khó hơn, và mới là thứ cần khi nói/viết):
+    **Việt → Anh** (chọn từ đúng) và **Gõ từ** (gõ lại từ tiếng Anh).
+  - **Nghe** (nghe rồi gõ lại).
+
+  *Hai kiểu trắc nghiệm cần ít nhất 4 từ để dựng đáp án nhiễu.*
+
+  **Quy tắc dựng đáp án nhiễu:** nhiễu lấy từ các thẻ khác trong cùng phiên, ưu tiên **cùng
+  từ loại** cho khó hơn. Thẻ nào **cùng đề bài** với thẻ đang hỏi thì bị loại — nếu không sẽ
+  ra câu có hai đáp án đúng (vd đề "quyết định" mà cho chọn cả *decision* lẫn *decide*).
+  Không còn nhiễu hợp lệ thì hệ thống hiện thẳng đáp án để tự đánh giá, không dựng câu hỏng.
 - Tùy chọn thêm: **giới hạn số thẻ** mỗi phiên và **xáo trộn** thứ tự.
 
 **Bước học** — tùy kiểu ôn:
@@ -157,8 +178,14 @@ càng nhớ tốt thì lần ôn sau càng để lâu; nhớ kém thì ôn lại
 
 ## 9. Trang tổng quan
 
-Trang chính hiển thị các con số toàn tài khoản: **số bộ thẻ**, **tổng số từ**, **số từ
-đã thuộc**, và **số từ cần ôn hôm nay**, kèm một thanh thể hiện tỷ lệ các trạng thái.
+Trang chính xếp theo thứ tự **việc cần làm trước, thống kê sau**:
+
+1. **Việc hôm nay** — nếu còn thẻ đến hạn thì hiện ngay một khối "N từ cần ôn hôm nay" kèm
+   nút **"Ôn ngay"** mở phiên gộp mọi bộ thẻ (xem mục 6). Ôn hết rồi thì đổi thành lời chúc.
+2. **Chuỗi ngày học** (streak).
+3. **Bộ thẻ** — các con số toàn tài khoản (**số bộ thẻ**, **tổng số từ**, **số từ đã thuộc**,
+   **số từ cần ôn hôm nay**) kèm thanh tỷ lệ trạng thái, rồi danh sách bộ thẻ.
+4. Các khối tham khảo: **Thử thách hôm nay**, **Bạn hay quên**.
 
 Ngoài ra còn có:
 - **Chuỗi ngày học (streak):** số ngày liên tiếp có ôn tập, số lượt ôn hôm nay, và biểu đồ
@@ -168,7 +195,8 @@ Ngoài ra còn có:
   trang chủ hiện lời nhắc dẫn tới danh sách bộ thẻ.
 - **Thử thách hôm nay:** 3–4 nhiệm vụ trong ngày kèm thanh tiến độ (xem mục 10).
 - **Bạn hay quên:** danh sách các từ bị đánh giá **"Chưa thuộc"** nhiều nhất (từ nhật ký ôn),
-  kèm số lần quên — để ưu tiên ôn lại. Có trang riêng **/weak** liệt kê đầy đủ.
+  kèm số lần quên. Có **nút mở phiên ôn đúng những từ này** (tối đa 30 từ) và trang riêng
+  **/weak** liệt kê đầy đủ.
 
 ---
 

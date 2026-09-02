@@ -15,13 +15,17 @@ export default function DashboardPage() {
         <h1 className="mb-6 flex items-center gap-2 text-2xl font-bold">
           Xin chào <Hand className="h-6 w-6 text-amber-500" />
         </h1>
-        <EnrichBackfillButton banner />
+        {/* Thứ tự có chủ ý: việc cần làm hôm nay → bộ thẻ (để học/thêm từ) →
+            rồi mới tới các khối tham khảo. Trước đây 4 khối thống kê nằm trên
+            lưới bộ thẻ, nên trên điện thoại phải cuộn qua hết mới tới được chỗ
+            bắt đầu học. */}
         <StudyOverview />
-        <div className="mb-6 grid items-start gap-4 lg:grid-cols-2">
+        <DecksManager showStats />
+        <div className="mt-6 grid items-start gap-4 lg:grid-cols-2">
           <DailyChallenge />
           <WeakWords limit={6} />
         </div>
-        <DecksManager showStats />
+        <EnrichBackfillButton banner />
       </main>
       <QuickCreator />
     </>

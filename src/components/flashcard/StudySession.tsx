@@ -4,9 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, PartyPopper } from "lucide-react";
 import type { CardStatus, CardWithProgress } from "@/types";
-import { fetchCardsWithProgress, recordProgress } from "@/lib/db/cards";
+import {
+  fetchCardsByIds,
+  fetchCardsWithProgress,
+  fetchDueCardsAllDecks,
+  recordProgress,
+} from "@/lib/db/cards";
+import { fetchWeakWords, WEAK_SESSION_SIZE } from "@/lib/db/weak";
 import { STATUS_META, isDue } from "@/lib/status";
-import { REVIEW_TYPES, type ReviewType } from "@/lib/quiz";
+import { MCQ_TYPES, REVIEW_TYPES, type ReviewType } from "@/lib/quiz";
 import { useSettings } from "@/lib/settings";
 import { speak } from "@/lib/speak";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +24,43 @@ import { QuizCard } from "./QuizCard";
 
 type Mode = "all" | "weak" | "due";
 type Phase = "setup" | "studying" | "done";
+
+/**
+ * Nguồn thẻ của phiên học.
+ *  - `deck`: một bộ thẻ — người dùng còn được chọn Mode (tất cả / hôm nay / chưa thuộc).
+ *  - `due`: thẻ đến hạn trên **toàn tài khoản**, gộp mọi bộ thẻ.
+ *  - `weak`: những từ bị đánh giá "Chưa thuộc" nhiều nhất.
+ *
+ * Với `due`/`weak` thì tập thẻ **đã là** lựa chọn rồi, nên màn chuẩn bị bỏ phần
+ * chọn Mode và chỉ còn kiểu ôn / số thẻ / xáo trộn.
+ */
+export type StudySource =
+  | { kind: "deck"; deckId: string }
+  | { kind: "due" }
+  | { kind: "weak" };
+
+
+const SOURCE_META: Record<
+  StudySource["kind"],
+  { title: string; subtitle: string; empty: string }
+> = {
+  deck: {
+    title: "Bắt đầu học",
+    subtitle: "Chọn cách ôn tập.",
+    empty: "Bộ thẻ này chưa có từ nào để học.",
+  },
+  due: {
+    title: "Ôn hôm nay",
+    subtitle: "Thẻ đến hạn ôn từ mọi bộ thẻ, gộp vào một phiên.",
+    empty: "Hôm nay không còn thẻ nào đến hạn. Quay lại mai nhé!",
+  },
+  weak: {
+    title: "Ôn từ hay quên",
+    subtitle: "Những từ bạn đánh giá “Chưa thuộc” nhiều nhất.",
+    empty:
+      "Chưa có từ nào bị đánh giá “Chưa thuộc”. Học vài phiên rồi quay lại.",
+  },
+};
 /** Trạng thái người dùng gán khi đánh giá (3 nút). */
 type Assessed = "hard" | "good" | "easy";
 
@@ -62,7 +105,7 @@ function shuffleArr<T>(a: T[]): T[] {
 
 const LIMIT_OPTIONS = [0, 10, 20, 30, 50]; // 0 = tất cả
 
-export function StudySession({ deckId }: { deckId: string }) {
+export function StudySession({ source }: { source: StudySource }) {
   const [all, setAll] = useState<CardWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase>("setup");
@@ -86,9 +129,34 @@ export function StudySession({ deckId }: { deckId: string }) {
     easy: 0,
   });
 
-  const load = useCallback(() => {
-    return fetchCardsWithProgress(deckId).then(setAll);
-  }, [deckId]);
+  // Tách ra giá trị nguyên thủy: `source` là object literal do page truyền vào
+  // nên mỗi lần render là một object mới — phụ thuộc trực tiếp vào nó sẽ làm
+  // useCallback đổi liên tục và effect nạp dữ liệu chạy vô hạn.
+  const kind = source.kind;
+  const deckId = source.kind === "deck" ? source.deckId : null;
+
+  const load = useCallback(async () => {
+    if (kind === "deck" && deckId) {
+      setAll(await fetchCardsWithProgress(deckId));
+      return;
+    }
+    if (kind === "due") {
+      setAll(await fetchDueCardsAllDecks());
+      return;
+    }
+    // weak: xếp hạng theo số lần quên rồi lấy thẻ đầy đủ theo đúng thứ tự đó.
+    const ranked = await fetchWeakWords(WEAK_SESSION_SIZE);
+    setAll(await fetchCardsByIds(ranked.map((w) => w.cardId)));
+  }, [kind, deckId]);
+
+  const meta = SOURCE_META[kind];
+  // Đường thoát khỏi phiên: về đúng nơi người dùng vừa đi ra.
+  const back =
+    kind === "deck"
+      ? { href: `/decks/${deckId}`, label: "Về bộ thẻ" }
+      : kind === "weak"
+        ? { href: "/weak", label: "Về danh sách" }
+        : { href: "/dashboard", label: "Về trang chủ" };
 
   useEffect(() => {
     load().finally(() => setLoading(false));
@@ -102,18 +170,21 @@ export function StudySession({ deckId }: { deckId: string }) {
 
   // Mặc định chọn "Ôn hôm nay" khi có thẻ đến hạn (khuyến nghị spaced repetition).
   useEffect(() => {
-    if (inited || all.length === 0) return;
+    if (kind !== "deck" || inited || all.length === 0) return;
     setInited(true);
     if (all.some((c) => isDue(c.progress?.next_due_at))) setMode("due");
-  }, [all, inited]);
+  }, [all, inited, kind]);
 
   function start() {
+    // Chỉ nguồn "deck" mới lọc theo Mode; due/weak đã được lọc từ lúc nạp.
     const pool =
-      mode === "weak"
-        ? all.filter(isWeak)
-        : mode === "due"
-          ? all.filter((c) => isDue(c.progress?.next_due_at))
-          : all;
+      kind !== "deck"
+        ? all
+        : mode === "weak"
+          ? all.filter(isWeak)
+          : mode === "due"
+            ? all.filter((c) => isDue(c.progress?.next_due_at))
+            : all;
     let list = shuffle ? shuffleArr(pool) : orderCards(pool);
     if (limit > 0) list = list.slice(0, limit);
     setQueue(list);
@@ -205,13 +276,13 @@ export function StudySession({ deckId }: { deckId: string }) {
   if (all.length === 0) {
     return (
       <div className="py-20 text-center text-slate-500 dark:text-slate-400">
-        <p>Bộ thẻ này chưa có từ nào để học.</p>
+        <p>{meta.empty}</p>
         <Link
-          href={`/decks/${deckId}`}
+          href={back.href}
           className="mt-3 inline-flex items-center gap-1 text-brand dark:text-indigo-400 hover:underline"
         >
           <ArrowLeft size={16} />
-          Quay lại thêm từ
+          {back.label}
         </Link>
       </div>
     );
@@ -221,40 +292,55 @@ export function StudySession({ deckId }: { deckId: string }) {
   if (phase === "setup") {
     return (
       <div className="mx-auto max-w-md">
-        <h1 className="mb-1 text-xl font-bold">Bắt đầu học</h1>
-        <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">Chọn cách ôn tập.</p>
+        <h1 className="mb-1 text-xl font-bold">{meta.title}</h1>
+        <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
+          {meta.subtitle}
+        </p>
 
-        <div className="space-y-2">
-          <ModeOption
-            label="Ôn hôm nay"
-            desc="Thẻ đến hạn ôn (spaced repetition)"
-            count={dueCount}
-            active={mode === "due"}
-            onClick={() => setMode("due")}
-            disabled={dueCount === 0}
-          />
-          <ModeOption
-            label="Ôn tất cả"
-            desc="Toàn bộ từ trong bộ thẻ"
-            count={all.length}
-            active={mode === "all"}
-            onClick={() => setMode("all")}
-          />
-          <ModeOption
-            label="Chỉ từ chưa thuộc"
-            desc="Từ chưa học hoặc đánh giá khó"
-            count={weakCount}
-            active={mode === "weak"}
-            onClick={() => setMode("weak")}
-            disabled={weakCount === 0}
-          />
-        </div>
+        {kind === "deck" ? (
+          <div className="space-y-2">
+            <ModeOption
+              label="Ôn hôm nay"
+              desc="Thẻ đến hạn ôn (spaced repetition)"
+              count={dueCount}
+              active={mode === "due"}
+              onClick={() => setMode("due")}
+              disabled={dueCount === 0}
+            />
+            <ModeOption
+              label="Ôn tất cả"
+              desc="Toàn bộ từ trong bộ thẻ"
+              count={all.length}
+              active={mode === "all"}
+              onClick={() => setMode("all")}
+            />
+            <ModeOption
+              label="Chỉ từ chưa thuộc"
+              desc="Từ chưa học hoặc đánh giá khó"
+              count={weakCount}
+              active={mode === "weak"}
+              onClick={() => setMode("weak")}
+              disabled={weakCount === 0}
+            />
+          </div>
+        ) : (
+          /* due/weak: tập thẻ đã cố định, chỉ cho biết có bao nhiêu từ. */
+          <div className="rounded-xl border border-brand/30 bg-brand-light/50 px-4 py-3 dark:bg-indigo-500/10">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              <strong className="text-brand-dark dark:text-indigo-300">
+                {all.length}
+              </strong>{" "}
+              từ trong phiên này.
+            </p>
+          </div>
+        )}
 
         <div className="mt-6">
           <p className="mb-2 text-sm font-medium text-slate-600 dark:text-slate-400">Kiểu ôn</p>
           <div className="flex flex-wrap gap-2">
             {REVIEW_TYPES.map((rt) => {
-              const disabled = rt.value === "mcq" && all.length < 4;
+              // Cả hai chiều trắc nghiệm đều cần đủ thẻ để dựng đáp án nhiễu.
+              const disabled = MCQ_TYPES.includes(rt.value) && all.length < 4;
               const active = reviewType === rt.value;
               return (
                 <button
@@ -306,13 +392,14 @@ export function StudySession({ deckId }: { deckId: string }) {
             className="flex-1"
             onClick={start}
             disabled={
-              (mode === "weak" && weakCount === 0) ||
-              (mode === "due" && dueCount === 0)
+              kind === "deck" &&
+              ((mode === "weak" && weakCount === 0) ||
+                (mode === "due" && dueCount === 0))
             }
           >
             Bắt đầu
           </Button>
-          <Link href={`/decks/${deckId}`} className="shrink-0">
+          <Link href={back.href} className="shrink-0">
             <Button size="lg" variant="secondary">
               Thoát
             </Button>
@@ -352,8 +439,8 @@ export function StudySession({ deckId }: { deckId: string }) {
 
         <div className="mt-8 flex justify-center gap-3">
           <Button onClick={backToSetup}>Học tiếp</Button>
-          <Link href={`/decks/${deckId}`}>
-            <Button variant="secondary">Về bộ thẻ</Button>
+          <Link href={back.href}>
+            <Button variant="secondary">{back.label}</Button>
           </Link>
         </div>
       </div>
