@@ -21,9 +21,9 @@ export default function DashboardPage() {
             bắt đầu học. */}
         <StudyOverview />
         <DecksManager showStats />
-        {/* [&>*]:min-w-0 — chốt cho mọi thẻ con: grid item không co được dưới
+        {/* — chốt cho mọi thẻ con: grid item không co được dưới
             min-content, nên một truncate ở sâu bên trong là đủ làm tràn trang. */}
-        <div className="mt-6 grid items-start gap-4 [&>*]:min-w-0 lg:grid-cols-2">
+        <div className="mt-6 grid items-start gap-4 lg:grid-cols-2">
           <DailyChallenge />
           <WeakWords limit={6} />
         </div>
