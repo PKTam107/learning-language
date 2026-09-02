@@ -11,7 +11,7 @@ export default function DashboardPage() {
   return (
     <>
       <Navbar />
-      <main className="mx-auto max-w-5xl px-4 pb-28 pt-8 md:pb-12">
+      <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 sm:pt-8 md:pb-12">
         <h1 className="mb-6 flex items-center gap-2 text-2xl font-bold">
           Xin chào <Hand className="h-6 w-6 text-amber-500" />
         </h1>
@@ -21,7 +21,9 @@ export default function DashboardPage() {
             bắt đầu học. */}
         <StudyOverview />
         <DecksManager showStats />
-        <div className="mt-6 grid items-start gap-4 lg:grid-cols-2">
+        {/* [&>*]:min-w-0 — chốt cho mọi thẻ con: grid item không co được dưới
+            min-content, nên một truncate ở sâu bên trong là đủ làm tràn trang. */}
+        <div className="mt-6 grid items-start gap-4 [&>*]:min-w-0 lg:grid-cols-2">
           <DailyChallenge />
           <WeakWords limit={6} />
         </div>

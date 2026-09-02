@@ -13,7 +13,11 @@ interface DeckCardProps {
 
 export function DeckCard({ deck, onEdit, onDelete }: DeckCardProps) {
   return (
-    <div className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 transition-shadow hover:shadow-md">
+    /* min-w-0 là bắt buộc khi thẻ này nằm trong grid: grid item mặc định
+    có min-width:auto nên KHÔNG co được xuống dưới min-content, mà bên trong có
+    truncate (white-space:nowrap) làm min-content bằng cả chuỗi text → track bị
+    nong rộng hơn viewport và cả trang tràn ngang. */
+    <div className="flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-5 transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-start justify-between">
         <Link href={`/decks/${deck.id}`} className="min-w-0 flex-1">
           <h3 className="truncate text-lg font-semibold text-slate-900 dark:text-slate-100 hover:text-brand dark:hover:text-indigo-400">

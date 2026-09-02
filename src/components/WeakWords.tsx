@@ -33,10 +33,15 @@ export function WeakWords({ limit }: { limit?: number }) {
   }, [limit]);
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <Brain className="h-5 w-5 text-rose-500" /> Bạn hay quên
+    /* min-w-0 là bắt buộc khi thẻ này nằm trong grid: grid item mặc định
+    có min-width:auto nên KHÔNG co được xuống dưới min-content, mà bên trong có
+    truncate (white-space:nowrap) làm min-content bằng cả chuỗi text → track bị
+    nong rộng hơn viewport và cả trang tràn ngang. */
+    <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="flex min-w-0 items-center gap-2 text-lg font-semibold">
+          <Brain className="h-5 w-5 shrink-0 text-rose-500" />
+          <span className="truncate">Bạn hay quên</span>
         </h2>
         {limit && words && words.length >= limit && (
           <Link
