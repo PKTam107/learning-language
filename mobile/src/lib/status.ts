@@ -1,4 +1,4 @@
-import type { CardStatus, CardWithProgress, DeckStats } from "@/types";
+import type { CardStatus, DeckStats } from "@/types";
 import type { ThemeColors } from "@/lib/theme";
 
 /** Thứ tự hiển thị: chưa học → chưa thuộc → đang thuộc → đã thuộc. */
@@ -32,20 +32,6 @@ export function isDue(
 ): boolean {
   if (!nextDueAt) return true;
   return new Date(nextDueAt).getTime() <= nowMs;
-}
-
-/** Tính DeckStats (byStatus + due) từ danh sách thẻ kèm progress. */
-export function computeStats(
-  cards: CardWithProgress[],
-  nowMs: number = Date.now()
-): DeckStats {
-  const byStatus = emptyByStatus();
-  let due = 0;
-  for (const c of cards) {
-    byStatus[c.progress?.status ?? "new"]++;
-    if (isDue(c.progress?.next_due_at, nowMs)) due++;
-  }
-  return { total: cards.length, byStatus, due };
 }
 
 export function masteredPercent(stats: DeckStats): number {

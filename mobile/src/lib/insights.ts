@@ -1,6 +1,13 @@
 import { supabase } from "@/lib/supabase";
 import { fetchAllRows } from "@/lib/paginate";
 import { isDue } from "@/lib/status";
+import { resolvePolicy } from "@/lib/policy";
+import {
+  dueTodayCount,
+  isNewCard,
+  remainingNew,
+  type QueuePolicy,
+} from "@/lib/queue";
 import {
   activeDayCount,
   bestStreak,
@@ -40,10 +47,15 @@ export interface DueItem {
 }
 
 export interface DueCalendarData {
-  /** Thẻ tới hạn theo ngày. Thẻ quá hạn & chưa học gom vào **hôm nay**. */
+  /**
+   * Thẻ tới hạn theo ngày. Thẻ quá hạn gom vào **hôm nay**, cùng với số từ mới
+   * còn trong hạn mức hôm nay.
+   */
   byDay: Record<string, DueItem[]>;
-  /** Số thẻ đã tới hạn tính đến lúc nạp (gồm thẻ chưa học). */
+  /** Số thẻ trong hàng đợi hôm nay (thẻ quá hạn + từ mới trong hạn mức). */
   dueNow: number;
+  /** Từ mới chưa xếp lịch được vì hết hạn mức hôm nay. */
+  newHeldBack: number;
   totalCards: number;
 }
 
@@ -66,7 +78,7 @@ const EMPTY_ACTIVITY: ActivityStats = {
 export const EMPTY_PROGRESS: ProgressData = {
   activity: EMPTY_ACTIVITY,
   metrics: EMPTY_METRICS,
-  due: { byDay: {}, dueNow: 0, totalCards: 0 },
+  due: { byDay: {}, dueNow: 0, newHeldBack: 0, totalCards: 0 },
 };
 
 /** Dựng ActivityStats từ danh sách mốc thời gian ôn (ISO). */
@@ -89,29 +101,58 @@ interface CardRow {
   id: string;
   term: string;
   deck_id: string;
-  card_progress?: { status?: string; next_due_at?: string | null }[] | null;
+  card_progress?: {
+    status?: string;
+    next_due_at?: string | null;
+    last_reviewed_at?: string | null;
+  }[] | null;
 }
 
-function buildDueCalendar(rows: CardRow[], now: Date): DueCalendarData {
+function buildDueCalendar(
+  rows: CardRow[],
+  now: Date,
+  policy: QueuePolicy
+): DueCalendarData {
   const nowMs = now.getTime();
   const todayKey = dayKey(now);
   const byDay: Record<string, DueItem[]> = {};
+  const item = (c: CardRow): DueItem => ({
+    cardId: c.id,
+    term: c.term,
+    deckId: c.deck_id,
+  });
+
+  const news: CardRow[] = [];
   let dueNow = 0;
 
   for (const c of rows) {
-    const nextDue = c.card_progress?.[0]?.next_due_at ?? null;
-    // Chưa học hoặc đã qua hạn → cần ôn ngay, xếp vào ô hôm nay.
-    const overdue = isDue(nextDue, nowMs);
+    const progress = c.card_progress?.[0];
+    // Từ mới chưa có ngày hẹn nào: chỉ những từ trong hạn mức hôm nay mới được
+    // xếp vào ô hôm nay, phần còn lại là hàng chờ (xem lib/queue.ts).
+    if (isNewCard({ progress })) {
+      news.push(c);
+      continue;
+    }
+    const nextDue = progress?.next_due_at ?? null;
+    const overdue = isDue(nextDue, nowMs); // quá hạn → việc của hôm nay
     const key = overdue ? todayKey : dayKey(new Date(nextDue as string));
     if (overdue) dueNow++;
-    (byDay[key] ??= []).push({
-      cardId: c.id,
-      term: c.term,
-      deckId: c.deck_id,
-    });
+    (byDay[key] ??= []).push(item(c));
   }
 
-  return { byDay, dueNow, totalCards: rows.length };
+  const quota = remainingNew(policy);
+  const taken = quota === Infinity ? news : news.slice(0, quota);
+  if (taken.length) {
+    (byDay[todayKey] ??= []).push(...taken.map(item));
+    dueNow += taken.length;
+  }
+
+  return {
+    byDay,
+    dueNow,
+    newHeldBack: news.length - taken.length,
+    totalCards: rows.length,
+  };
 }
 
 /**
@@ -121,7 +162,9 @@ function buildDueCalendar(rows: CardRow[], now: Date): DueCalendarData {
  * Lưu ý: heatmap/chuỗi ngày/số ngày có học tính trong cửa sổ HEATMAP_DAYS ngày;
  * riêng **tổng lượt ôn** đếm toàn bộ lịch sử (đếm phía server, không tải rows).
  */
-export async function fetchProgressData(): Promise<ProgressData> {
+export async function fetchProgressData(
+  newPerDay: number
+): Promise<ProgressData> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -134,7 +177,7 @@ export async function fetchProgressData(): Promise<ProgressData> {
   // Cả hai truy vấn này đều vượt 1000 dòng rất dễ: 364 ngày nhật ký ôn, và
   // toàn bộ thẻ của tài khoản. Không phân trang thì heatmap, chuỗi ngày dài
   // nhất, số ngày có học và lịch ôn đều thiếu dữ liệu mà không báo lỗi.
-  const [history, totalRes, cardRows] = await Promise.all([
+  const [history, totalRes, cardRows, policy] = await Promise.all([
     // review_events có thể chưa được migrate → coi như chưa có lịch sử.
     fetchAllRows<{ reviewed_at: string }>((from, to) =>
       supabase
@@ -148,17 +191,20 @@ export async function fetchProgressData(): Promise<ProgressData> {
     fetchAllRows<CardRow>((from, to) =>
       supabase
         .from("cards")
-        .select("id, term, deck_id, card_progress(status, next_due_at)")
+        .select(
+          "id, term, deck_id, card_progress(status, next_due_at, last_reviewed_at)"
+        )
         .order("id")
         .range(from, to)
     ),
+    resolvePolicy(newPerDay),
   ]);
 
   const activity = buildActivity(
     history.map((r) => r.reviewed_at),
     now
   );
-  const due = buildDueCalendar(cardRows, now);
+  const due = buildDueCalendar(cardRows, now, policy);
   const masteredCards = cardRows.filter(
     (c) => c.card_progress?.[0]?.status === "easy"
   ).length;
@@ -179,7 +225,9 @@ export async function fetchProgressData(): Promise<ProgressData> {
  * Chỉ số cho thử thách hôm nay. Nhẹ hơn fetchProgressData: chỉ nhật ký ôn trong
  * ngày + số thẻ tạo trong ngày + hàng đợi tới hạn.
  */
-export async function fetchChallengeMetrics(): Promise<ChallengeMetrics> {
+export async function fetchChallengeMetrics(
+  newPerDay: number
+): Promise<ChallengeMetrics> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -191,26 +239,33 @@ export async function fetchChallengeMetrics(): Promise<ChallengeMetrics> {
   // dòng nào). Trước đây khối này kéo *toàn bộ* thẻ kèm progress về máy chỉ để
   // đếm — vừa nặng, vừa bị cắt ở 1000 dòng nên đếm thiếu.
   //
-  // "Chưa tới hạn" = có dòng progress và next_due_at còn ở tương lai (xem
-  // isDue trong lib/status.ts: thiếu next_due_at nghĩa là chưa học → tới hạn),
-  // nên dueToday = tổng thẻ − số thẻ chưa tới hạn. Dùng index
-  // card_progress_user_due ở migration 0008.
-  const [events, newRes, totalRes, notDueRes] = await Promise.all([
-    fetchAllRows<{ card_id: string | null; status: string }>((from, to) =>
+  // dueToday phải khớp hàng đợi thật (lib/queue.ts): thẻ tới hạn ôn lại +
+  // từ mới trong hạn mức. Đếm được bằng 3 con số:
+  //   thẻ tới hạn  = card_progress có next_due_at đã qua
+  //   từ mới còn   = tổng thẻ − số thẻ đã có tiến độ
+  const nowIso = new Date().toISOString();
+  const [events, newRes, totalRes, withProgressRes, dueRes, policy] =
+    await Promise.all([
+      fetchAllRows<{ card_id: string | null; status: string }>((from, to) =>
+        supabase
+          .from("review_events")
+          .select("card_id, status")
+          .gte("reviewed_at", dayStart)
+          .order("id")
+          .range(from, to)
+      ).catch(() => [] as { card_id: string | null; status: string }[]),
       supabase
-        .from("review_events")
-        .select("card_id, status")
-        .gte("reviewed_at", dayStart)
-        .order("id")
-        .range(from, to)
-    ).catch(() => [] as { card_id: string | null; status: string }[]),
-    supabase.from("cards").select("id", { count: "exact", head: true }).gte("created_at", dayStart),
-    supabase.from("cards").select("id", { count: "exact", head: true }),
-    supabase
-      .from("card_progress")
-      .select("id", { count: "exact", head: true })
-      .gt("next_due_at", new Date().toISOString()),
-  ]);
+        .from("cards")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", dayStart),
+      supabase.from("cards").select("id", { count: "exact", head: true }),
+      supabase.from("card_progress").select("id", { count: "exact", head: true }),
+      supabase
+        .from("card_progress")
+        .select("id", { count: "exact", head: true })
+        .lte("next_due_at", nowIso),
+      resolvePolicy(newPerDay),
+    ]);
 
   const distinct = new Set<string>();
   const mastered = new Set<string>();
@@ -221,7 +276,11 @@ export async function fetchChallengeMetrics(): Promise<ChallengeMetrics> {
   }
 
   const totalCards = totalRes.count ?? 0;
-  const dueToday = Math.max(0, totalCards - (notDueRes.count ?? 0));
+  const newAvailable = Math.max(0, totalCards - (withProgressRes.count ?? 0));
+  const dueToday = dueTodayCount(
+    { dueReviews: dueRes.count ?? 0, newAvailable },
+    policy
+  );
 
   return {
     reviewsToday: events.length,

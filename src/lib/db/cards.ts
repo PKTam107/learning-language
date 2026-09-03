@@ -2,8 +2,11 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/currentUser";
-import { isDue } from "@/lib/status";
 import { fetchAllRows } from "@/lib/db/paginate";
+import { resolvePolicy } from "@/lib/db/policy";
+import { trashCards } from "@/lib/db/trash";
+import { buildDueQueue, type DueQueue } from "@/lib/queue";
+import { rowFromState, scheduleReview, stateFromRow } from "@/lib/srs";
 import type { Card, CardStatus, CardWithProgress, DraftCard } from "@/types";
 
 const supabase = () => createClient();
@@ -251,26 +254,32 @@ export async function fetchCardsWithProgress(
 }
 
 /**
- * Thẻ đến hạn ôn trên **toàn tài khoản** (mọi bộ thẻ), cho phiên "Ôn hôm nay".
+ * Hàng đợi "Ôn hôm nay" trên **toàn tài khoản** (mọi bộ thẻ).
  *
- * Điều kiện "đến hạn" (xem `isDue`) là *chưa có dòng progress* HOẶC
- * `next_due_at` đã qua — vế đầu không diễn đạt được bằng filter trên bảng
- * `cards`, nên lọc phía client. RLS đã giới hạn theo user.
+ * Gồm thẻ tới hạn ôn lại + từ mới trong hạn mức hôm nay (xem `lib/queue.ts`).
+ * Điều kiện tới hạn không diễn đạt được bằng filter trên bảng `cards` (thẻ chưa
+ * học không có dòng progress), nên lọc phía client. RLS đã giới hạn theo user.
  */
-export async function fetchDueCardsAllDecks(): Promise<CardWithProgress[]> {
-  const rows = await fetchAllRows<any>((from, to) =>
-    supabase()
-      .from("cards")
-      .select("*, card_progress(*)")
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .range(from, to)
-  );
+export async function fetchDueQueueAllDecks(
+  newPerDay: number
+): Promise<DueQueue<CardWithProgress>> {
+  const [rows, policy] = await Promise.all([
+    fetchAllRows<any>((from, to) =>
+      supabase()
+        .from("cards")
+        .select("*, card_progress(*)")
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(from, to)
+    ),
+    resolvePolicy(newPerDay),
+  ]);
 
-  const now = Date.now();
-  return rows
-    .map((c: any) => ({ ...c, progress: c.card_progress?.[0] ?? null }))
-    .filter((c: CardWithProgress) => isDue(c.progress?.next_due_at, now));
+  const cards: CardWithProgress[] = rows.map((c: any) => ({
+    ...c,
+    progress: c.card_progress?.[0] ?? null,
+  }));
+  return buildDueQueue(cards, policy);
 }
 
 /**
@@ -304,14 +313,9 @@ async function requireUserId(): Promise<string> {
   return userId;
 }
 
+/** Xóa thẻ = chuyển vào thùng rác 30 ngày (xem `lib/db/trash.ts`). */
 export async function deleteCard(id: string): Promise<void> {
-  const userId = await requireUserId();
-  const { error } = await supabase()
-    .from("cards")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", userId);
-  if (error) throw error;
+  await trashCards([id]);
 }
 
 export async function moveCard(id: string, deckId: string): Promise<void> {
@@ -326,16 +330,9 @@ export async function moveCard(id: string, deckId: string): Promise<void> {
 
 // ---------- Hành động hàng loạt ----------
 
-/** Xóa nhiều thẻ theo id. */
+/** Xóa nhiều thẻ = chuyển cả lô vào thùng rác. */
 export async function deleteCards(ids: string[]): Promise<void> {
-  if (ids.length === 0) return;
-  const userId = await requireUserId();
-  const { error } = await supabase()
-    .from("cards")
-    .delete()
-    .in("id", ids)
-    .eq("user_id", userId);
-  if (error) throw error;
+  await trashCards(ids);
 }
 
 /**
@@ -402,87 +399,120 @@ export async function resetProgress(ids: string[]): Promise<void> {
   if (error) throw error;
 }
 
-const DAY_MS = 86_400_000;
-const MIN_EASE = 1.3;
-
 /**
- * Lịch ôn kiểu SM-2 rút gọn, dựa trên đánh giá + khoảng cách lần trước.
- * Dùng cột có sẵn (ease_factor, next_due_at) — không cần đổi schema.
+ * Cột chưa tồn tại — thường là do migration 0009 chưa chạy. PostgREST trả 42703
+ * (undefined_column) hoặc PGRST204 (cache schema không thấy cột).
  */
-function computeSchedule(
-  status: CardStatus,
-  prevEase: number,
-  prevIntervalDays: number
-): { ease: number; intervalDays: number } {
-  if (status === "hard") {
-    // Sai/khó → giảm ease, ôn lại sớm (ngày mai).
-    return { ease: Math.max(MIN_EASE, prevEase - 0.2), intervalDays: 1 };
-  }
-  if (status === "easy") {
-    const base = prevIntervalDays < 1 ? 3 : prevIntervalDays * prevEase * 1.3;
-    return { ease: prevEase + 0.15, intervalDays: Math.round(base) };
-  }
-  // good
-  const base = prevIntervalDays < 1 ? 1 : prevIntervalDays * prevEase;
-  return { ease: prevEase, intervalDays: Math.round(base) };
+function isUndefinedColumn(err: unknown): boolean {
+  const code = (err as { code?: string })?.code;
+  return code === "42703" || code === "PGRST204";
 }
 
-/** Ghi nhận đánh giá + tính lịch ôn lại (spaced repetition). */
+/** Ảnh chụp một lượt đánh giá — đủ để hoàn tác (xem `undoReview`). */
+export interface ReviewReceipt {
+  cardId: string;
+  /** Dòng `card_progress` TRƯỚC khi ghi; null = thẻ chưa từng ôn. */
+  prev: Record<string, unknown> | null;
+  /** Id dòng nhật ký ôn vừa ghi; null nếu ghi nhật ký lỗi. */
+  eventId: string | null;
+}
+
+/**
+ * Ghi nhận đánh giá + tính lịch ôn lại (xem `lib/srs.ts`).
+ * Trả về ảnh chụp trạng thái cũ để người dùng hoàn tác được nếu bấm nhầm.
+ */
 export async function recordProgress(
   cardId: string,
   status: CardStatus
-): Promise<void> {
-  const userId = await currentUserId();
-  if (!userId) throw new Error("Chưa đăng nhập");
+): Promise<ReviewReceipt> {
+  const userId = await requireUserId();
 
+  // Lấy cả dòng: vừa để tính lịch, vừa làm ảnh chụp cho hoàn tác.
   const { data: existing } = await supabase()
     .from("card_progress")
-    .select("review_count, ease_factor, last_reviewed_at, next_due_at")
+    .select("*")
     .eq("user_id", userId)
     .eq("card_id", cardId)
     .maybeSingle();
 
-  const prevEase = existing?.ease_factor ?? 2.5;
-  let prevIntervalDays = 0;
-  if (existing?.last_reviewed_at && existing?.next_due_at) {
-    prevIntervalDays = Math.max(
-      0,
-      Math.round(
-        (new Date(existing.next_due_at).getTime() -
-          new Date(existing.last_reviewed_at).getTime()) /
-          DAY_MS
-      )
-    );
-  }
-
-  const { ease, intervalDays } = computeSchedule(
-    status,
-    prevEase,
-    prevIntervalDays
-  );
   const now = new Date();
-  const nextDue = new Date(now.getTime() + intervalDays * DAY_MS);
+  const { state, dueAt } = scheduleReview(
+    stateFromRow(existing),
+    status as "hard" | "good" | "easy",
+    now
+  );
 
-  const { error } = await supabase().from("card_progress").upsert(
+  const row = rowFromState(state, dueAt, now);
+  let { error } = await supabase().from("card_progress").upsert(
     {
       user_id: userId,
       card_id: cardId,
-      status,
-      review_count: (existing?.review_count ?? 0) + 1,
-      last_reviewed_at: now.toISOString(),
-      next_due_at: nextDue.toISOString(),
-      ease_factor: ease,
+      ...row,
+      // Mốc "từ mới hôm nay" chỉ đặt ở lượt ôn đầu tiên rồi giữ nguyên.
+      introduced_at:
+        (existing?.introduced_at as string | null) ?? now.toISOString(),
     },
     { onConflict: "user_id,card_id" }
   );
+
+  // Migration 0009 chưa chạy → ghi lại bằng bộ cột cũ. Mất bước học và hạn mức
+  // từ mới, nhưng phiên học không đứng giữa chừng vì một lệnh SQL chưa chạy.
+  if (error && isUndefinedColumn(error)) {
+    const { interval_days, srs_phase, learning_step, lapses, ...legacy } = row;
+    ({ error } = await supabase()
+      .from("card_progress")
+      .upsert(
+        { user_id: userId, card_id: cardId, ...legacy },
+        { onConflict: "user_id,card_id" }
+      ));
+  }
   if (error) throw error;
 
-  // Ghi nhật ký ôn cho streak/thống kê. Không chặn luồng học nếu lỗi
-  // (vd migration review_events chưa chạy) — nuốt lỗi im lặng.
-  void supabase()
+  // Ghi nhật ký ôn cho streak/thống kê. Không chặn luồng học nếu lỗi (vd
+  // migration review_events chưa chạy) — chỉ mất khả năng hoàn tác dòng này.
+  let eventId: string | null = null;
+  const { data: event, error: logErr } = await supabase()
     .from("review_events")
     .insert({ user_id: userId, card_id: cardId, status })
-    .then(({ error: logErr }) => {
-      if (logErr) console.warn("review_events:", logErr.message);
-    });
+    .select("id")
+    .single();
+  if (logErr) console.warn("review_events:", logErr.message);
+  else eventId = (event?.id as string) ?? null;
+
+  return { cardId, prev: existing ?? null, eventId };
+}
+
+/**
+ * Hoàn tác một lượt đánh giá: trả `card_progress` về đúng ảnh chụp cũ và xóa
+ * dòng nhật ký ôn tương ứng (để streak/heatmap không đếm lượt đã hủy).
+ *
+ * Thẻ trước đó chưa từng ôn thì xóa hẳn dòng progress — đúng trạng thái
+ * "Chưa học" ban đầu.
+ */
+export async function undoReview(receipt: ReviewReceipt): Promise<void> {
+  const userId = await requireUserId();
+  const sb = supabase();
+
+  if (receipt.prev) {
+    const { error } = await sb
+      .from("card_progress")
+      .upsert(receipt.prev, { onConflict: "user_id,card_id" });
+    if (error) throw error;
+  } else {
+    const { error } = await sb
+      .from("card_progress")
+      .delete()
+      .eq("user_id", userId)
+      .eq("card_id", receipt.cardId);
+    if (error) throw error;
+  }
+
+  if (receipt.eventId) {
+    const { error } = await sb
+      .from("review_events")
+      .delete()
+      .eq("id", receipt.eventId)
+      .eq("user_id", userId);
+    if (error) console.warn("undo review_events:", error.message);
+  }
 }
