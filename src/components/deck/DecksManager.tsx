@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Deck, DeckStats } from "@/types";
 import { fetchDecksWithStats, deleteDeck } from "@/lib/db/decks";
+import { useSettings } from "@/lib/settings";
 import { exportAccountBackup } from "@/lib/export";
-import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
+import { emptyByStatus } from "@/lib/status";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -20,6 +21,9 @@ interface DecksManagerProps {
 
 export function DecksManager({ showStats }: DecksManagerProps) {
   const [decks, setDecks] = useState<Deck[]>([]);
+  /** Thống kê toàn tài khoản — tính một lần cho cả kho, xem fetchDecksWithStats. */
+  const [account, setAccount] = useState<DeckStats | null>(null);
+  const { settings, ready } = useSettings();
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Deck | null>(null);
@@ -38,20 +42,26 @@ export function DecksManager({ showStats }: DecksManagerProps) {
 
   const load = useCallback(async () => {
     try {
-      setDecks(await fetchDecksWithStats());
+      const { decks: rows, account: total } = await fetchDecksWithStats(
+        settings.newPerDay
+      );
+      setDecks(rows);
+      setAccount(total);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [settings.newPerDay]);
 
+  // Hàng đợi hôm nay phụ thuộc hạn mức từ mới → chờ cài đặt nạp xong.
   useEffect(() => {
+    if (!ready) return;
     load();
-  }, [load]);
+  }, [load, ready]);
 
   async function handleDelete(deck: Deck) {
     if (
       !confirm(
-        `Xóa bộ thẻ "${deck.name}"? Toàn bộ ${deck.card_count ?? 0} từ trong bộ sẽ bị xóa.`
+        `Xóa bộ thẻ "${deck.name}"? Toàn bộ ${deck.card_count ?? 0} từ trong bộ sẽ vào thùng rác — phục hồi được trong 30 ngày.`
       )
     )
       return;
@@ -59,18 +69,18 @@ export function DecksManager({ showStats }: DecksManagerProps) {
     load();
   }
 
-  const agg = useMemo<DeckStats>(() => {
-    const byStatus = emptyByStatus();
-    let total = 0;
-    let due = 0;
-    for (const d of decks) {
-      if (!d.stats) continue;
-      total += d.stats.total;
-      due += d.stats.due;
-      for (const s of STATUS_ORDER) byStatus[s] += d.stats.byStatus[s];
-    }
-    return { total, byStatus, due };
-  }, [decks]);
+  const agg = useMemo<DeckStats>(
+    () =>
+      account ?? {
+        total: 0,
+        byStatus: emptyByStatus(),
+        due: 0,
+        dueReviews: 0,
+        newToday: 0,
+        newHeldBack: 0,
+      },
+    [account]
+  );
 
   if (loading) {
     // Giữ đúng bố cục trang thật (ô số + lưới thẻ) để nội dung không nhảy khi

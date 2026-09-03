@@ -1,7 +1,10 @@
 import { supabase } from "@/lib/supabase";
-import type { CardStatus, Deck, DeckStats } from "@/types";
-import { emptyByStatus, isDue } from "@/lib/status";
+import type { CardWithProgress, Deck, DeckStats } from "@/types";
+import { emptyByStatus } from "@/lib/status";
+import { computeStats } from "@/lib/queue";
 import { fetchAllRows } from "@/lib/paginate";
+import { resolvePolicy } from "@/lib/policy";
+import { trashDeck } from "@/lib/trash";
 
 /** Lấy danh sách deck của user hiện tại kèm số lượng card. */
 export async function fetchDecks(): Promise<Deck[]> {
@@ -17,45 +20,68 @@ export async function fetchDecks(): Promise<Deck[]> {
   }));
 }
 
-/** Danh sách deck kèm thống kê trạng thái (2 query, không N+1). */
-export async function fetchDecksWithStats(): Promise<Deck[]> {
-  const [decksRes, cardRows] = await Promise.all([
+/** DeckStats rỗng cho bộ thẻ chưa có từ nào. */
+function emptyStats(): DeckStats {
+  return {
+    total: 0,
+    byStatus: emptyByStatus(),
+    due: 0,
+    dueReviews: 0,
+    newToday: 0,
+    newHeldBack: 0,
+  };
+}
+
+export interface DecksWithStats {
+  decks: Deck[];
+  /**
+   * Thống kê toàn tài khoản, tính từ TẤT CẢ thẻ trong một lần — không cộng dồn
+   * từng bộ, vì hạn mức từ mới là chung (cộng dồn sẽ ra số lớn hơn thực tế).
+   */
+  account: DeckStats;
+}
+
+/**
+ * Danh sách deck kèm thống kê trạng thái (2 query, không N+1).
+ * `stats.due` là hàng đợi hôm nay của bộ đó, đã trừ hạn mức từ mới (lib/queue.ts).
+ */
+export async function fetchDecksWithStats(
+  newPerDay: number
+): Promise<DecksWithStats> {
+  const [decksRes, cardRows, policy] = await Promise.all([
     supabase.from("decks").select("*").order("created_at", { ascending: false }),
     // Phải phân trang: tài khoản trên 1000 thẻ thì `select()` trần bị cắt im
     // lặng ở 1000 dòng, làm mọi con số thống kê thiếu hụt mà không báo lỗi.
     fetchAllRows<any>((from, to) =>
       supabase
         .from("cards")
-        .select("deck_id, card_progress(status, next_due_at)")
+        .select("deck_id, card_progress(status, next_due_at, last_reviewed_at)")
         .order("id")
         .range(from, to)
     ),
+    resolvePolicy(newPerDay),
   ]);
   if (decksRes.error) throw decksRes.error;
 
   const now = Date.now();
-  const statsByDeck = new Map<string, DeckStats>();
+  const byDeck = new Map<string, CardWithProgress[]>();
   for (const c of cardRows) {
-    const progress = c.card_progress?.[0];
-    const status = (progress?.status ?? "new") as CardStatus;
-    let s = statsByDeck.get(c.deck_id);
-    if (!s) {
-      s = { total: 0, byStatus: emptyByStatus(), due: 0 };
-      statsByDeck.set(c.deck_id, s);
-    }
-    s.total++;
-    s.byStatus[status]++;
-    if (isDue(progress?.next_due_at, now)) s.due++;
+    const list = byDeck.get(c.deck_id) ?? [];
+    list.push({ progress: c.card_progress?.[0] ?? null } as CardWithProgress);
+    byDeck.set(c.deck_id, list);
   }
 
-  return (decksRes.data ?? []).map((d: any) => {
-    const stats = statsByDeck.get(d.id) ?? {
-      total: 0,
-      byStatus: emptyByStatus(),
-      due: 0,
-    };
+  const decks = (decksRes.data ?? []).map((d: any) => {
+    const cards = byDeck.get(d.id);
+    const stats = cards ? computeStats(cards, policy, now) : emptyStats();
     return { ...d, card_count: stats.total, stats } as Deck;
   });
+
+  const allCards = Array.from(byDeck.values()).flat();
+  return {
+    decks,
+    account: allCards.length ? computeStats(allCards, policy, now) : emptyStats(),
+  };
 }
 
 export async function createDeck(input: {
@@ -90,7 +116,7 @@ export async function updateDeck(
   if (error) throw error;
 }
 
+/** Xóa bộ thẻ = chuyển cả bộ (kèm mọi thẻ bên trong) vào thùng rác 30 ngày. */
 export async function deleteDeck(id: string): Promise<void> {
-  const { error } = await supabase.from("decks").delete().eq("id", id);
-  if (error) throw error;
+  await trashDeck(id);
 }

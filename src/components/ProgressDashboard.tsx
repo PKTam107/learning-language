@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CalendarCheck, Flame, Repeat, Trophy } from "lucide-react";
 import { fetchProgressData, type ProgressData } from "@/lib/db/insights";
+import { useSettings } from "@/lib/settings";
 import { evaluateAchievements, summarize } from "@/lib/achievements";
 import { Achievements } from "@/components/Achievements";
 import { Heatmap } from "@/components/Heatmap";
@@ -16,10 +17,12 @@ import { Spinner } from "@/components/ui/Spinner";
 export function ProgressDashboard() {
   const [data, setData] = useState<ProgressData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { settings, ready } = useSettings();
 
   useEffect(() => {
+    if (!ready) return;
     let alive = true;
-    fetchProgressData()
+    fetchProgressData(settings.newPerDay)
       .then((d) => {
         if (alive) setData(d);
       })
@@ -29,7 +32,7 @@ export function ProgressDashboard() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [ready, settings.newPerDay]);
 
   if (error) {
     return (

@@ -35,7 +35,7 @@ npm install
 ### 2. Tạo Supabase project
 1. Vào https://supabase.com → New Project.
 2. Mở **SQL Editor** → chạy lần lượt các file trong [`supabase/migrations/`](./supabase/migrations)
-   **theo đúng thứ tự số** (`0001_init.sql` → `0008_progress_indexes.sql`): dán nội dung từng file → **Run**.
+   **theo đúng thứ tự số** (`0001_init.sql` → `0009_srs_settings_trash.sql`): dán nội dung từng file → **Run**.
 3. Bật **Google OAuth**: Dashboard → Authentication → Providers → Google
    (tạo OAuth Client ID/Secret ở [Google Cloud Console](https://console.cloud.google.com/),
    thêm redirect URL: `https://<project>.supabase.co/auth/v1/callback`).
@@ -94,6 +94,7 @@ Chi tiết (đăng nhập, tạo env, keystore, tra từ): xem [`mobile/docs/cha
 | `npm run start` | Chạy bản build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Kiểm tra TypeScript |
+| `npm run test` | Chạy unit test (Vitest) — lịch ôn & hàng đợi ôn |
 | `node scripts/generate-icons.mjs` | Sinh lại bộ icon PWA (chỉ khi đổi nhận diện) |
 
 > Icon đã được commit sẵn trong `public/` và `src/app/apple-icon.png` nên build bình thường

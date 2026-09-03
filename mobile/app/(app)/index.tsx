@@ -20,7 +20,8 @@ import {
   buildDailyChallenge,
   type DailyChallenge as Challenge,
 } from "@/lib/challenge";
-import { STATUS_ORDER, emptyByStatus } from "@/lib/status";
+import { emptyByStatus } from "@/lib/status";
+import { useSettings } from "@/lib/settings";
 import { DeckCard } from "@/components/deck/DeckCard";
 import { DeckForm } from "@/components/deck/DeckForm";
 import { StatusBar } from "@/components/status/StatusBar";
@@ -47,6 +48,9 @@ export default function DecksScreen() {
   const [stats, setStats] = useState<StudyStats>(EMPTY_STATS);
   const [weak, setWeak] = useState<WeakWord[]>([]);
   const [challenge, setChallenge] = useState<Challenge | null>(null);
+  /** Thống kê toàn tài khoản — tính một lần cho cả kho, xem fetchDecksWithStats. */
+  const [account, setAccount] = useState<DeckStats | null>(null);
+  const { settings, ready: settingsReady } = useSettings();
 
   async function handleBackup() {
     setBackupBusy(true);
@@ -63,12 +67,13 @@ export default function DecksScreen() {
     try {
       setError(null);
       const [deckData, statData, weakData, challengeMetrics] = await Promise.all([
-        fetchDecksWithStats(),
+        fetchDecksWithStats(settings.newPerDay),
         fetchStudyStats(),
         fetchWeakWords(8),
-        fetchChallengeMetrics(),
+        fetchChallengeMetrics(settings.newPerDay),
       ]);
-      setDecks(deckData);
+      setDecks(deckData.decks);
+      setAccount(deckData.account);
       setStats(statData);
       setWeak(weakData);
       setChallenge(buildDailyChallenge(challengeMetrics));
@@ -78,32 +83,34 @@ export default function DecksScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [settings.newPerDay]);
 
-  // Tải lại mỗi khi màn được focus (vd quay lại từ deck detail).
+  // Tải lại mỗi khi màn được focus (vd quay lại từ deck detail). Chờ cài đặt
+  // (hạn mức từ mới) nạp xong để không phải đếm hàng đợi hai lần.
   useFocusEffect(
     useCallback(() => {
+      if (!settingsReady) return;
       load();
-    }, [load])
+    }, [load, settingsReady])
   );
 
-  const agg = useMemo<DeckStats>(() => {
-    const byStatus = emptyByStatus();
-    let total = 0;
-    let due = 0;
-    for (const d of decks) {
-      if (!d.stats) continue;
-      total += d.stats.total;
-      due += d.stats.due;
-      for (const s of STATUS_ORDER) byStatus[s] += d.stats.byStatus[s];
-    }
-    return { total, byStatus, due };
-  }, [decks]);
+  const agg = useMemo<DeckStats>(
+    () =>
+      account ?? {
+        total: 0,
+        byStatus: emptyByStatus(),
+        due: 0,
+        dueReviews: 0,
+        newToday: 0,
+        newHeldBack: 0,
+      },
+    [account]
+  );
 
   function handleDelete(deck: Deck) {
     Alert.alert(
       "Xóa bộ thẻ",
-      `Xóa "${deck.name}"? Toàn bộ ${deck.card_count ?? 0} từ trong bộ sẽ bị xóa.`,
+      `Xóa "${deck.name}"? Toàn bộ ${deck.card_count ?? 0} từ sẽ vào thùng rác — phục hồi được trong 30 ngày trên bản web.`,
       [
         { text: "Hủy", style: "cancel" },
         {
@@ -168,7 +175,9 @@ export default function DecksScreen() {
                     {agg.due} từ cần ôn hôm nay
                   </Text>
                   <Text style={styles.todaySub}>
-                    Gộp tất cả bộ thẻ vào một phiên.
+                    {agg.newToday > 0
+                      ? `${agg.dueReviews} từ ôn lại · ${agg.newToday} từ mới · gộp mọi bộ thẻ.`
+                      : "Gộp tất cả bộ thẻ vào một phiên."}
                   </Text>
                 </View>
                 <Text style={styles.todayCta}>Ôn ngay →</Text>
@@ -178,7 +187,9 @@ export default function DecksScreen() {
                 <View style={styles.doneCard}>
                   <PartyPopper size={18} color={colors.success} />
                   <Text style={styles.doneText}>
-                    Xong hết thẻ đến hạn hôm nay. Nghỉ ngơi thôi!
+                    {agg.newHeldBack > 0
+                      ? `Xong hạn mức hôm nay (${settings.newPerDay} từ mới/ngày). Còn ${agg.newHeldBack} từ đang chờ tới lượt.`
+                      : "Xong hết thẻ đến hạn hôm nay. Nghỉ ngơi thôi!"}
                   </Text>
                 </View>
               )

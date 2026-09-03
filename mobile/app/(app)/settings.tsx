@@ -11,6 +11,7 @@ import {
 import { Stack } from "expo-router";
 import { AlarmClock, ChevronRight } from "lucide-react-native";
 import { useSettings } from "@/lib/settings";
+import { NEW_PER_DAY_OPTIONS } from "@/lib/queue";
 import {
   cancelDailyReminder,
   formatCountdown,
@@ -108,7 +109,38 @@ export default function SettingsScreen() {
             onValueChange={(v) => update({ autoSpeak: v })}
           />
         </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.rowText}>
+          <Text style={styles.rowLabel}>Từ mới mỗi ngày</Text>
+          <Text style={styles.rowDesc}>
+            Số từ chưa học được đưa vào phiên “Ôn hôm nay”. Thẻ đã tới hạn ôn lại
+            thì không bị giới hạn.
+          </Text>
+        </View>
+        <View style={styles.chipRow}>
+          {NEW_PER_DAY_OPTIONS.map((n) => {
+            const active = settings.newPerDay === n;
+            return (
+              <Pressable
+                key={n}
+                onPress={() => update({ newPerDay: n })}
+                style={[styles.chip, active && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {n === 0 ? "Không giới hạn" : n}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
+
+      <Text style={styles.hint}>
+        Hạn mức từ mới tính chung cho cả tài khoản trong ngày — học bộ thẻ nào
+        trước thì bộ đó dùng hạn mức trước.
+      </Text>
 
       {/* --- Nhắc học --- */}
       <Text style={styles.section}>Nhắc học hằng ngày</Text>
@@ -164,6 +196,23 @@ export default function SettingsScreen() {
         miễn phí. Bạn chọn được bất kỳ giờ:phút nào.
       </Text>
 
+      {/* --- Dữ liệu --- */}
+      <Text style={styles.section}>Dữ liệu</Text>
+      <View style={styles.card}>
+        <View style={styles.rowText}>
+          <Text style={styles.rowLabel}>Thùng rác</Text>
+          <Text style={styles.rowDesc}>
+            Thẻ và bộ thẻ đã xóa được giữ 30 ngày. Phục hồi hiện làm trên bản web
+            (trang Cài đặt → Thùng rác).
+          </Text>
+        </View>
+      </View>
+
+      <Text style={styles.hint}>
+        Các cài đặt trên được lưu theo tài khoản nên sang thiết bị khác vẫn giữ
+        nguyên. Riêng giao diện sáng/tối để theo từng máy.
+      </Text>
+
       <TimePickerSheet
         open={pickerOpen}
         hour={settings.reminderHour}
@@ -198,6 +247,20 @@ const makeStyles = (colors: ThemeColors) =>
     rowText: { flex: 1 },
     rowLabel: { fontSize: 15, fontWeight: "600", color: colors.text },
     rowDesc: { marginTop: 2, fontSize: 13, color: colors.textMuted },
+    divider: { height: 1, backgroundColor: colors.border },
+
+    chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+    chip: {
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs + 2,
+    },
+    chipActive: { borderColor: colors.brand, backgroundColor: colors.brandLight },
+    chipText: { fontSize: 14, color: colors.textMuted },
+    chipTextActive: { fontWeight: "700", color: colors.brandDark },
 
     timeCard: {
       flexDirection: "row",

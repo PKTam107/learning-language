@@ -4,6 +4,9 @@ export type LanguageCode = string; // 'en' | 'vi' | ... (mở rộng đa ngôn n
 
 export type CardStatus = "new" | "hard" | "good" | "easy";
 
+/** Giai đoạn lịch ôn của một thẻ — chi tiết ở [lib/srs.ts](../lib/srs.ts). */
+export type SrsPhase = "learning" | "review" | "relearning";
+
 export interface Definition {
   partOfSpeech: string;
   definition: string;
@@ -52,8 +55,17 @@ export interface DraftCard {
 export interface DeckStats {
   total: number;
   byStatus: Record<CardStatus, number>;
-  /** Số thẻ đến hạn ôn (chưa học hoặc next_due_at <= hiện tại). */
+  /**
+   * Hàng đợi hôm nay: thẻ tới hạn ôn lại + từ mới trong hạn mức
+   * (= `dueReviews + newToday`, xem [lib/queue.ts](../lib/queue.ts)).
+   */
   due: number;
+  /** Thẻ đã học và đã tới hạn ôn lại. */
+  dueReviews: number;
+  /** Từ mới sẽ được đưa vào học hôm nay, sau khi trừ hạn mức. */
+  newToday: number;
+  /** Từ mới còn chờ vì hôm nay đã hết hạn mức. */
+  newHeldBack: number;
 }
 
 export interface Deck {
@@ -109,6 +121,15 @@ export interface CardProgress {
   last_reviewed_at: string | null;
   next_due_at: string | null;
   ease_factor: number | null;
+  /** Khoảng ôn đã chốt cho lần kế (ngày); 0 khi thẻ còn trong giai đoạn học. */
+  interval_days: number;
+  srs_phase: SrsPhase;
+  /** Số bước học đã qua trong giai đoạn hiện tại. */
+  learning_step: number;
+  /** Số lần quên sau khi thẻ đã tốt nghiệp (nhận diện thẻ "leech"). */
+  lapses: number;
+  /** Lần ôn đầu tiên — dùng đếm hạn mức "từ mới mỗi ngày". */
+  introduced_at: string | null;
 }
 
 /** Card kèm progress, dùng trong study mode. */

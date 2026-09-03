@@ -16,7 +16,10 @@ import {
   resetProgress,
 } from "@/lib/db/cards";
 import { fetchDecks } from "@/lib/db/decks";
-import { STATUS_META, STATUS_ORDER, computeStats, masteredPercent } from "@/lib/status";
+import { STATUS_META, STATUS_ORDER, masteredPercent } from "@/lib/status";
+import { computeStats, UNLIMITED, type QueuePolicy } from "@/lib/queue";
+import { resolvePolicy } from "@/lib/db/policy";
+import { useSettings } from "@/lib/settings";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
@@ -38,7 +41,9 @@ type Mode = "detail" | "edit" | "move";
 export function DeckDetail({ deckId }: { deckId: string }) {
   const [deck, setDeck] = useState<Deck | null>(null);
   const [cards, setCards] = useState<CardWithProgress[]>([]);
+  const [policy, setPolicy] = useState<QueuePolicy>(UNLIMITED);
   const [loading, setLoading] = useState(true);
+  const { settings, ready } = useSettings();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<CardStatus | "all">("all");
 
@@ -60,20 +65,25 @@ export function DeckDetail({ deckId }: { deckId: string }) {
 
   const load = useCallback(async () => {
     const supabase = createClient();
-    const [{ data: deckData }, cardData] = await Promise.all([
+    const [{ data: deckData }, cardData, queuePolicy] = await Promise.all([
       supabase.from("decks").select("*").eq("id", deckId).maybeSingle(),
       fetchCardsWithProgress(deckId),
+      // Hạn mức từ mới là chung cả tài khoản → cần biết hôm nay đã dùng bao nhiêu
+      // mới nói đúng "bộ này còn bao nhiêu thẻ cần ôn".
+      resolvePolicy(settings.newPerDay),
     ]);
     setDeck(deckData as Deck | null);
     setCards(cardData);
+    setPolicy(queuePolicy);
     setLoading(false);
-  }, [deckId]);
+  }, [deckId, settings.newPerDay]);
 
   useEffect(() => {
+    if (!ready) return;
     load();
-  }, [load]);
+  }, [load, ready]);
 
-  const stats = useMemo(() => computeStats(cards), [cards]);
+  const stats = useMemo(() => computeStats(cards, policy), [cards, policy]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -148,7 +158,8 @@ export function DeckDetail({ deckId }: { deckId: string }) {
   }
 
   async function handleDelete(card: Card) {
-    if (!confirm(`Xóa từ "${card.term}"?`)) return;
+    if (!confirm(`Xóa từ "${card.term}"? Phục hồi được trong 30 ngày ở Thùng rác.`))
+      return;
     await deleteCard(card.id);
     load();
   }
@@ -181,7 +192,12 @@ export function DeckDetail({ deckId }: { deckId: string }) {
   async function handleBulkDelete() {
     const ids = selectedIds();
     if (ids.length === 0) return;
-    if (!confirm(`Xóa ${ids.length} từ đã chọn?`)) return;
+    if (
+      !confirm(
+        `Xóa ${ids.length} từ đã chọn? Phục hồi được trong 30 ngày ở Thùng rác.`
+      )
+    )
+      return;
     setBulkBusy(true);
     try {
       await deleteCards(ids);

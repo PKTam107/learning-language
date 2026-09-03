@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, ChevronRight, Target } from "lucide-react";
 import { fetchChallengeMetrics } from "@/lib/db/insights";
+import { useSettings } from "@/lib/settings";
 import { buildDailyChallenge, type DailyChallenge as Challenge } from "@/lib/challenge";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -13,16 +14,20 @@ import { Spinner } from "@/components/ui/Spinner";
  */
 export function DailyChallenge() {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const { settings, ready } = useSettings();
 
+  // Mục tiêu "ôn N lượt" co giãn theo số thẻ tới hạn, mà số đó phụ thuộc hạn
+  // mức từ mới → chờ cài đặt nạp xong rồi mới tính.
   useEffect(() => {
+    if (!ready) return;
     let alive = true;
-    fetchChallengeMetrics().then((m) => {
+    fetchChallengeMetrics(settings.newPerDay).then((m) => {
       if (alive) setChallenge(buildDailyChallenge(m));
     });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [ready, settings.newPerDay]);
 
   return (
     /* min-w-0 là bắt buộc khi thẻ này nằm trong grid: grid item mặc định

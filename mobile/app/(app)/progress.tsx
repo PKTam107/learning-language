@@ -15,6 +15,7 @@ import {
   type ProgressData,
 } from "@/lib/insights";
 import { evaluateAchievements, summarize } from "@/lib/achievements";
+import { useSettings } from "@/lib/settings";
 import { Achievements } from "@/components/Achievements";
 import { Heatmap } from "@/components/Heatmap";
 import { ReviewCalendar, dueInNextDays } from "@/components/ReviewCalendar";
@@ -32,23 +33,26 @@ export default function ProgressScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { settings, ready } = useSettings();
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      setData(await fetchProgressData());
+      setData(await fetchProgressData(settings.newPerDay));
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [settings.newPerDay]);
 
+  // Lịch ôn phụ thuộc hạn mức từ mới → chờ cài đặt nạp xong.
   useFocusEffect(
     useCallback(() => {
+      if (!ready) return;
       load();
-    }, [load])
+    }, [load, ready])
   );
 
   if (loading) {

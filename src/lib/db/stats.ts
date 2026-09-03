@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/currentUser";
 import { fetchAllRows } from "@/lib/db/paginate";
+import { resolvePolicy } from "@/lib/db/policy";
+import { dueTodayCount, remainingNew } from "@/lib/queue";
 import {
   buildSeries,
   countByDay,
@@ -14,24 +16,61 @@ import {
 
 const supabase = () => createClient();
 
+export interface DueSummary {
+  /** Kích thước hàng đợi hôm nay = dueReviews + newToday. */
+  total: number;
+  /** Thẻ đã học, đã tới hạn ôn lại. */
+  dueReviews: number;
+  /** Từ mới được đưa vào hôm nay (trong hạn mức). */
+  newToday: number;
+  /** Từ mới còn chờ vì hết hạn mức hôm nay. */
+  newHeldBack: number;
+}
+
+export const EMPTY_DUE_SUMMARY: DueSummary = {
+  total: 0,
+  dueReviews: 0,
+  newToday: 0,
+  newHeldBack: 0,
+};
+
 /**
- * Số thẻ đến hạn ôn trên toàn tài khoản, đếm **phía server** (head: true →
- * không tải dòng nào).
+ * Hàng đợi hôm nay trên toàn tài khoản, đếm **phía server** (head: true → không
+ * tải dòng nào). Phải khớp với `buildDueQueue` để con số ở trang chủ đúng bằng
+ * số thẻ nhận được khi bấm "Ôn ngay".
  *
- * "Đến hạn" = chưa có dòng progress HOẶC next_due_at đã qua (xem `isDue`), nên
- * đếm ngược: tổng thẻ − số thẻ còn hạn ở tương lai. Dùng index
- * card_progress_user_due (migration 0008).
+ *   - thẻ tới hạn ôn lại = card_progress có next_due_at đã qua
+ *   - từ mới còn lại     = tổng thẻ − số thẻ đã có tiến độ
+ *
+ * Dùng index card_progress_user_due (0008) và card_progress_user_introduced (0009).
  */
-export async function fetchDueCount(): Promise<number> {
+export async function fetchDueSummary(newPerDay: number): Promise<DueSummary> {
   const sb = supabase();
-  const [totalRes, notDueRes] = await Promise.all([
+  const nowIso = new Date().toISOString();
+  const [totalRes, withProgressRes, dueRes, policy] = await Promise.all([
     sb.from("cards").select("id", { count: "exact", head: true }),
+    sb.from("card_progress").select("id", { count: "exact", head: true }),
     sb
       .from("card_progress")
       .select("id", { count: "exact", head: true })
-      .gt("next_due_at", new Date().toISOString()),
+      .lte("next_due_at", nowIso),
+    resolvePolicy(newPerDay),
   ]);
-  return Math.max(0, (totalRes.count ?? 0) - (notDueRes.count ?? 0));
+
+  const dueReviews = dueRes.count ?? 0;
+  const newAvailable = Math.max(
+    0,
+    (totalRes.count ?? 0) - (withProgressRes.count ?? 0)
+  );
+  const quota = remainingNew(policy);
+  const newToday = quota === Infinity ? newAvailable : Math.min(newAvailable, quota);
+
+  return {
+    total: dueTodayCount({ dueReviews, newAvailable }, policy),
+    dueReviews,
+    newToday,
+    newHeldBack: newAvailable - newToday,
+  };
 }
 
 export interface StudyStats {
