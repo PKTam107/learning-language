@@ -52,6 +52,12 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
 | Heatmap học tập | Lưới 52 tuần kiểu GitHub từ `review_events`, 5 mức đậm theo ngày ôn nhiều nhất | [Heatmap.tsx](../src/components/Heatmap.tsx), [streak.ts](../src/lib/streak.ts) |
 | Lịch ôn tập | Lịch tháng đếm thẻ tới hạn theo `card_progress.next_due_at`; chạm ngày → danh sách từ | [ReviewCalendar.tsx](../src/components/ReviewCalendar.tsx) |
 | Dashboard | Stat + streak + banner nhắc học + thử thách hôm nay + "Bạn hay quên" | [DecksManager.tsx](../src/components/deck/DecksManager.tsx), [StudyOverview.tsx](../src/components/StudyOverview.tsx), [DailyChallenge.tsx](../src/components/DailyChallenge.tsx), [WeakWords.tsx](../src/components/WeakWords.tsx) |
+| Lịch ôn (SRS) | Learning steps → review → relearning; khoảng lưu ở `interval_days`, nhiễu ±5%, trần 365 ngày, ease 1.3–3.0 | [srs.ts](../src/lib/srs.ts), [0009](../supabase/migrations/0009_srs_settings_trash.sql) |
+| Hàng đợi hôm nay | Thẻ tới hạn (không giới hạn) + từ mới theo hạn mức/ngày; dùng chung cho dashboard, deck, thử thách, lịch ôn | [queue.ts](../src/lib/queue.ts), [db/policy.ts](../src/lib/db/policy.ts) |
+| Hoàn tác lượt ôn | `recordProgress` trả receipt (ảnh chụp progress + id review_event) → `undoReview` khôi phục & xóa lượt khỏi nhật ký | [db/cards.ts](../src/lib/db/cards.ts), [StudySession.tsx](../src/components/flashcard/StudySession.tsx) |
+| Cài đặt theo tài khoản | `profiles.settings` (jsonb) + cache localStorage; đọc local trước → remote ghi đè | [settings.ts](../src/lib/settings.ts), [db/settings.ts](../src/lib/db/settings.ts) |
+| Thùng rác | Xóa = chuyển bản ghi sang `deleted_items` (jsonb) rồi xóa; phục hồi kèm tiến độ; tự dọn sau 30 ngày | [db/trash.ts](../src/lib/db/trash.ts), [/trash](../src/app/trash/page.tsx) |
+| Test | Vitest cho `srs.ts`, `queue.ts` + test canh bản sao web/mobile không trôi (42 case) | [tests/](../tests) |
 | Trang Tiến độ | `/progress`: 4 ô số + heatmap + huy hiệu + lịch ôn, **1 lần nạp** dùng chung dữ liệu (3 query song song) | [/progress](../src/app/progress/page.tsx), [ProgressDashboard.tsx](../src/components/ProgressDashboard.tsx), [db/insights.ts](../src/lib/db/insights.ts) |
 
 ### A4. Khoảng trống & nợ kỹ thuật
@@ -68,7 +74,15 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
    *Giới hạn hiện tại:* heatmap/chuỗi dài nhất/số ngày có học tính trong cửa sổ **364 ngày**
    gần nhất (tổng lượt ôn thì đếm toàn bộ qua `count` phía server).
 8. ~~**Rate limit** `/api/lookup`~~ — ✅ đã làm: 30 lượt/phút/user qua RPC Supabase.
-9. **Test**: chưa có. → P4.
+9. ~~**Test**~~ — ✅ đã làm (P0): Vitest cho phần logic thuần (`srs.ts`, `queue.ts`) +
+   test canh hai bản sao web/mobile không trôi khỏi nhau. `npm run test`.
+10. ~~**Hạn mức từ mới / ngày**~~ — ✅ đã làm (P0): trước đây mọi thẻ chưa học đều bị tính
+    "đến hạn hôm nay" nên nhập 200 từ là dashboard báo 200 thẻ cần ôn.
+11. ~~**Hoàn tác lượt đánh giá**~~ — ✅ đã làm (P0).
+12. ~~**Cài đặt lưu theo thiết bị**~~ — ✅ đã làm (P0): `profiles.settings`; riêng theme
+    vẫn cố ý theo thiết bị.
+13. ~~**Xóa là mất vĩnh viễn**~~ — ✅ đã làm (P0): thùng rác 30 ngày.
+14. *Còn lại:* phục hồi thùng rác trên mobile, web push, học offline thật, đa ngôn ngữ.
 
 ---
 
@@ -140,6 +154,48 @@ Nguồn sự thật nhãn/màu: [src/lib/status.ts](../src/lib/status.ts).
 - [x] Gom helper ngày/chuỗi vào [streak.ts](../src/lib/streak.ts) (web) và
   `mobile/src/lib/streak.ts`; `stats.ts` (streak card) dùng lại chính các helper này.
 - [x] Migration `0008`: index `card_progress(user_id, next_due_at)` + `cards(user_id, created_at)`.
+
+### P0 — Vá những lỗ làm hỏng trải nghiệm học ✅ (migration `0009`)
+
+**P0.1 — Hạn mức từ mới mỗi ngày** ✅
+- [x] `lib/queue.ts` (thuần): tách hàng đợi thành *thẻ tới hạn ôn lại* (không giới hạn) và
+  *từ mới* (giới hạn `newPerDay`, mặc định 15). `dueTodayCount` khớp `buildDueQueue` để con số
+  đếm phía server bằng đúng số thẻ nhận được khi bấm "Ôn ngay".
+- [x] Cột `card_progress.introduced_at` (đặt ở lượt ôn ĐẦU TIÊN) → đếm "từ mới hôm nay" bằng
+  một COUNT phía server, index `card_progress_user_introduced`.
+- [x] Áp cho: dashboard (`fetchDueSummary`), danh sách bộ thẻ (`fetchDecksWithStats` trả thêm
+  `account` — thống kê toàn tài khoản tính một lần, **không cộng dồn từng bộ** vì hạn mức là chung),
+  deck detail, thử thách hôm nay, lịch ôn (phần từ mới vượt hạn mức thành `newHeldBack`).
+- [x] Mobile ngang bằng (bản sao `mobile/src/lib/queue.ts`).
+
+**P0.2 — Hoàn tác lượt đánh giá** ✅
+- [x] `recordProgress` trả `ReviewReceipt` = ảnh chụp dòng `card_progress` cũ + id dòng
+  `review_events` vừa ghi; `undoReview` khôi phục dòng cũ (hoặc xóa hẳn nếu thẻ chưa từng ôn)
+  và xóa lượt khỏi nhật ký để streak/heatmap không đếm lượt đã hủy.
+- [x] UI: nút "Hoàn tác" khi đang học + ở màn tóm tắt, phím tắt **Z**/Backspace trên web;
+  QuizCard mount lại (`key` kèm số lần hoàn tác) để trả lời lại được. Mobile ngang bằng.
+
+**P0.3 — Lịch ôn thật (learning steps)** ✅
+- [x] `lib/srs.ts` (thuần): learning → review → relearning; cột mới `interval_days`,
+  `srs_phase`, `learning_step`, `lapses`. Khoảng ôn **lưu tường minh** nên ôn sớm/muộn không
+  làm lệch lịch; nhiễu ±5% (từ 4 ngày trở lên) chống dồn lịch; trần 365 ngày; ease 1.3–3.0.
+- [x] `stateFromRow` chịu được dữ liệu trước 0009 (thiếu cột → coi như đã tốt nghiệp, suy ra
+  khoảng cũ) nên thẻ đang học không bị nhảy lịch.
+- [x] 24 test cho `srs.ts` + 16 test cho `queue.ts` + 2 test canh bản sao mobile.
+
+**P0.4 — Cài đặt theo tài khoản** ✅
+- [x] `profiles.settings` (jsonb). Đọc localStorage/AsyncStorage trước (hiện ngay, không nháy),
+  rồi bản trên tài khoản ghi đè; ghi thì ghi cả hai. `sanitizeSettings` lọc giá trị lạ.
+- [x] Theme cố ý **không** đồng bộ (thiết bị khác nhau, nhu cầu sáng/tối khác nhau).
+
+**P0.5 — Thùng rác 30 ngày** ✅
+- [x] Bảng `deleted_items`: xóa = **chuyển bản ghi (jsonb) sang bảng lưu trữ rồi mới xóa**.
+  Chọn cách này thay vì cột `deleted_at` để **không phải sửa mọi truy vấn** ở cả hai client
+  (phiên học, thống kê, export, chống trùng từ) — sót một chỗ là thẻ đã xóa lọt vào bài học.
+- [x] Phục hồi kèm `card_progress`; thẻ trùng từ ở bộ đích thì bỏ qua và báo số lượng; thẻ chỉ
+  về được khi bộ thẻ gốc còn (nếu không thì phải phục hồi bộ thẻ trước).
+- [x] Trang `/trash` (web) + tự dọn mục quá hạn khi mở trang. Mobile: xóa vào thùng rác, phần
+  xem/phục hồi để sau.
 
 ### P3 — Đa ngôn ngữ (mở khóa kiến trúc DB có sẵn)
 - [ ] Dùng `profiles.default_source/target_language`; chọn ngôn ngữ khi tạo deck (bỏ hardcode).

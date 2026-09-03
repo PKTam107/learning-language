@@ -38,6 +38,7 @@ Bộ thẻ là một nhóm từ vựng người dùng tự đặt tên (ví dụ
 - Danh sách bộ thẻ hiển thị cho mỗi bộ: **tổng số từ**, **tỷ lệ đã thuộc**, và **số từ cần ôn hôm nay**.
 - **Quy tắc:** khi tạo bộ thẻ mới, hệ thống mặc định chiều học là Anh → Việt (chưa cho chọn ngôn ngữ khác).
 - **Quy tắc:** xóa một bộ thẻ sẽ xóa toàn bộ thẻ bên trong nó. Thao tác xóa cần xác nhận.
+  Cả bộ thẻ lẫn các thẻ bên trong vào **Thùng rác**, phục hồi được trong 30 ngày (mục 12).
 
 ---
 
@@ -89,6 +90,9 @@ Mở một bộ thẻ, người dùng thấy danh sách các từ và có thể:
 - **Tìm** theo từ hoặc nghĩa, và **lọc theo trạng thái học**.
 - Mỗi thẻ hiển thị một **chấm màu** thể hiện mức độ thuộc (xem mục 7).
 
+**Quy tắc xóa:** xóa thẻ (một hoặc hàng loạt) **không mất ngay** — thẻ được chuyển vào
+**Thùng rác** và phục hồi được trong 30 ngày (xem mục 12).
+
 **Hành động hàng loạt:** bật chế độ **Chọn** để tick nhiều thẻ (hoặc "Chọn tất cả"), rồi thực hiện một lần cho cả nhóm:
 - **Xóa** các thẻ đã chọn.
 - **Chuyển** sang bộ thẻ khác — thẻ nào trùng từ (đã có ở bộ đích) sẽ được bỏ qua và báo lại số lượng.
@@ -105,7 +109,7 @@ Một phiên học gồm ba bước: **chọn chế độ → học → xem tóm
 | Lối vào | Tập thẻ | Mở từ đâu |
 |---|---|---|
 | **Một bộ thẻ** | thẻ trong bộ đó (còn chọn được chế độ bên dưới) | nút "Học ngay" ở mỗi bộ thẻ |
-| **Ôn hôm nay** | thẻ đến hạn của **mọi bộ thẻ**, gộp một phiên | nút "Ôn ngay" ở đầu trang chủ |
+| **Ôn hôm nay** | thẻ đến hạn ôn lại của **mọi bộ thẻ** + từ mới trong hạn mức hôm nay (mục 8) | nút "Ôn ngay" ở đầu trang chủ |
 | **Ôn từ hay quên** | tối đa **30 từ** bị đánh giá "Chưa thuộc" nhiều nhất | nút trong khối "Bạn hay quên" |
 
 Hai lối sau **không có bước chọn chế độ** (tập thẻ đã là lựa chọn rồi) — chỉ còn chọn kiểu ôn,
@@ -135,6 +139,10 @@ số thẻ mỗi phiên và xáo trộn.
 - **Trắc nghiệm / Gõ từ / Nghe:** hệ thống **tự chấm** đúng/sai (gõ cho phép sai 1 ký tự) rồi hiện
   đáp án. Kết quả được quy về đánh giá: **đúng → "Tạm nhớ", sai → "Chưa thuộc"**.
 - Có thanh tiến độ cho biết đang ở thẻ thứ mấy. *Bấm nút phát âm chỉ phát tiếng — không làm lật thẻ.*
+- **Hoàn tác:** bấm nhầm nút đánh giá thì bấm **"Hoàn tác"** (trên web còn có phím tắt **Z**)
+  để quay lại đúng thẻ vừa rồi. Hoàn tác trả lịch ôn của thẻ về nguyên trạng **và** xóa lượt
+  ôn đó khỏi nhật ký, nên chuỗi ngày học / heatmap không đếm lượt đã hủy. Dùng được cả ở màn
+  tóm tắt cuối phiên (hoàn tác thẻ cuối cùng). Có ở cả web và điện thoại.
 - Có thể bật **tự phát âm khi lật thẻ / khi lộ đáp án** trong Cài đặt (xem mục 11).
 
 **Bước tóm tắt** — kết thúc phiên, hệ thống tổng kết số từ ở mỗi mức đánh giá trong
@@ -164,24 +172,49 @@ Trạng thái này quyết định màu chấm ở danh sách, tỷ lệ "đã t
 
 ## 8. Lịch ôn tập (nhớ theo khoảng cách)
 
-Sau mỗi lần đánh giá, hệ thống tự tính **ngày cần ôn lại** cho từ đó. Nguyên tắc: từ
+Sau mỗi lần đánh giá, hệ thống tự tính **thời điểm cần ôn lại** cho từ đó. Nguyên tắc: từ
 càng nhớ tốt thì lần ôn sau càng để lâu; nhớ kém thì ôn lại sớm.
 
-- Đánh giá **Chưa thuộc:** hẹn ôn lại **ngày hôm sau**, và giảm độ "dễ" của từ (sau này giãn cách chậm hơn).
-- Đánh giá **Tạm nhớ:** hẹn ôn lại xa hơn lần trước một mức vừa phải.
-- Đánh giá **Đã thuộc:** hẹn ôn lại **xa hơn hẳn**, và tăng độ "dễ" (những lần sau càng giãn cách lâu).
+Một từ đi qua ba giai đoạn:
 
-**Quy tắc "cần ôn hôm nay":** một từ được coi là tới hạn nếu **chưa từng học** hoặc
-**đã qua ngày hẹn ôn**. Con số "cần ôn" hiển thị ở bộ thẻ và ở trang tổng quan đếm theo quy tắc này.
+| Giai đoạn | Khi nào | Cách hẹn lịch |
+|---|---|---|
+| **Đang học** | từ mới, chưa qua các bước học | *Chưa thuộc* → gặp lại sau **10 phút**; *Tạm nhớ* → **ngày mai**, rồi lần "Tạm nhớ" kế tiếp là tốt nghiệp với khoảng **3 ngày**; *Đã thuộc* → tốt nghiệp thẳng với **5 ngày** |
+| **Ôn giãn cách** | đã tốt nghiệp | *Tạm nhớ* → khoảng cũ **× độ dễ**; *Đã thuộc* → khoảng cũ **× độ dễ × 1,3** và tăng độ dễ |
+| **Học lại** | vừa quên một từ đã tốt nghiệp | khoảng bị **rút còn một nửa**, độ dễ giảm, và phải học lại một bước ngắn (10 phút) trước khi quay về ôn giãn cách |
 
----
+**Các quy tắc chốt:**
+- **Khoảng ôn được lưu thẳng vào thẻ**, không suy ra từ ngày hẹn cũ — nên **ôn sớm hay ôn
+  muộn cũng không làm lệch lịch** những lần sau.
+- **Độ dễ** (ease) nằm trong khoảng 1,3–3,0. Quên thì giảm 0,2; "Đã thuộc" thì tăng 0,15.
+- **Nhiễu ±5%:** khoảng ôn từ 4 ngày trở lên được xê dịch ngẫu nhiên trong ±5%, để cả lô từ
+  nhập cùng một ngày không tới hạn cùng một ngày mãi mãi (lịch ôn không bị dồn cục).
+- **Trần 1 năm:** không hẹn ôn xa hơn 365 ngày.
+- Thẻ mới **không nhảy thẳng** vào khoảng nhiều ngày nữa: phải qua bước học đã.
+
+**Quy tắc "cần ôn hôm nay":** hàng đợi hôm nay gồm hai phần:
+1. **Thẻ tới hạn ôn lại** — đã học và đã qua thời điểm hẹn. Phần này **không bị giới hạn**:
+   đây là việc đã hẹn, cắt bớt chỉ khiến nó dồn sang mai.
+2. **Từ mới** — chưa ôn lần nào, lấy tối đa **N từ/ngày** theo cài đặt (mặc định **15**,
+   chọn được 5/10/15/20/30/50 hoặc *không giới hạn* — xem mục 11).
+
+**Vì sao có hạn mức từ mới:** trước đây mọi từ chưa học đều bị tính là "cần ôn hôm nay", nên
+nhập 200 từ từ Excel là trang chủ báo "200 từ cần ôn hôm nay" — con số không ai học nổi, lại
+làm thử thách trong ngày và lịch ôn sai theo. Từ mới chưa tới lượt được **giữ lại chờ ngày
+sau**, và app nói rõ "còn N từ mới đang chờ tới lượt".
+
+**Hạn mức tính chung cho cả tài khoản trong một ngày.** Con số "cần ôn" hiện ở mỗi bộ thẻ là
+*"học bộ này ngay bây giờ thì được bao nhiêu thẻ"* — nên học bộ nào trước thì bộ đó dùng hạn
+mức trước, và tổng các bộ có thể lớn hơn con số ở trang chủ.
 
 ## 9. Trang tổng quan
 
 Trang chính xếp theo thứ tự **việc cần làm trước, thống kê sau**:
 
 1. **Việc hôm nay** — nếu còn thẻ đến hạn thì hiện ngay một khối "N từ cần ôn hôm nay" kèm
-   nút **"Ôn ngay"** mở phiên gộp mọi bộ thẻ (xem mục 6). Ôn hết rồi thì đổi thành lời chúc.
+   nút **"Ôn ngay"** mở phiên gộp mọi bộ thẻ (xem mục 6). Khối này nói rõ N gồm bao nhiêu
+   **thẻ ôn lại** và bao nhiêu **từ mới**. Ôn hết rồi thì đổi thành lời chúc — và nếu còn từ
+   mới đang chờ vì hết hạn mức (mục 8) thì nói rõ còn bao nhiêu từ chờ tới lượt.
 2. **Chuỗi ngày học** (streak).
 3. **Bộ thẻ** — các con số toàn tài khoản (**số bộ thẻ**, **tổng số từ**, **số từ đã thuộc**,
    **số từ cần ôn hôm nay**) kèm thanh tỷ lệ trạng thái, rồi danh sách bộ thẻ.
@@ -268,6 +301,8 @@ Trang **Cài đặt** cho phép mỗi người tùy chỉnh:
   ở trang Cài đặt. Riêng web còn áp dụng lựa chọn **trước khi trang hiện ra** nên không bị
   nháy nền trắng lúc tải.
 - **Tự phát âm khi lật thẻ / lộ đáp án:** bật/tắt việc tự đọc từ tiếng Anh khi học (mặc định bật).
+- **Từ mới mỗi ngày:** hạn mức từ chưa học được đưa vào phiên "Ôn hôm nay" (mặc định **15**;
+  chọn 5/10/15/20/30/50 hoặc *không giới hạn*). Xem mục 8. **Có ở cả hai bản.**
 - **Nhắc học hằng ngày:** bật/tắt và chọn **giờ nhắc**. Khi bật, đến giờ mà hôm nay chưa ôn thì
   hệ thống hiển thị **lời nhắc ngay trong app** (trên trang chủ).
 
@@ -276,11 +311,38 @@ Trang **Cài đặt** cho phép mỗi người tùy chỉnh:
 - **Web** dùng **banner nhắc trong app** — hiện khi mở trang chủ (trình duyệt không tự bật thông
   báo khi tab đã đóng nếu không có hạ tầng push riêng).
 
-Cài đặt được lưu **trên từng thiết bị** (không đồng bộ qua tài khoản).
+**Nơi lưu cài đặt:** tự phát âm, từ mới mỗi ngày, bật/tắt và giờ nhắc học được lưu **theo tài
+khoản** — đăng nhập ở máy khác vẫn giữ nguyên. Máy tự nhớ một bản để mở app không phải chờ
+mạng; khi có mạng thì bản trên tài khoản là bản đúng. Riêng **giao diện sáng/tối** cố tình để
+theo từng thiết bị (điện thoại nền tối trong khi máy tính nền sáng là chuyện bình thường).
 
 ---
 
-## 12. Web và điện thoại đồng bộ ra sao
+## 12. Thùng rác (phục hồi thẻ đã xóa)
+
+Xóa thẻ, xóa nhiều thẻ cùng lúc, hay xóa cả một bộ thẻ đều **không mất ngay**: bản ghi được
+chuyển vào **Thùng rác** và giữ **30 ngày**.
+
+- Mở ở **Cài đặt → Thùng rác** (bản web). Danh sách hiện từng mục kèm: đó là thẻ hay bộ thẻ,
+  thuộc bộ nào, và **còn bao nhiêu ngày** trước khi bị dọn hẳn.
+- **Phục hồi:** thẻ về đúng bộ thẻ cũ, **kèm tiến độ học và lịch ôn** trước lúc xóa. Phục hồi
+  một bộ thẻ thì mọi thẻ bên trong về theo.
+- **Xóa hẳn** từng mục, hoặc **Dọn sạch** cả thùng rác. Thao tác này không hoàn tác được.
+- Mục quá 30 ngày được **tự dọn** ngay khi mở trang Thùng rác.
+
+**Quy tắc:**
+- Thẻ chỉ phục hồi được khi **bộ thẻ gốc còn tồn tại** — nếu bộ thẻ cũng đã bị xóa thì phải
+  phục hồi bộ thẻ trước.
+- Nếu trong lúc thẻ nằm ở thùng rác bạn đã **tạo lại đúng từ đó** trong bộ, thẻ cũ sẽ được bỏ
+  qua để không tạo bản trùng (phục hồi cả bộ thẻ thì app báo số từ bị bỏ qua).
+- **Nhật ký ôn** (streak, heatmap) không mất khi xóa thẻ, nhưng thẻ được phục hồi **không nối
+  lại** được với các lượt ôn cũ — nên "Bạn hay quên" không tính lại lịch sử quên của thẻ đó.
+- Trên **điện thoại**, xóa cũng chuyển vào thùng rác như web; còn **xem/phục hồi** thì hiện
+  làm trên bản web.
+
+---
+
+## 13. Web và điện thoại đồng bộ ra sao
 
 - Cả hai bản dùng **chung một tài khoản và một kho dữ liệu**. Tạo thẻ trên điện thoại
   thì mở web thấy ngay, và ngược lại — không cần thao tác đồng bộ thủ công.
@@ -294,13 +356,16 @@ Cài đặt được lưu **trên từng thiết bị** (không đồng bộ qua
 - Ngang bằng cả ở **Tiến độ học** (mục 10): thử thách hôm nay, huy hiệu, heatmap 1 năm và lịch
   ôn tập — cùng cách tính nên hai bên hiện cùng số liệu.
 - Ngang bằng cả ở **giao diện Sáng/Tối** (mục 11) và **hiệu ứng ăn mừng cuối phiên học** (mục 6).
-- Điểm khác duy nhất còn lại là **cách nhắc học** (xem mục 11): điện thoại dùng thông báo hệ
-  thống, web dùng banner trong app. Riêng **cài đặt** (giao diện, tự phát âm, nhắc học) lưu
-  theo từng thiết bị nên không đồng bộ qua tài khoản.
+- Ngang bằng cả ở **lịch ôn mới** (mục 8), **hạn mức từ mới mỗi ngày**, **hoàn tác lượt đánh
+  giá** (mục 6) và **đưa thẻ đã xóa vào thùng rác** (mục 12).
+- **Cài đặt** (tự phát âm, từ mới/ngày, nhắc học) nay đi theo **tài khoản** nên hai bản dùng
+  chung một cấu hình; riêng giao diện sáng/tối vẫn theo từng thiết bị.
+- Hai điểm khác còn lại: **cách nhắc học** (điện thoại dùng thông báo hệ thống, web dùng
+  banner trong app — mục 11) và **quản lý thùng rác** (xem/phục hồi hiện chỉ có trên web).
 
 ---
 
-## 13. Cài web ra màn hình chính
+## 14. Cài web ra màn hình chính
 
 Bản web là một **PWA**: mở trên điện thoại hoặc Chrome/Edge trên máy tính, trình duyệt sẽ
 mời **"Cài đặt LinguaCards"** (Safari trên iOS: nút Chia sẻ → *Thêm vào Màn hình chính*).
@@ -315,11 +380,11 @@ lưu lại sẽ rò sang người khác nếu dùng chung máy.
 
 ---
 
-## 14. Chưa có (dự kiến làm sau)
+## 15. Chưa có (dự kiến làm sau)
 
 - **Học nhiều ngôn ngữ** ngoài Anh → Việt.
 - **Nhập Anki** (`.apkg`) và **chia sẻ bộ thẻ** (đã có nhập Excel + xuất CSV/Excel/JSON).
 - **Học offline thật sự** — hiện web đã **cài được ra màn hình chính** (xem mục 14) nhưng
   vẫn cần mạng để tải thẻ và lưu tiến độ; mất mạng chỉ hiện trang báo ngoại tuyến.
-- **Đồng bộ cài đặt qua tài khoản** (hiện lưu theo thiết bị) và **nhắc học khi đóng tab trên web**
-  (cần hạ tầng push).
+- **Nhắc học khi đóng tab trên web** (cần hạ tầng push).
+- **Phục hồi thùng rác trên điện thoại** (hiện chỉ xóa vào thùng rác được, xem/phục hồi làm trên web).
