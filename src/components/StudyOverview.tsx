@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlarmClock, GraduationCap, PartyPopper } from "lucide-react";
-import { fetchDueCount, fetchStudyStats, type StudyStats } from "@/lib/db/stats";
+import {
+  fetchDueSummary,
+  fetchStudyStats,
+  type DueSummary,
+  type StudyStats,
+} from "@/lib/db/stats";
 import { Button } from "@/components/ui/Button";
 import { useSettings } from "@/lib/settings";
 import { minutesOfDay } from "@/lib/reminder";
@@ -21,20 +26,30 @@ import { StreakCard } from "./StreakCard";
 export function StudyOverview() {
   const { settings, ready } = useSettings();
   const [stats, setStats] = useState<StudyStats | null>(null);
-  const [due, setDue] = useState<number | null>(null);
+  const [due, setDue] = useState<DueSummary | null>(null);
 
   useEffect(() => {
     let alive = true;
     fetchStudyStats().then((s) => {
       if (alive) setStats(s);
     });
-    fetchDueCount().then((n) => {
-      if (alive) setDue(n);
-    });
     return () => {
       alive = false;
     };
   }, []);
+
+  // Hàng đợi hôm nay phụ thuộc hạn mức từ mới trong Cài đặt → chờ cài đặt nạp
+  // xong (và đếm lại nếu người dùng đổi hạn mức).
+  useEffect(() => {
+    if (!ready) return;
+    let alive = true;
+    fetchDueSummary(settings.newPerDay).then((d) => {
+      if (alive) setDue(d);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [ready, settings.newPerDay]);
 
   // Giữ chỗ đúng chiều cao thẻ streak để phần dưới không bị đẩy xuống khi số về.
   if (!stats)
@@ -78,7 +93,7 @@ export function StudyOverview() {
       )}
       {/* Hành động chính của ngày. `due === null` là còn đang đếm → chưa vẽ. */}
       {due !== null &&
-        (due > 0 ? (
+        (due.total > 0 ? (
           <div className="flex flex-col gap-3 rounded-xl border border-brand/30 bg-gradient-to-br from-brand-light to-white p-5 sm:flex-row sm:items-center sm:justify-between dark:border-indigo-500/30 dark:from-indigo-500/15 dark:to-slate-900">
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand text-white shadow-md shadow-brand/30">
@@ -86,10 +101,12 @@ export function StudyOverview() {
               </span>
               <div>
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {due} từ cần ôn hôm nay
+                  {due.total} từ cần ôn hôm nay
                 </p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Gộp tất cả bộ thẻ vào một phiên.
+                  {due.newToday > 0
+                    ? `${due.dueReviews} từ ôn lại · ${due.newToday} từ mới · gộp mọi bộ thẻ.`
+                    : "Gộp tất cả bộ thẻ vào một phiên."}
                 </p>
               </div>
             </div>
@@ -104,7 +121,9 @@ export function StudyOverview() {
             <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200">
               <PartyPopper className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
               <span className="text-sm font-medium">
-                Xong hết thẻ đến hạn hôm nay. Nghỉ ngơi thôi!
+                {due.newHeldBack > 0
+                  ? `Xong hạn mức hôm nay (${settings.newPerDay} từ mới/ngày). Còn ${due.newHeldBack} từ đang chờ tới lượt.`
+                  : "Xong hết thẻ đến hạn hôm nay. Nghỉ ngơi thôi!"}
               </span>
             </div>
           )

@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlarmClock } from "lucide-react";
+import Link from "next/link";
+import { AlarmClock, ChevronRight, Trash2 } from "lucide-react";
 import { useSettings } from "@/lib/settings";
+import { NEW_PER_DAY_OPTIONS } from "@/lib/queue";
+import { fetchTrashCount } from "@/lib/db/trash";
 import {
   formatCountdown,
   formatHm,
@@ -17,6 +20,17 @@ import { ThemeSelect } from "@/components/ThemeToggle";
 export function SettingsForm() {
   const { settings, ready, update } = useSettings();
   const [now, setNow] = useState(() => new Date());
+  const [trashCount, setTrashCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetchTrashCount().then((n) => {
+      if (alive) setTrashCount(n);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Cho dòng "còn bao lâu" không bị cũ khi để trang mở lâu.
   useEffect(() => {
@@ -56,14 +70,45 @@ export function SettingsForm() {
         <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
           Học tập
         </h2>
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <div className="space-y-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
           <Toggle
             label="Tự phát âm khi lật thẻ"
             desc="Đọc từ tiếng Anh mỗi khi bạn lật xem đáp án / lộ đáp án."
             checked={settings.autoSpeak}
             onChange={(v) => update({ autoSpeak: v })}
           />
+
+          <div className="flex items-center justify-between gap-4 border-t border-slate-200 pt-4 dark:border-slate-800">
+            <div className="flex-1">
+              <label
+                htmlFor="new-per-day"
+                className="text-sm font-medium text-slate-800 dark:text-slate-100"
+              >
+                Từ mới mỗi ngày
+              </label>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                Số từ chưa học được đưa vào phiên “Ôn hôm nay”. Thẻ đã tới hạn ôn
+                lại thì không bị giới hạn.
+              </p>
+            </div>
+            <select
+              id="new-per-day"
+              value={settings.newPerDay}
+              onChange={(e) => update({ newPerDay: Number(e.target.value) })}
+              className="shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-base dark:border-slate-700 dark:bg-slate-900 sm:text-sm"
+            >
+              {NEW_PER_DAY_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n === 0 ? "Không giới hạn" : `${n} từ`}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
+        <p className="mt-2 text-xs leading-5 text-slate-400 dark:text-slate-500">
+          Hạn mức từ mới tính chung cho cả tài khoản trong ngày — học bộ thẻ nào
+          trước thì bộ đó dùng hạn mức trước.
+        </p>
       </section>
 
       {/* --- Nhắc học --- */}
@@ -158,6 +203,44 @@ export function SettingsForm() {
         <p className="mt-2 text-xs leading-5 text-slate-400 dark:text-slate-500">
           Nhắc học hiển thị dưới dạng banner ngay trong app khi bạn mở trang chủ —
           không cần cấp quyền thông báo.
+        </p>
+      </section>
+
+      {/* --- Dữ liệu --- */}
+      <section>
+        <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          Dữ liệu
+        </h2>
+        <Link
+          href="/trash"
+          className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
+        >
+          <span className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <Trash2 className="h-4 w-4" />
+            </span>
+            <span>
+              <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">
+                Thùng rác
+              </span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">
+                Thẻ và bộ thẻ đã xóa — phục hồi được trong 30 ngày.
+              </span>
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-2">
+            {!!trashCount && (
+              <span className="rounded-full bg-brand-light px-2 py-0.5 text-xs font-semibold text-brand-dark dark:bg-indigo-500/15 dark:text-indigo-300">
+                {trashCount}
+              </span>
+            )}
+            <ChevronRight className="h-4 w-4 text-slate-400" />
+          </span>
+        </Link>
+        <p className="mt-2 text-xs leading-5 text-slate-400 dark:text-slate-500">
+          Các cài đặt trên được lưu theo <strong>tài khoản</strong> nên sang
+          thiết bị khác vẫn giữ nguyên. Riêng giao diện sáng/tối để theo từng
+          thiết bị.
         </p>
       </section>
     </div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,11 +14,15 @@ import type { CardStatus, CardWithProgress } from "@/types";
 import {
   fetchCardsByIds,
   fetchCardsWithProgress,
-  fetchDueCardsAllDecks,
+  fetchDueQueueAllDecks,
   recordProgress,
+  undoReview,
+  type ReviewReceipt,
 } from "@/lib/cards";
 import { fetchWeakWords, WEAK_SESSION_SIZE } from "@/lib/weak";
-import { STATUS_META, isDue } from "@/lib/status";
+import { STATUS_META } from "@/lib/status";
+import { resolvePolicy } from "@/lib/policy";
+import { buildDueQueue, UNLIMITED, type QueuePolicy } from "@/lib/queue";
 import { useSettings } from "@/lib/settings";
 import { playPronunciation } from "@/lib/audio";
 import { MCQ_TYPES, REVIEW_TYPES, type ReviewType } from "@/lib/quiz";
@@ -76,6 +81,18 @@ function shuffleArr<T>(a: T[]): T[] {
 
 const LIMIT_OPTIONS = [0, 10, 20, 30, 50];
 
+/** Một lượt đánh giá đã ghi, giữ lại để hoàn tác được. */
+interface HistoryEntry {
+  /** Vị trí thẻ trong hàng đợi — để quay lại đúng thẻ đó. */
+  index: number;
+  status: Assessed;
+  /**
+   * Lời hứa ghi tiến độ. Không await lúc đánh giá để phiên học không phải chờ
+   * mạng, nhưng hoàn tác vẫn có đủ ảnh chụp trạng thái cũ.
+   */
+  receipt: Promise<ReviewReceipt | null>;
+}
+
 /**
  * Nguồn thẻ của phiên học, suy ra từ tham số route.
  *
@@ -112,6 +129,9 @@ export default function StudyScreen() {
   const router = useRouter();
 
   const [all, setAll] = useState<CardWithProgress[]>([]);
+  const [policy, setPolicy] = useState<QueuePolicy>(UNLIMITED);
+  /** Từ mới bị giữ lại vì hết hạn mức hôm nay (chỉ để thông báo). */
+  const [heldBack, setHeldBack] = useState(0);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<Phase>("setup");
   const [inited, setInited] = useState(false);
@@ -129,8 +149,12 @@ export default function StudyScreen() {
     good: 0,
     easy: 0,
   });
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [undoing, setUndoing] = useState(false);
+  /** Tăng sau mỗi lần hoàn tác để QuizCard mount lại → trả lời lại được. */
+  const [attempt, setAttempt] = useState(0);
 
-  const { settings } = useSettings();
+  const { settings, ready } = useSettings();
 
   const kind: SourceKind =
     deckId === "today" ? "due" : deckId === "weak" ? "weak" : "deck";
@@ -138,7 +162,9 @@ export default function StudyScreen() {
 
   const load = useCallback(async () => {
     if (kind === "due") {
-      setAll(await fetchDueCardsAllDecks());
+      const queue = await fetchDueQueueAllDecks(settings.newPerDay);
+      setAll(queue.cards);
+      setHeldBack(queue.newHeldBack);
       return;
     }
     if (kind === "weak") {
@@ -148,24 +174,32 @@ export default function StudyScreen() {
       return;
     }
     if (!deckId) return;
-    setAll(await fetchCardsWithProgress(deckId));
-  }, [kind, deckId]);
+    // Chế độ "Ôn hôm nay" của một bộ thẻ cũng phải tôn trọng hạn mức từ mới
+    // chung của tài khoản.
+    const [cards, queuePolicy] = await Promise.all([
+      fetchCardsWithProgress(deckId),
+      resolvePolicy(settings.newPerDay),
+    ]);
+    setAll(cards);
+    setPolicy(queuePolicy);
+  }, [kind, deckId, settings.newPerDay]);
 
+  // Chờ cài đặt (hạn mức từ mới) nạp xong mới nạp thẻ, để không nạp hai lần.
   useEffect(() => {
+    if (!ready) return;
     load().finally(() => setLoading(false));
-  }, [load]);
+  }, [load, ready]);
 
   const weakCount = useMemo(() => all.filter(isWeak).length, [all]);
-  const dueCount = useMemo(
-    () => all.filter((c) => isDue(c.progress?.next_due_at)).length,
-    [all]
-  );
+  /** Hàng đợi hôm nay của bộ thẻ này (đã trừ hạn mức từ mới). */
+  const dueQueue = useMemo(() => buildDueQueue(all, policy), [all, policy]);
+  const dueCount = dueQueue.cards.length;
 
   useEffect(() => {
     if (kind !== "deck" || inited || all.length === 0) return;
     setInited(true);
-    if (all.some((c) => isDue(c.progress?.next_due_at))) setMode("due");
-  }, [all, inited, kind]);
+    if (dueCount > 0) setMode("due");
+  }, [all, dueCount, inited, kind]);
 
   function start() {
     // Chỉ nguồn "deck" mới lọc theo Mode; due/weak đã được lọc từ lúc nạp.
@@ -175,7 +209,7 @@ export default function StudyScreen() {
         : mode === "weak"
           ? all.filter(isWeak)
           : mode === "due"
-            ? all.filter((c) => isDue(c.progress?.next_due_at))
+            ? dueQueue.cards
             : all;
     let list = shuffle ? shuffleArr(pool) : orderCards(pool);
     if (limit > 0) list = list.slice(0, limit);
@@ -183,11 +217,13 @@ export default function StudyScreen() {
     setIndex(0);
     setFlipped(false);
     setCounts({ hard: 0, good: 0, easy: 0 });
+    setHistory([]);
     setPhase("studying");
   }
 
   function backToSetup() {
     setPhase("setup");
+    setHistory([]);
     setLoading(true);
     load().finally(() => setLoading(false));
   }
@@ -221,12 +257,45 @@ export default function StudyScreen() {
   const assess = useCallback(
     (status: Assessed) => {
       if (!current) return;
-      void recordProgress(current.id, status).catch(() => {});
+      // Không await: lượt học không nên chờ mạng. Promise được giữ trong
+      // history để hoàn tác có đủ ảnh chụp trạng thái cũ.
+      const receipt = recordProgress(current.id, status).catch((e: unknown) => {
+        console.warn("recordProgress:", (e as Error).message);
+        return null;
+      });
+      setHistory((h) => [...h, { index, status, receipt }]);
       setCounts((c) => ({ ...c, [status]: c[status] + 1 }));
       next();
     },
-    [current, next]
+    [current, index, next]
   );
+
+  /**
+   * Hoàn tác lượt đánh giá gần nhất: trả tiến độ + nhật ký ôn về trạng thái
+   * trước đó rồi quay lại đúng thẻ đó.
+   */
+  const undo = useCallback(async () => {
+    const last = history[history.length - 1];
+    if (!last || undoing) return;
+    setUndoing(true);
+    try {
+      const receipt = await last.receipt;
+      if (receipt) await undoReview(receipt);
+      setHistory((h) => h.slice(0, -1));
+      setCounts((c) => ({
+        ...c,
+        [last.status]: Math.max(0, c[last.status] - 1),
+      }));
+      setIndex(last.index);
+      setFlipped(false);
+      setAttempt((a) => a + 1);
+      setPhase("studying");
+    } catch (e) {
+      Alert.alert("Không hoàn tác được", (e as Error).message);
+    } finally {
+      setUndoing(false);
+    }
+  }, [history, undoing]);
 
   // Kết quả câu ôn (trắc nghiệm/gõ/nghe): đúng → "good", sai → "hard".
   const handleQuizAnswer = useCallback(
@@ -274,7 +343,11 @@ export default function StudyScreen() {
             <>
               <ModeOption
                 label="Ôn hôm nay"
-                desc="Thẻ đến hạn ôn (spaced repetition)"
+                desc={
+                  dueQueue.newCount > 0
+                    ? `${dueQueue.reviewCount} thẻ tới hạn + ${dueQueue.newCount} từ mới`
+                    : "Thẻ đến hạn ôn (spaced repetition)"
+                }
                 count={dueCount}
                 active={mode === "due"}
                 disabled={dueCount === 0}
@@ -304,6 +377,14 @@ export default function StudyScreen() {
                 này.
               </Text>
             </View>
+          )}
+
+          {(kind === "deck" ? dueQueue.newHeldBack : heldBack) > 0 && (
+            <Text style={styles.quotaNote}>
+              Còn {kind === "deck" ? dueQueue.newHeldBack : heldBack} từ mới đang
+              chờ tới lượt — hôm nay đã dùng hết hạn mức {settings.newPerDay} từ
+              mới/ngày (đổi được trong Cài đặt).
+            </Text>
           )}
 
           <Text style={styles.optLabel}>Kiểu ôn</Text>
@@ -403,6 +484,15 @@ export default function StudyScreen() {
               style={styles.grow}
             />
           </View>
+
+          {/* Bấm nhầm ở thẻ cuối thì vẫn sửa được sau khi phiên đã kết thúc. */}
+          {history.length > 0 && (
+            <Pressable onPress={() => void undo()} disabled={undoing}>
+              <Text style={[styles.undoText, undoing && styles.undoDisabled]}>
+                ↩ Hoàn tác thẻ cuối
+              </Text>
+            </Pressable>
+          )}
         </View>
       </Screen>
     );
@@ -416,9 +506,18 @@ export default function StudyScreen() {
   return (
     <Screen title="Học">
       <View style={styles.body}>
-        <Text style={styles.progressLabel}>
-          Đang học: {index + 1}/{queue.length} từ
-        </Text>
+        <View style={styles.progressRow}>
+          <Text style={styles.progressLabel}>
+            Đang học: {index + 1}/{queue.length} từ
+          </Text>
+          {history.length > 0 && (
+            <Pressable onPress={() => void undo()} disabled={undoing}>
+              <Text style={[styles.undoText, undoing && styles.undoDisabled]}>
+                ↩ Hoàn tác
+              </Text>
+            </Pressable>
+          )}
+        </View>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
         </View>
@@ -433,7 +532,7 @@ export default function StudyScreen() {
           )}
           {current && reviewType !== "flashcard" && (
             <QuizCard
-              key={current.id}
+              key={`${current.id}:${attempt}`}
               card={current}
               pool={all}
               type={reviewType}
@@ -553,7 +652,27 @@ const makeStyles = (colors: ThemeColors) =>
       gap: spacing.md,
       padding: spacing.xl,
     },
+    progressRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+    },
     progressLabel: { fontSize: 14, color: colors.textMuted },
+    undoText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.brand,
+      paddingVertical: spacing.xs,
+      marginTop: spacing.sm,
+    },
+    undoDisabled: { opacity: 0.4 },
+    quotaNote: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: colors.textMuted,
+      marginTop: spacing.sm,
+    },
     progressTrack: {
       height: 8,
       borderRadius: radius.full,

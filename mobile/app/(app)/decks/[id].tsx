@@ -38,9 +38,11 @@ import {
   STATUS_META,
   statusColor,
   STATUS_ORDER,
-  computeStats,
   masteredPercent,
 } from "@/lib/status";
+import { computeStats, UNLIMITED, type QueuePolicy } from "@/lib/queue";
+import { resolvePolicy } from "@/lib/policy";
+import { useSettings } from "@/lib/settings";
 import { CardRow } from "@/components/card/CardRow";
 import { CardDetail } from "@/components/flashcard/CardDetail";
 import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
@@ -74,32 +76,39 @@ export default function DeckDetailScreen() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [importing, setImporting] = useState(false);
   const [detailCard, setDetailCard] = useState<CardWithProgress | null>(null);
+  const [policy, setPolicy] = useState<QueuePolicy>(UNLIMITED);
+  const { settings, ready } = useSettings();
 
   const load = useCallback(async () => {
     if (!id) return;
     try {
       setError(null);
-      const [deckData, cardData] = await Promise.all([
+      const [deckData, cardData, queuePolicy] = await Promise.all([
         fetchDeck(id),
         fetchCardsWithProgress(id),
+        // Hạn mức từ mới là chung cả tài khoản → cần biết hôm nay đã dùng bao
+        // nhiêu mới nói đúng "bộ này còn bao nhiêu thẻ cần ôn".
+        resolvePolicy(settings.newPerDay),
       ]);
       setDeck(deckData);
       setCards(cardData);
+      setPolicy(queuePolicy);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [id]);
+  }, [id, settings.newPerDay]);
 
   useFocusEffect(
     useCallback(() => {
+      if (!ready) return;
       load();
-    }, [load])
+    }, [load, ready])
   );
 
-  const stats = useMemo(() => computeStats(cards), [cards]);
+  const stats = useMemo(() => computeStats(cards, policy), [cards, policy]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -115,7 +124,10 @@ export default function DeckDetailScreen() {
   }, [cards, query, statusFilter]);
 
   function handleDelete(card: { id: string; term: string }) {
-    Alert.alert("Xóa từ", `Xóa từ "${card.term}"?`, [
+    Alert.alert(
+      "Xóa từ",
+      `Xóa từ "${card.term}"? Phục hồi được trong 30 ngày (Thùng rác trên bản web).`,
+      [
       { text: "Hủy", style: "cancel" },
       {
         text: "Xóa",
@@ -208,7 +220,10 @@ export default function DeckDetailScreen() {
   function handleBulkDelete() {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
-    Alert.alert("Xóa thẻ", `Xóa ${ids.length} từ đã chọn?`, [
+    Alert.alert(
+      "Xóa thẻ",
+      `Xóa ${ids.length} từ đã chọn? Phục hồi được trong 30 ngày (Thùng rác trên bản web).`,
+      [
       { text: "Hủy", style: "cancel" },
       {
         text: "Xóa",
