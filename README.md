@@ -85,7 +85,8 @@ Chi tiết (đăng nhập, tạo env, keystore, tra từ): xem [`mobile/docs/cha
 1. Đăng nhập (Google hoặc email).
 2. Tạo bộ thẻ (vd "TOEIC 900").
 3. Bấm nút **+** góc dưới phải → gõ từ → Enter → sửa nếu cần → **Lưu**.
-4. Bấm **Học ngay** → lật thẻ (Space) → đánh giá **Chưa thuộc / Tạm nhớ / Đã thuộc** (phím 1/2/3).
+4. Bấm **Học ngay** → lật thẻ: chạm, **kéo/vuốt ngang** (thẻ xoay bám theo tay) hoặc phím
+   Space → đánh giá **Chưa thuộc / Tạm nhớ / Đã thuộc** (phím 1/2/3).
 
 ## Lệnh hữu ích
 

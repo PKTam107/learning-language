@@ -284,6 +284,10 @@ sequenceDiagram
   S-->>U: Tóm tắt phiên (đếm theo từng nhóm) + vẫn hoàn tác được lượt cuối
 ```
 
+Thao tác lật: chạm, **kéo/vuốt ngang** (góc xoay bám theo con trỏ hoặc ngón tay, thả tay ra mới
+quyết định lật hẳn hay bật về) hoặc phím Space. Phần quyết định là hàm thuần ở
+[flip.ts](../src/lib/flip.ts), nhân bản sang mobile và có test canh không trôi.
+
 Hai chỗ chịu lỗi có chủ đích: `review_events` ghi hỏng thì **không chặn** phiên học
 (chỉ mất khả năng hoàn tác lượt đó); migration `0009` chưa chạy thì `recordProgress`
 tự ghi lại bằng bộ cột cũ thay vì để người học đứng giữa chừng.
