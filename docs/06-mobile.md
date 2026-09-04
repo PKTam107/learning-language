@@ -70,6 +70,10 @@ giá trị anon với `../.env.local` của web; **không** đưa `service_role`
 - **Expo SDK 52 + expo-router v4** (file-based routing trong `mobile/app/`)
 - **React Native 0.76** + TypeScript
 - **@supabase/supabase-js** + AsyncStorage (session lưu trên máy)
+- **react-native-gesture-handler + react-native-reanimated** — cử chỉ vuốt lật thẻ chạy
+  trên **UI thread** (worklet), không đi vòng qua JS thread nên thẻ bám sát ngón tay.
+  Cả hai đều có phần **native**: thêm/nâng cấp chúng thì phải **build lại APK**, cập nhật
+  bundle JS không đủ.
 
 Cây thư mục chi tiết: [`mobile/README.md`](../mobile/README.md#cấu-trúc).
 
