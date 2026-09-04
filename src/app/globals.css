@@ -31,19 +31,27 @@ body {
   overflow-x: clip;
 }
 
-/* Flip animation cho flashcard */
+/* Flip animation cho flashcard.
+   Góc xoay do component đặt inline (rotateY cộng dồn + bám theo con trỏ khi
+   kéo) — ở đây chỉ lo phối cảnh, quán tính và mặt khuất. */
 .flip-card {
   perspective: 1200px;
+  /* Kéo ngang = lật thẻ, nên trình duyệt đừng nuốt cử chỉ đó; vuốt dọc vẫn
+     cuộn trang bình thường. */
+  touch-action: pan-y;
 }
 .flip-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  transition: transform 0.5s;
+  transition: transform 0.45s cubic-bezier(0.2, 0.75, 0.25, 1);
   transform-style: preserve-3d;
+  will-change: transform;
 }
-.flip-inner.flipped {
-  transform: rotateY(180deg);
+/* Đang kéo thì góc phải đúng bằng vị trí ngón tay — thêm transition vào là thẻ
+   chạy đuổi theo tay, cảm giác trễ và dính. */
+.flip-inner.dragging {
+  transition: none;
 }
 .flip-face {
   position: absolute;

@@ -40,7 +40,8 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
 | Tra & tạo thẻ | FAB "+" → gõ → tra → sửa (DraftEditor) → lưu; giữ modal cho flow nhanh | [QuickCreator.tsx](../src/components/QuickCreator.tsx) |
 | Lookup pipeline | cache → DictionaryAPI.dev → AI dịch → fallback dịch cả cụm nếu notFound → ghi cache | [lib/lookup.ts](../src/lib/lookup.ts) |
 | Translate providers | mymemory (default, free), openai, gemini, libretranslate | [lib/ai/index.ts](../src/lib/ai/index.ts) |
-| Study mode | Lật thẻ (Space), đánh giá 1/2/3, progress bar, sắp xếp ưu tiên hard→new→good→easy | [StudySession.tsx](../src/components/flashcard/StudySession.tsx) |
+| Study mode | Lật thẻ: chạm / **kéo ngang bám theo con trỏ, ngón tay** / Space; đánh giá 1/2/3, progress bar, sắp xếp ưu tiên hard→new→good→easy | [StudySession.tsx](../src/components/flashcard/StudySession.tsx) |
+| Cử chỉ lật thẻ | Góc xoay **cộng dồn** (không tua ngược) + bám theo tay khi kéo; thả tay ra lật hẳn nếu kéo quá 30% bề ngang **hoặc** vuốt nhanh | [flip.ts](../src/lib/flip.ts), [FlashcardFlip.tsx](../src/components/flashcard/FlashcardFlip.tsx) |
 | Kiểu ôn đa dạng | Lật thẻ / trắc nghiệm (MCQ) / gõ từ (sai ≤1 ký tự) / nghe; tự chấm → good/hard | [quiz.ts](../src/lib/quiz.ts), [QuizCard.tsx](../src/components/flashcard/QuizCard.tsx) |
 | Audio | US/UK từ DictionaryAPI + TTS fallback; tự phát âm khi lật thẻ (theo cài đặt) | [speak.ts](../src/lib/speak.ts), [AudioButton.tsx](../src/components/flashcard/AudioButton.tsx) |
 | Streak | Nhật ký `review_events` → streak + lượt hôm nay/tuần + biểu đồ 7 ngày (dashboard) | [db/stats.ts](../src/lib/db/stats.ts), [StreakCard.tsx](../src/components/StreakCard.tsx), [StudyOverview.tsx](../src/components/StudyOverview.tsx) |

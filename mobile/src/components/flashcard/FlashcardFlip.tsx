@@ -1,13 +1,23 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Animated,
+  Dimensions,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  type LayoutChangeEvent,
 } from "react-native";
 import type { CardWithProgress } from "@/types";
+import {
+  dragAngle,
+  isBack,
+  isHorizontalDrag,
+  settleDrag,
+  snapToFace,
+} from "@/lib/flip";
 import { AudioButton } from "./AudioButton";
 import { radius, spacing, type ThemeColors } from "@/lib/theme";
 import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
@@ -19,33 +29,119 @@ interface Props {
   onFlip: () => void;
 }
 
-/** Thẻ lật: mặt trước = từ + phiên âm + audio; mặt sau = nghĩa + từ loại + ví dụ. */
+/**
+ * Thẻ lật: mặt trước = từ + phiên âm + audio; mặt sau = nghĩa + từ loại + ví dụ.
+ *
+ * Lật bằng chạm hoặc **vuốt ngang**: khi vuốt, góc xoay bám theo ngón tay; thả
+ * tay ra mới quyết định lật hẳn hay bật về chỗ cũ (theo quãng vuốt hoặc vận tốc).
+ *
+ * Góc xoay **cộng dồn** (0 → 180 → 360 → …) chứ không tua ngược 180 → 0, nên thẻ
+ * luôn quay tiếp theo hướng vừa vuốt thay vì chỉ xoay một chiều. Mặt nào đang
+ * hiện chỉ phụ thuộc góc chẵn/lẻ vòng nửa (`isBack`) — bản web dùng đúng cách này.
+ */
 export function FlashcardFlip({ card, flipped, onFlip }: Props) {
   const colors = useThemeColors();
   const styles = useStyles(makeStyles);
-  const anim = useRef(new Animated.Value(0)).current;
 
+  const rot = useRef(new Animated.Value(flipped ? 180 : 0)).current;
+  /** Góc đích hiện tại (JS không đọc trực tiếp được Animated.Value chạy native). */
+  const degRef = useRef(flipped ? 180 : 0);
+  /** Hướng lật gần nhất (1 = sang phải). Lật bằng chạm đi theo hướng này. */
+  const dirRef = useRef(1);
+  /** Góc lúc bắt đầu vuốt. */
+  const baseRef = useRef(degRef.current);
+  const widthRef = useRef(Dimensions.get("window").width);
+  const draggingRef = useRef(false);
+
+  const springTo = useCallback(
+    (deg: number) => {
+      degRef.current = deg;
+      Animated.spring(rot, {
+        toValue: deg,
+        useNativeDriver: true,
+        friction: 9,
+        tension: 60,
+        restDisplacementThreshold: 0.4,
+        restSpeedThreshold: 0.4,
+      }).start();
+    },
+    [rot]
+  );
+
+  // Cha giữ trạng thái `flipped` (nút "Hiện đáp án", sang thẻ mới). Lệch với góc
+  // đang có thì quay THÊM nửa vòng theo hướng gần nhất.
   useEffect(() => {
-    Animated.spring(anim, {
-      toValue: flipped ? 180 : 0,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 10,
-    }).start();
-  }, [flipped, anim]);
+    if (draggingRef.current) return; // đang vuốt thì ngón tay mới là chuẩn
+    if (isBack(degRef.current) === flipped) return;
+    springTo(snapToFace(degRef.current) + 180 * dirRef.current);
+  }, [flipped, springTo]);
 
-  const frontRotate = anim.interpolate({
+  const finish = useCallback(
+    (dx: number, vx: number, cancelled = false) => {
+      draggingRef.current = false;
+      const settled = settleDrag({
+        base: baseRef.current,
+        dx,
+        velocity: vx,
+        width: widthRef.current,
+        cancelled,
+      });
+      springTo(settled.deg);
+      if (settled.flipped) {
+        dirRef.current = settled.dir;
+        onFlip();
+      }
+    },
+    [onFlip, springTo]
+  );
+
+  const pan = useMemo(() => {
+    // Chỉ giành quyền khi vuốt NGANG: chạm để Pressable/nút audio xử lý, vuốt
+    // dọc để ScrollView của mặt sau cuộn.
+    const wantsHorizontal = (_e: unknown, g: { dx: number; dy: number }) =>
+      isHorizontalDrag(g.dx, g.dy);
+
+    return PanResponder.create({
+      onMoveShouldSetPanResponder: wantsHorizontal,
+      // Bắt ở pha capture để vuốt ngang NGAY TRÊN mặt sau cũng lật được thẻ,
+      // không bị ScrollView giữ mất.
+      onMoveShouldSetPanResponderCapture: wantsHorizontal,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: () => {
+        draggingRef.current = true;
+        baseRef.current = degRef.current;
+        // Nắm lại giữa chừng: lấy góc đang thấy chứ không lấy góc đích.
+        rot.stopAnimation((v: number) => {
+          baseRef.current = v;
+          degRef.current = v;
+        });
+      },
+      onPanResponderMove: (_e, g) => {
+        const next = dragAngle(baseRef.current, g.dx, widthRef.current);
+        degRef.current = next;
+        rot.setValue(next);
+      },
+      onPanResponderRelease: (_e, g) => finish(g.dx, g.vx),
+      onPanResponderTerminate: (_e, g) => finish(g.dx, g.vx, true),
+    });
+  }, [finish, rot]);
+
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    widthRef.current = e.nativeEvent.layout.width || widthRef.current;
+  }, []);
+
+  const frontRotate = rot.interpolate({
     inputRange: [0, 180],
     outputRange: ["0deg", "180deg"],
   });
-  const backRotate = anim.interpolate({
+  const backRotate = rot.interpolate({
     inputRange: [0, 180],
     outputRange: ["180deg", "360deg"],
   });
 
   return (
-    <Pressable onPress={onFlip} accessibilityLabel="Lật thẻ">
-      <View style={styles.container}>
+    <Pressable onPress={onFlip} accessibilityLabel="Lật thẻ — chạm hoặc vuốt ngang">
+      <View style={styles.container} onLayout={onLayout} {...pan.panHandlers}>
         {/* Mặt trước */}
         <Animated.View
           style={[
@@ -75,7 +171,7 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
             <AudioButton url={card.audio_us} text={card.term} label="US" />
             <AudioButton url={card.audio_uk} text={card.term} label="UK" />
           </Pressable>
-          <Text style={styles.hint}>Chạm để lật</Text>
+          <Text style={styles.hint}>Chạm hoặc vuốt để lật</Text>
         </Animated.View>
 
         {/* Mặt sau */}
