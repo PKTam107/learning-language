@@ -4,6 +4,8 @@
 Cập nhật lần cuối: thêm **trang Tiến độ** (huy hiệu, heatmap 1 năm, lịch ôn) + **thử thách
 hôm nay** trên trang chủ — có cả ở web và mobile.
 
+> Các luồng dưới đây có sơ đồ ở [10 — Sơ đồ luồng](./10-flows.md).
+
 > Đây là tài liệu "sống" — mô tả code **đang có**, khác với 01-product-spec (tầm nhìn)
 > và 05-roadmap (kế hoạch dài hạn). Khi hoàn thành hạng mục, cập nhật lại mục A/B.
 

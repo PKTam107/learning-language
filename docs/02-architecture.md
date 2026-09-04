@@ -41,6 +41,8 @@
                                           └──────────────────┘ └──────────────┘
 ```
 
+> Bản Mermaid của sơ đồ này (và 11 luồng khác): [10 — Sơ đồ luồng](./10-flows.md).
+
 **Nguyên tắc truy cập dữ liệu:**
 - Dữ liệu người dùng (decks/cards/progress): client query **trực tiếp** Supabase, bảo vệ bằng **RLS** theo `auth.uid()`.
 - Gọi API bên ngoài (dictionary, AI): **bắt buộc qua route handler** server để không lộ key. Route handler cũng ghi/đọc `dictionary_cache`.
@@ -97,6 +99,9 @@ learning-language/
 ```
 
 ## 4. Luồng chính
+
+> Tóm tắt dạng chữ. Sơ đồ đầy đủ (rate limit, nhánh cụm từ, hạn mức từ mới, hoàn tác,
+> thùng rác, ERD…): [10 — Sơ đồ luồng](./10-flows.md).
 
 ### 4.1 Auto-generate flashcard
 ```
