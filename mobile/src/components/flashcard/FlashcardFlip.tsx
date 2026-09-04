@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   Animated,
   Dimensions,
+  Easing,
   PanResponder,
   Pressable,
   ScrollView,
@@ -9,6 +10,7 @@ import {
   Text,
   View,
   type LayoutChangeEvent,
+  type PanResponderInstance,
 } from "react-native";
 import type { CardWithProgress } from "@/types";
 import {
@@ -39,31 +41,61 @@ interface Props {
  * luôn quay tiếp theo hướng vừa vuốt thay vì chỉ xoay một chiều. Mặt nào đang
  * hiện chỉ phụ thuộc góc chẵn/lẻ vòng nửa (`isBack`) — bản web dùng đúng cách này.
  */
+/** Bằng đúng thời lượng lật của bản web (450ms) để hai bên cùng một nhịp. */
+const FLIP_MS = 450;
+/** Cùng đường cong với `.flip-inner` trên web: nhanh lúc đầu, không nảy quá đà. */
+const FLIP_EASING = Easing.bezier(0.2, 0.75, 0.25, 1);
+
 export function FlashcardFlip({ card, flipped, onFlip }: Props) {
   const colors = useThemeColors();
   const styles = useStyles(makeStyles);
 
   const rot = useRef(new Animated.Value(flipped ? 180 : 0)).current;
-  /** Góc đích hiện tại (JS không đọc trực tiếp được Animated.Value chạy native). */
+  /**
+   * Góc **đang hiển thị thật sự**. Animated.Value chạy native nên JS không đọc
+   * thẳng được — phải soi qua listener (xem effect bên dưới). Cần góc thật để
+   * nắm lại thẻ giữa lúc đang lật mà không bị nhảy.
+   */
   const degRef = useRef(flipped ? 180 : 0);
+  /** Góc đích của animation đang chạy — dùng để xét mặt nào sắp hiện. */
+  const targetRef = useRef(degRef.current);
   /** Hướng lật gần nhất (1 = sang phải). Lật bằng chạm đi theo hướng này. */
-  const dirRef = useRef(1);
+  const dirRef = useRef<1 | -1>(1);
   /** Góc lúc bắt đầu vuốt. */
   const baseRef = useRef(degRef.current);
   const widthRef = useRef(Dimensions.get("window").width);
   const draggingRef = useRef(false);
+  /** `onFlip` đổi định danh mỗi lần cha render — giữ bản mới nhất trong ref để
+   *  PanResponder chỉ phải dựng MỘT lần, không dựng lại giữa cử chỉ. */
+  const onFlipRef = useRef(onFlip);
+  onFlipRef.current = onFlip;
 
-  const springTo = useCallback(
+  // Bám giá trị native về JS. Chỉ một Animated.Value nên chi phí không đáng kể,
+  // đổi lại lúc nào cũng biết thẻ đang nghiêng bao nhiêu độ.
+  useEffect(() => {
+    const id = rot.addListener(({ value }) => {
+      degRef.current = value;
+    });
+    return () => rot.removeListener(id);
+  }, [rot]);
+
+  /**
+   * Chạy về `deg`. Dùng `timing` chứ không `spring`: spring nảy quanh đích rồi
+   * mới dừng, thẻ chữ nhiều nhìn ra "rung"; đường cong này giống hệt web.
+   * Thời lượng co theo quãng còn lại — bật về 10° mà mất 450ms thì thấy ì.
+   */
+  const animateTo = useCallback(
     (deg: number) => {
-      degRef.current = deg;
-      Animated.spring(rot, {
+      targetRef.current = deg;
+      const remaining = Math.abs(deg - degRef.current);
+      Animated.timing(rot, {
         toValue: deg,
+        duration: Math.max(140, Math.round((FLIP_MS * Math.min(180, remaining)) / 180)),
+        easing: FLIP_EASING,
         useNativeDriver: true,
-        friction: 9,
-        tension: 60,
-        restDisplacementThreshold: 0.4,
-        restSpeedThreshold: 0.4,
-      }).start();
+      }).start(({ finished }) => {
+        if (finished) degRef.current = deg;
+      });
     },
     [rot]
   );
@@ -72,12 +104,19 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
   // đang có thì quay THÊM nửa vòng theo hướng gần nhất.
   useEffect(() => {
     if (draggingRef.current) return; // đang vuốt thì ngón tay mới là chuẩn
-    if (isBack(degRef.current) === flipped) return;
-    springTo(snapToFace(degRef.current) + 180 * dirRef.current);
-  }, [flipped, springTo]);
+    if (isBack(targetRef.current) === flipped) return;
+    animateTo(snapToFace(targetRef.current) + 180 * dirRef.current);
+  }, [flipped, animateTo]);
 
-  const finish = useCallback(
-    (dx: number, vx: number, cancelled = false) => {
+  // Dựng đúng một lần: mọi thứ handler cần đều nằm trong ref.
+  const panRef = useRef<PanResponderInstance | null>(null);
+  if (panRef.current === null) {
+    // Chỉ giành quyền khi vuốt NGANG: chạm để Pressable/nút audio xử lý, vuốt
+    // dọc để ScrollView của mặt sau cuộn.
+    const wantsHorizontal = (_e: unknown, g: { dx: number; dy: number }) =>
+      isHorizontalDrag(g.dx, g.dy);
+
+    const finish = (dx: number, vx: number, cancelled = false) => {
       draggingRef.current = false;
       const settled = settleDrag({
         base: baseRef.current,
@@ -86,22 +125,14 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
         width: widthRef.current,
         cancelled,
       });
-      springTo(settled.deg);
+      animateTo(settled.deg);
       if (settled.flipped) {
         dirRef.current = settled.dir;
-        onFlip();
+        onFlipRef.current();
       }
-    },
-    [onFlip, springTo]
-  );
+    };
 
-  const pan = useMemo(() => {
-    // Chỉ giành quyền khi vuốt NGANG: chạm để Pressable/nút audio xử lý, vuốt
-    // dọc để ScrollView của mặt sau cuộn.
-    const wantsHorizontal = (_e: unknown, g: { dx: number; dy: number }) =>
-      isHorizontalDrag(g.dx, g.dy);
-
-    return PanResponder.create({
+    panRef.current = PanResponder.create({
       onMoveShouldSetPanResponder: wantsHorizontal,
       // Bắt ở pha capture để vuốt ngang NGAY TRÊN mặt sau cũng lật được thẻ,
       // không bị ScrollView giữ mất.
@@ -109,22 +140,21 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
         draggingRef.current = true;
+        // Dừng animation đang chạy và lấy chính góc đang thấy làm mốc.
+        rot.stopAnimation();
         baseRef.current = degRef.current;
-        // Nắm lại giữa chừng: lấy góc đang thấy chứ không lấy góc đích.
-        rot.stopAnimation((v: number) => {
-          baseRef.current = v;
-          degRef.current = v;
-        });
+        targetRef.current = degRef.current;
       },
       onPanResponderMove: (_e, g) => {
         const next = dragAngle(baseRef.current, g.dx, widthRef.current);
-        degRef.current = next;
+        targetRef.current = next;
         rot.setValue(next);
       },
       onPanResponderRelease: (_e, g) => finish(g.dx, g.vx),
       onPanResponderTerminate: (_e, g) => finish(g.dx, g.vx, true),
     });
-  }, [finish, rot]);
+  }
+  const pan = panRef.current;
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     widthRef.current = e.nativeEvent.layout.width || widthRef.current;
@@ -139,15 +169,37 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
     outputRange: ["180deg", "360deg"],
   });
 
+  // `backfaceVisibility: hidden` là cách chính để giấu mặt khuất, nhưng trên một
+  // số máy Android nó không ăn — mặt sau hiện đè lên mặt trước thành một mảng
+  // chữ ngược lấp lóa. Tắt hẳn opacity của mặt đang quay đi là chốt chặn thứ hai:
+  // dùng góc quy về 0–360 nên vẫn đúng khi góc cộng dồn lên 540, 720…
+  const spin = Animated.modulo(rot, 360);
+  const FACE_SWAP = [0, 89.99, 90, 270, 270.01, 360];
+  const frontOpacity = spin.interpolate({
+    inputRange: FACE_SWAP,
+    outputRange: [1, 1, 0, 0, 1, 1],
+    extrapolate: "clamp",
+  });
+  const backOpacity = spin.interpolate({
+    inputRange: FACE_SWAP,
+    outputRange: [0, 0, 1, 1, 0, 0],
+    extrapolate: "clamp",
+  });
+
   return (
     <Pressable onPress={onFlip} accessibilityLabel="Lật thẻ — chạm hoặc vuốt ngang">
       <View style={styles.container} onLayout={onLayout} {...pan.panHandlers}>
         {/* Mặt trước */}
         <Animated.View
+          renderToHardwareTextureAndroid
+          shouldRasterizeIOS
           style={[
             styles.face,
             styles.front,
-            { transform: [{ perspective: 1000 }, { rotateY: frontRotate }] },
+            {
+              opacity: frontOpacity,
+              transform: [{ perspective: 1000 }, { rotateY: frontRotate }],
+            },
           ]}
         >
           <Text style={styles.term}>{card.term}</Text>
@@ -176,10 +228,15 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
 
         {/* Mặt sau */}
         <Animated.View
+          renderToHardwareTextureAndroid
+          shouldRasterizeIOS
           style={[
             styles.face,
             styles.back,
-            { transform: [{ perspective: 1000 }, { rotateY: backRotate }] },
+            {
+              opacity: backOpacity,
+              transform: [{ perspective: 1000 }, { rotateY: backRotate }],
+            },
           ]}
         >
           <ScrollView
