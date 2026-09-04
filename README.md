@@ -24,6 +24,8 @@ Xem thư mục [`docs/`](./docs):
 - [06 — Mobile App](./docs/06-mobile.md)
 - [07 — Current State & Plan](./docs/07-current-state.md)
 - [08 — Tóm tắt tính năng hiện tại](./docs/08-features.md)
+- [09 — Thời hạn phiên đăng nhập](./docs/09-auth-session.md)
+- [10 — Sơ đồ luồng (Mermaid)](./docs/10-flows.md)
 
 ## Bắt đầu
 
