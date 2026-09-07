@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/currentUser";
 import { fetchAllRows } from "@/lib/db/paginate";
+import { apiFetch } from "@/lib/api";
 
 const supabase = () => createClient();
 
@@ -46,11 +47,7 @@ export async function fetchUnenriched(
 async function enrichWords(
   words: string[]
 ): Promise<Record<string, Enrichment>> {
-  const res = await fetch("/api/enrich", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ words }),
-  });
+  const res = await apiFetch("/api/enrich", { words });
   if (!res.ok) {
     const info = await res.json().catch(() => null);
     throw new Error(info?.message ?? "Làm giàu thất bại");

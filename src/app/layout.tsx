@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { THEME_BOOTSTRAP, THEME_COLOR } from "@/lib/theme";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { DevicePing } from "@/components/DevicePing";
 
 const inter = Inter({ subsets: ["latin", "vietnamese"], variable: "--font-inter" });
 
@@ -43,6 +44,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
         {children}
         <ServiceWorkerRegister />
+        <DevicePing />
       </body>
     </html>
   );

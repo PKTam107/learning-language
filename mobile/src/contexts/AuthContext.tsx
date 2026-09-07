@@ -11,6 +11,7 @@ import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
 import { getQueryParams } from "expo-auth-session/build/QueryParams";
 import { supabase } from "@/lib/supabase";
+import { pingDevice } from "@/lib/api";
 
 interface AuthContextValue {
   session: Session | null;
@@ -36,12 +37,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
       setSession(data.session);
       setInitializing(false);
+      if (data.session) void pingDevice();
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
+      // Ghi nhận thiết bị sau mỗi lần đăng nhập / gia hạn phiên; pingDevice tự
+      // giới hạn nhịp nên gọi thoải mái.
+      if (nextSession) void pingDevice();
     });
 
     return () => {

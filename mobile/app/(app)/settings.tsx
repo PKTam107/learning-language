@@ -22,6 +22,7 @@ import {
 } from "@/lib/notifications";
 import { TimePickerSheet } from "@/components/ui/TimePickerSheet";
 import { ThemePicker } from "@/components/ThemePicker";
+import { DeviceList } from "@/components/DeviceList";
 import { radius, spacing, type ThemeColors } from "@/lib/theme";
 import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
@@ -194,6 +195,15 @@ export default function SettingsScreen() {
       <Text style={styles.hint}>
         Nhắc học dùng thông báo cục bộ trên máy — không cần internet và hoàn toàn
         miễn phí. Bạn chọn được bất kỳ giờ:phút nào.
+      </Text>
+
+      {/* --- Thiết bị --- */}
+      <Text style={styles.section}>Thiết bị đăng nhập</Text>
+      <DeviceList />
+
+      <Text style={styles.hint}>
+        Thấy máy lạ thì bấm “Gỡ” — phiên của máy đó bị thu hồi và phải đăng nhập
+        lại. Nếu nghi lộ mật khẩu, đổi mật khẩu sau khi gỡ.
       </Text>
 
       {/* --- Dữ liệu --- */}
