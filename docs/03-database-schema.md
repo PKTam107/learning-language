@@ -5,6 +5,7 @@ Migration thực thi:
 - [`supabase/migrations/0002_card_fields_and_dedup.sql`](../supabase/migrations/0002_card_fields_and_dedup.sql) — thêm `phonetic_uk`, `phonetic_us`, `note` cho `cards` và unique index chống trùng từ trong deck.
 - [`supabase/migrations/0005_rate_limit.sql`](../supabase/migrations/0005_rate_limit.sql) — bộ đếm rate limit + RPC `consume_rate_limit`.
 - [`supabase/migrations/0010_devices.sql`](../supabase/migrations/0010_devices.sql) — bảng `user_devices` + RPC ghi nhận / liệt kê / thu hồi thiết bị.
+- [`supabase/migrations/0011_harden_new_tables.sql`](../supabase/migrations/0011_harden_new_tables.sql) — thu hồi quyền `anon` trên `review_events` và `user_devices` (0003 chỉ phủ các bảng có trước).
 
 ## 1. Sơ đồ quan hệ
 

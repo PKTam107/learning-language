@@ -5,7 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+
+  // `next` đến từ URL nên phải coi là dữ liệu của kẻ lạ: chỉ nhận đường dẫn
+  // nội bộ bắt đầu bằng MỘT dấu "/". Chặn "//evil.com" và "/\evil.com" —
+  // trình duyệt đọc chúng thành host khác, thành ra open redirect: link đăng
+  // nhập trông như của mình nhưng đá người dùng sang trang giả mạo.
+  const requested = searchParams.get("next");
+  const next =
+    requested && /^\/(?![/\\])/.test(requested) ? requested : "/dashboard";
 
   if (code) {
     const supabase = createClient();
