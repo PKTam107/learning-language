@@ -27,10 +27,18 @@ function shouldPing(userId: string): boolean {
   }
 }
 
+function markPinged(userId: string, at: number) {
+  try {
+    localStorage.setItem(LAST_PING_KEY, `${userId}:${at}`);
+  } catch {
+    /* storage bị chặn → cùng lắm ping mỗi lần tải trang */
+  }
+}
+
 /**
  * Báo cho server biết máy này vừa hoạt động, sau khi đã đăng nhập.
  * Đặt ở layout gốc nên chạy trên mọi trang; tự giới hạn nhịp bằng localStorage.
- * Lỗi thì im lặng — đây là tính năng phụ, không được cản việc học.
+ * Không cản việc học: lỗi chỉ ghi console chứ không hiện gì cho người dùng.
  */
 export function DevicePing() {
   const { user } = useSession();
@@ -40,18 +48,29 @@ export function DevicePing() {
     const deviceId = getDeviceId();
     if (!deviceId || !shouldPing(user.id)) return;
 
-    // Đánh dấu trước khi gọi: hai tab mở cùng lúc chỉ ping một lần.
-    try {
-      localStorage.setItem(LAST_PING_KEY, `${user.id}:${Date.now()}`);
-    } catch {
-      /* storage bị chặn → cùng lắm ping mỗi lần tải trang */
-    }
+    // Đánh dấu trước khi gọi để hai tab mở cùng lúc chỉ ping một lần — nhưng
+    // GỠ dấu nếu hỏng, nếu không một lần lỗi (vd chưa chạy migration) sẽ khóa
+    // luôn cả tiếng đồng hồ mới thử lại.
+    markPinged(user.id, Date.now());
 
     fetch("/api/devices", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-device-id": deviceId },
       body: JSON.stringify({ deviceId, platform: "web" }),
-    }).catch(() => {});
+    })
+      .then(async (res) => {
+        const info = (await res.json().catch(() => null)) as {
+          ok?: boolean;
+          message?: string;
+        } | null;
+        if (res.ok && info?.ok) return;
+        markPinged(user.id, 0);
+        console.warn("device ping:", res.status, info?.message ?? "");
+      })
+      .catch((e: Error) => {
+        markPinged(user.id, 0);
+        console.warn("device ping:", e.message);
+      });
   }, [user]);
 
   return null;

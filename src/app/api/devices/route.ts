@@ -52,9 +52,13 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    // Migration 0010 chưa chạy → không làm hỏng luồng đăng nhập.
+    // Migration 0010 chưa chạy → KHÔNG làm hỏng luồng đăng nhập, nhưng phải nói
+    // rõ hỏng ở đâu: nuốt lỗi thì bảng cứ rỗng mà không ai biết vì sao.
     console.warn("touch_user_device:", error.message);
-    return NextResponse.json({ ok: false }, { status: 200 });
+    return NextResponse.json(
+      { ok: false, message: error.message },
+      { status: 200 }
+    );
   }
 
   return NextResponse.json({ ok: true });

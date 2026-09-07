@@ -56,12 +56,16 @@ export async function pingDevice(): Promise<void> {
 
   try {
     const info = describeDevice();
-    await apiFetch("/api/devices", {
+    const res = await apiFetch("/api/devices", {
       deviceId: await getDeviceId(),
       name: info.name,
       platform: info.platform,
       appVersion: info.appVersion,
     });
+    // fetch KHÔNG ném lỗi với 4xx/5xx, và route trả 200 { ok: false } khi RPC
+    // hỏng — phải tự soi để lần sau còn thử lại.
+    const info2 = (await res.json().catch(() => null)) as { ok?: boolean } | null;
+    if (!res.ok || !info2?.ok) lastPingAt = 0;
   } catch {
     lastPingAt = 0; // thất bại (vd mất mạng) → cho phép thử lại lần sau
   }
