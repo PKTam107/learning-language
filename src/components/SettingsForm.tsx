@@ -16,6 +16,7 @@ import {
 } from "@/lib/reminder";
 import { Spinner } from "@/components/ui/Spinner";
 import { ThemeSelect } from "@/components/ThemeToggle";
+import { DeviceList } from "@/components/DeviceList";
 
 export function SettingsForm() {
   const { settings, ready, update } = useSettings();
@@ -203,6 +204,18 @@ export function SettingsForm() {
         <p className="mt-2 text-xs leading-5 text-slate-400 dark:text-slate-500">
           Nhắc học hiển thị dưới dạng banner ngay trong app khi bạn mở trang chủ —
           không cần cấp quyền thông báo.
+        </p>
+      </section>
+
+      {/* --- Thiết bị --- */}
+      <section>
+        <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          Thiết bị đăng nhập
+        </h2>
+        <DeviceList />
+        <p className="mt-2 text-xs leading-5 text-slate-400 dark:text-slate-500">
+          Thấy máy lạ thì bấm <strong>Gỡ</strong> — phiên của máy đó bị thu hồi
+          và phải đăng nhập lại. Nếu nghi lộ mật khẩu, đổi mật khẩu sau khi gỡ.
         </p>
       </section>
 

@@ -26,6 +26,7 @@ Xem thư mục [`docs/`](./docs):
 - [08 — Tóm tắt tính năng hiện tại](./docs/08-features.md)
 - [09 — Thời hạn phiên đăng nhập](./docs/09-auth-session.md)
 - [10 — Sơ đồ luồng (Mermaid)](./docs/10-flows.md)
+- [11 — Thiết bị đăng nhập & rate limit](./docs/11-devices-rate-limit.md)
 
 ## Bắt đầu
 
@@ -37,7 +38,7 @@ npm install
 ### 2. Tạo Supabase project
 1. Vào https://supabase.com → New Project.
 2. Mở **SQL Editor** → chạy lần lượt các file trong [`supabase/migrations/`](./supabase/migrations)
-   **theo đúng thứ tự số** (`0001_init.sql` → `0009_srs_settings_trash.sql`): dán nội dung từng file → **Run**.
+   **theo đúng thứ tự số** (`0001_init.sql` → `0010_devices.sql`): dán nội dung từng file → **Run**.
 3. Bật **Google OAuth**: Dashboard → Authentication → Providers → Google
    (tạo OAuth Client ID/Secret ở [Google Cloud Console](https://console.cloud.google.com/),
    thêm redirect URL: `https://<project>.supabase.co/auth/v1/callback`).

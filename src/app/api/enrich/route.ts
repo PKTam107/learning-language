@@ -1,32 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getRequestUser } from "@/lib/supabase/getUser";
-import { createServiceClient } from "@/lib/supabase/server";
+import { enforceRateLimit, standardRules } from "@/lib/rate-limit";
+import { requestDeviceId } from "@/lib/user-agent";
 import { enrichWord, type Enrichment } from "@/lib/enrich";
 
 const BodySchema = z.object({
   words: z.array(z.string().min(1).max(60)).min(1).max(10),
 });
 
-// Rate limit backfill: mỗi user tối đa N lô/phút (mỗi lô ≤10 từ). Chống đập Datamuse.
-const ENRICH_LIMIT = 60;
-const ENRICH_WINDOW_SECONDS = 60;
-
-async function withinRate(userId: string): Promise<boolean> {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return true;
-  try {
-    const { data, error } = await createServiceClient().rpc("consume_rate_limit", {
-      p_user_id: userId,
-      p_bucket: "enrich",
-      p_limit: ENRICH_LIMIT,
-      p_window_seconds: ENRICH_WINDOW_SECONDS,
-    });
-    if (error) return true; // RPC lỗi (migration chưa chạy) → không chặn
-    return data !== false;
-  } catch {
-    return true;
-  }
-}
+// Rate limit backfill (mỗi lô ≤10 từ, đập vào Datamuse): 60 lô/phút mỗi tài
+// khoản, 40 lô/phút mỗi thiết bị, 1000 lô/ngày.
+const ENRICH_RULES = standardRules("enrich", 60, 40, 1000);
 
 /**
  * Tính enrichment (CEFR + word family + collocations) cho một lô từ.
@@ -51,12 +36,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  if (!(await withinRate(user.id))) {
-    return NextResponse.json(
-      { error: "Rate limited", message: "Làm giàu quá nhanh, thử lại sau ít giây." },
-      { status: 429, headers: { "Retry-After": String(ENRICH_WINDOW_SECONDS) } }
-    );
-  }
+  const limited = await enforceRateLimit({
+    userId: user.id,
+    deviceId: requestDeviceId(request),
+    rules: ENRICH_RULES,
+    message: "Làm giàu quá nhanh, thử lại sau ít giây.",
+  });
+  if (limited) return limited;
 
   const words = [...new Set(parsed.data.words.map((w) => w.trim().toLowerCase()))];
   const entries = await Promise.all(

@@ -3,6 +3,8 @@
 Migration thực thi:
 - [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) — schema gốc + RLS.
 - [`supabase/migrations/0002_card_fields_and_dedup.sql`](../supabase/migrations/0002_card_fields_and_dedup.sql) — thêm `phonetic_uk`, `phonetic_us`, `note` cho `cards` và unique index chống trùng từ trong deck.
+- [`supabase/migrations/0005_rate_limit.sql`](../supabase/migrations/0005_rate_limit.sql) — bộ đếm rate limit + RPC `consume_rate_limit`.
+- [`supabase/migrations/0010_devices.sql`](../supabase/migrations/0010_devices.sql) — bảng `user_devices` + RPC ghi nhận / liệt kê / thu hồi thiết bị.
 
 ## 1. Sơ đồ quan hệ
 
@@ -105,6 +107,39 @@ Cache kết quả lookup để giảm gọi API & token AI. Không gắn user (d
 | created_at | timestamptz | |
 | UNIQUE(term, source_language, target_language) | | |
 
+### `rate_limit_counters`
+Bộ đếm rate limit theo cửa sổ cố định (migration `0005`). Một dòng cho mỗi
+(user, bucket); bucket là tên route (`lookup`, `enrich`, `translate`), có hậu tố
+`:day` cho hạn mức ngày và `:d:<device_id>` cho hạn mức theo thiết bị.
+
+| Cột | Kiểu | Ghi chú |
+|-----|------|---------|
+| user_id | uuid FK→auth.users | PK cùng `bucket` |
+| bucket | text | tên bộ đếm |
+| window_start | timestamptz | mốc mở cửa sổ hiện tại |
+| count | int | số lượt đã dùng trong cửa sổ |
+
+RLS bật, **không policy** → chỉ `service_role` đụng được. Tăng đếm bằng RPC
+`consume_rate_limit(user, bucket, limit, window_seconds)` (atomic trong Postgres,
+đúng cả khi chạy nhiều instance serverless).
+
+### `user_devices`
+Thiết bị đã đăng nhập vào tài khoản (migration `0010`).
+
+| Cột | Kiểu | Ghi chú |
+|-----|------|---------|
+| id | uuid PK | |
+| user_id | uuid FK→auth.users | owner |
+| device_id | text | id do client sinh, lưu localStorage / AsyncStorage |
+| session_id | uuid | phiên `auth.sessions` gần nhất của máy — để thu hồi từ xa |
+| name | text | "Chrome · Windows", "Pixel 7 · Android" |
+| platform | text | `web` / `ios` / `android` |
+| app_version | text | bản mobile |
+| user_agent | text | |
+| last_ip | text | lấy từ `x-forwarded-for` |
+| first_seen_at / last_seen_at | timestamptz | |
+| UNIQUE(user_id, device_id) | | |
+
 ## 3. Row Level Security (RLS)
 
 Bật RLS cho `profiles`, `decks`, `cards`, `card_progress`. Nguyên tắc:
@@ -112,6 +147,18 @@ Bật RLS cho `profiles`, `decks`, `cards`, `card_progress`. Nguyên tắc:
 
 `dictionary_cache`: không bật RLS theo user — ghi/đọc qua route handler dùng service role
 (hoặc cho phép `select` công khai cho người đã đăng nhập, `insert` chỉ qua server).
+
+`rate_limit_counters`: RLS bật, không policy — chỉ service_role.
+
+`user_devices`: chỉ cho `select` dòng của mình. Thêm/sửa/xóa đi qua 3 hàm
+SECURITY DEFINER trong `0010` — chúng vẫn lấy danh tính từ JWT người gọi
+(`auth.uid()` và claim `session_id`) nên một endpoint phục vụ được cả web
+(cookie) lẫn mobile (Bearer):
+
+- `touch_user_device(...)` — upsert "máy này vừa hoạt động", kèm session hiện tại.
+- `list_user_devices()` — danh sách của mình + `is_current` / `is_active`.
+- `revoke_user_device(device_id)` — xóa dòng `auth.sessions` của máy đó (đăng
+  xuất thật) rồi bỏ khỏi danh sách. Không bao giờ giết phiên hiện tại.
 
 Chi tiết policy nằm trong file migration.
 
@@ -129,3 +176,4 @@ Chi tiết policy nằm trong file migration.
 - `review_events(user_id, reviewed_at desc)` (migration `0004`) — streak, heatmap, "Bạn hay quên".
 - `card_progress(user_id, next_due_at)` (migration `0008`) — lịch ôn tập / số thẻ tới hạn.
 - `cards(user_id, created_at desc)` (migration `0008`) — đếm thẻ tạo trong ngày (thử thách hôm nay).
+- `user_devices(user_id, last_seen_at desc)` (migration `0010`) — danh sách thiết bị.

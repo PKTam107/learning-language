@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getRequestUser } from "@/lib/supabase/getUser";
-import { createServiceClient } from "@/lib/supabase/server";
+import { enforceRateLimit, standardRules } from "@/lib/rate-limit";
+import { requestDeviceId } from "@/lib/user-agent";
 import { buildDraftCard } from "@/lib/lookup";
 
 const BodySchema = z.object({
@@ -10,38 +11,11 @@ const BodySchema = z.object({
   target: z.string().default("vi"),
 });
 
-// Rate limit tra từ: mỗi user tối đa N lượt / cửa sổ (chống lạm dụng key AI).
-const LOOKUP_LIMIT = 30;
-const LOOKUP_WINDOW_SECONDS = 60;
-
-/**
- * Trả về false nếu user đã vượt hạn mức tra từ trong cửa sổ hiện tại.
- * Đếm atomic phía Postgres (bền vững trên serverless nhiều instance).
- * Nếu thiếu service key hoặc RPC lỗi (vd migration chưa chạy) → cho qua,
- * không chặn người dùng.
- */
-async function withinLookupRate(userId: string): Promise<boolean> {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return true;
-  try {
-    const { data, error } = await createServiceClient().rpc(
-      "consume_rate_limit",
-      {
-        p_user_id: userId,
-        p_bucket: "lookup",
-        p_limit: LOOKUP_LIMIT,
-        p_window_seconds: LOOKUP_WINDOW_SECONDS,
-      }
-    );
-    if (error) {
-      console.warn("rate limit rpc:", error.message);
-      return true;
-    }
-    return data !== false;
-  } catch (e) {
-    console.warn("rate limit:", (e as Error).message);
-    return true;
-  }
-}
+// Mỗi lượt tra = 1 lần gọi DictionaryAPI + 1 lượt dịch, mà hạn ngạch dịch tính
+// chung cho cả app (xem /api/translate). Ba tầng: 30 lượt/phút mỗi tài khoản,
+// trong đó một thiết bị không quá 20 — máy bị lạm dụng không nuốt trọn hạn mức
+// của tài khoản; và 500 lượt/ngày để một người không vét sạch hạn ngạch chung.
+const LOOKUP_RULES = standardRules("lookup", 30, 20, 500);
 
 export async function POST(request: Request) {
   // Yêu cầu đăng nhập (tránh lạm dụng API key) — cookie (web) hoặc Bearer (mobile)
@@ -50,15 +24,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!(await withinLookupRate(user.id))) {
-    return NextResponse.json(
-      {
-        error: "Rate limited",
-        message: `Bạn tra từ quá nhanh (tối đa ${LOOKUP_LIMIT} lượt/phút). Thử lại sau ít giây.`,
-      },
-      { status: 429, headers: { "Retry-After": String(LOOKUP_WINDOW_SECONDS) } }
-    );
-  }
+  const limited = await enforceRateLimit({
+    userId: user.id,
+    deviceId: requestDeviceId(request),
+    rules: LOOKUP_RULES,
+    message: "Bạn tra từ quá nhanh. Thử lại sau ít giây.",
+  });
+  if (limited) return limited;
 
   let body: unknown;
   try {

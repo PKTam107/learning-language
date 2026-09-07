@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { DraftEditor } from "@/components/flashcard/DraftEditor";
 import { fetchDecks } from "@/lib/db/decks";
 import { saveCard } from "@/lib/db/cards";
+import { apiFetch } from "@/lib/api";
 
 interface QuickCreatorProps {
   /** Deck mặc định để lưu (vd khi mở từ trang chi tiết deck). */
@@ -48,10 +49,10 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
     setError(null);
     setDraft(null);
     try {
-      const res = await fetch("/api/lookup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ word, source: "en", target: "vi" }),
+      const res = await apiFetch("/api/lookup", {
+        word,
+        source: "en",
+        target: "vi",
       });
       if (!res.ok) {
         const info = await res.json().catch(() => null);
