@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { THEME_BOOTSTRAP, THEME_COLOR } from "@/lib/theme";
@@ -37,11 +38,15 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Nonce do middleware sinh cho từng request. Script bootstrap bên dưới là
+  // inline nên không có nonce là bị CSP chặn → nền tối nháy trắng mỗi lần tải.
+  const nonce = headers().get("x-nonce") ?? undefined;
+
   return (
     <html lang="vi" className={inter.variable} suppressHydrationWarning>
       <body className="font-sans">
         {/* Phải chạy trước khi trang vẽ, nếu không nền tối sẽ nháy trắng một nhịp. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
         {children}
         <ServiceWorkerRegister />
         <DevicePing />
