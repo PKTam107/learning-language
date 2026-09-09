@@ -44,20 +44,55 @@ lọt vào bundle trình duyệt.
 | Không có header bảo mật nào — trang nhúng được vào iframe site khác (clickjacking lên nút Xóa bộ thẻ / Gỡ thiết bị) | `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` trong [`next.config.js`](../next.config.js) |
 | `/auth/callback?next=` nhận thẳng giá trị từ URL rồi ghép vào redirect | Chỉ nhận đường dẫn nội bộ bắt đầu bằng **một** dấu `/`; chặn `//evil.com` và `/\evil.com` |
 | `review_events` (0004) và `user_devices` (0010) ra đời sau `0003` nên vẫn giữ quyền mặc định của vai trò `anon` | [`0011_harden_new_tables.sql`](../supabase/migrations/0011_harden_new_tables.sql) thu hồi |
+| Không có Content-Security-Policy — script lạ chèn được là đọc luôn cookie phiên (cookie này không `httpOnly`) | CSP theo **nonce** sinh trong middleware, xem §3.1 |
 
 Riêng mục thứ ba: RLS vẫn đang chặn đúng (policy lọc theo `auth.uid()`, mà
 `anon` thì `uid` = null), nên đây là **lớp phòng thủ thứ hai** chứ không phải lỗ
 hổng đang mở — nếu sau này ai lỡ tay drop một policy thì tầng quyền bảng vẫn đỡ.
 
+### 3.1 CSP theo nonce
+
+Chính sách dựng ở [`src/lib/csp.ts`](../src/lib/csp.ts), gắn vào response trong
+[`src/lib/supabase/middleware.ts`](../src/lib/supabase/middleware.ts).
+
+Mỗi request sinh một `nonce` ngẫu nhiên 128 bit. Middleware đặt nó vào **header
+của request** (`x-nonce` cho layout đọc, và chính chuỗi CSP để Next tự gắn nonce
+vào các `<script>` nó sinh ra) lẫn **header của response**. Chỉ script mang đúng
+nonce đó mới chạy — script kẻ tấn công chèn vào không đoán được.
+
+Cố ý **không** dùng `'unsafe-inline'` cho script: có nó thì CSP gần như vô nghĩa
+trước XSS. `'strict-dynamic'` là bắt buộc vì Next tải chunk bằng JS nên không
+liệt kê trước từng file được.
+
+| Directive | Vì sao |
+| --- | --- |
+| `script-src 'self' 'nonce-…' 'strict-dynamic'` | thêm `'unsafe-eval'` **chỉ trong dev** (Next dev dùng eval) |
+| `style-src 'self' 'unsafe-inline'` | Next và next/font chèn `<style>` lúc hydrate; CSS không chạy được mã nên rủi ro thấp |
+| `connect-src 'self' <supabase>` | client gọi thẳng Supabase REST + Auth |
+| `media-src 'self' https:` | file phát âm của DictionaryAPI **và** URL người dùng tự nhập khi import — khoá theo host là gãy audio thẻ import |
+| `font-src 'self'` | `next/font` tải Inter về lúc build, không cần fonts.gstatic.com |
+| `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'` | chống nhúng iframe, plugin, và `<base>` bị chèn để đổi gốc URL tương đối |
+
+**Đánh đổi phải biết**: layout đọc `headers()` để lấy nonce, nên toàn bộ trang
+chuyển từ prerender tĩnh (○) sang render theo request (ƒ). Cụ thể `/login` và
+`/offline` trước đây CDN cache được, giờ trả `Cache-Control: private, no-store`.
+Đây là điều kiện đúng đắn — HTML mang nonce mà bị cache là nonce dùng lại, CSP
+mất tác dụng. Các trang còn lại vốn đã qua middleware gọi `getUser()` mỗi
+request nên phần hụt không đáng kể.
+
+**Gỡ ra khi cần**: đặt biến môi trường `CSP_REPORT_ONLY=1` → trình duyệt chỉ ghi
+vi phạm ra console chứ không chặn. Biến này nhúng lúc build nên đổi xong phải
+deploy lại.
+
+**Thêm dịch vụ ngoài về sau** (analytics, Sentry, CDN ảnh…) thì phải bổ sung host
+vào đúng directive trong `csp.ts`, nếu không trình duyệt chặn im lặng.
+
 ## 4. Việc còn lại (chấp nhận có ý thức)
 
-- **Chưa có Content-Security-Policy.** Trang có inline script (bootstrap giao
-  diện tối) và client gọi thẳng Supabase + DictionaryAPI + file audio, nên CSP
-  phải liệt kê đúng từng host; làm ẩu là app gãy im lặng trên production. Đây là
-  việc nên làm tiếp, có kiểm thử trên preview trước.
 - **Cookie phiên không `httpOnly`** — bản chất thiết kế của `@supabase/ssr`
-  (client trình duyệt phải đọc được token). Hệ quả: nếu có XSS thì mất token.
-  Bù lại bằng việc không có sink XSS nào (§2) và CSP ở trên.
+  (client trình duyệt phải đọc được token), không sửa được từ phía app. Hệ quả:
+  XSS là mất token. Bù bằng hai lớp: không có sink XSS nào (§2) và CSP theo
+  nonce chặn script lạ chạy ngay từ đầu (§3.1).
 - **Mobile lưu session trong `AsyncStorage`** dạng thường (chuẩn của Supabase
   RN). Máy bị root/jailbreak hoặc bị lấy backup thì đọc được. Muốn chặt hơn thì
   đổi sang `expo-secure-store`.

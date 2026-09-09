@@ -1,9 +1,7 @@
 /**
- * Header bảo mật áp cho MỌI response.
- * Cố ý chưa đặt Content-Security-Policy: trang có inline script (bootstrap
- * giao diện tối) và client gọi thẳng Supabase + từ điển + file audio, nên CSP
- * phải liệt kê đúng từng host — làm ẩu là app gãy im lặng trên production.
- * Xem docs/12-bao-mat.md §"Việc còn lại".
+ * Header bảo mật tĩnh, áp cho MỌI response.
+ * Content-Security-Policy KHÔNG nằm ở đây: nó cần nonce mới mỗi request nên
+ * phải sinh trong middleware — xem src/lib/csp.ts và docs/12-bao-mat.md §3.
  */
 const securityHeaders = [
   // Không cho nhúng trang vào iframe của site khác (chống clickjacking:

@@ -1,8 +1,12 @@
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { buildCsp, createNonce } from "@/lib/csp";
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+  // Nonce sinh mới mỗi request — nếu dùng lại thì kẻ tấn công đoán được và CSP
+  // mất tác dụng.
+  const nonce = createNonce();
+  return await updateSession(request, { nonce, csp: buildCsp(nonce) });
 }
 
 export const config = {
