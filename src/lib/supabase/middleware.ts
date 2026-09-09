@@ -94,17 +94,24 @@ export async function updateSession(
 
   const { pathname } = request.nextUrl;
 
-  // Route công khai (không cần login). `/` KHÔNG công khai — cổng gốc tự
-  // điều hướng theo trạng thái đăng nhập (xem src/app/page.tsx).
+  /**
+   * Route công khai (không cần login). `/` KHÔNG công khai — cổng gốc tự điều
+   * hướng theo trạng thái đăng nhập (xem src/app/page.tsx).
+   *
+   * `/api`, `/sw.js`, `/manifest.webmanifest` giờ đã bị `matcher` loại từ đầu
+   * (xem src/middleware.ts) nên ba dòng đó không còn chạy tới. CỐ Ý giữ lại:
+   * nếu sau này ai nới matcher mà quên chỗ này thì mọi lời gọi `/api` từ mobile
+   * sẽ bị đá về `/login` — mobile xác thực bằng Bearer, không có cookie, nên
+   * `getUser()` ở đây thấy null. Hỏng kiểu đó rất khó truy: client nhận HTML
+   * chuyển hướng thay vì JSON.
+   */
   const isPublic =
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
-    pathname.startsWith("/api") || // API tự kiểm tra auth riêng
-    // Hạ tầng PWA: service worker và manifest phải tải được kể cả khi chưa đăng
-    // nhập, nếu không trình duyệt sẽ nhận về trang /login và bỏ qua cài đặt app.
-    // Trang offline cũng vậy — lúc mất mạng thì không xác thực lại được.
+    pathname.startsWith("/api") ||
     pathname === "/sw.js" ||
     pathname === "/manifest.webmanifest" ||
+    // Trang offline: lúc mất mạng thì không xác thực lại được.
     pathname === "/offline";
 
   if (!user && !isPublic) {

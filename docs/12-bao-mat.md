@@ -8,7 +8,7 @@ Ghi lại **ai chặn ai** trong app, kết quả đợt rà soát, và những 
 | --- | --- | --- |
 | **RLS (chính)** | Mọi truy vấn chỉ thấy dòng có `user_id = auth.uid()` | policy trong `0001`, siết thêm ở `0003` |
 | **Quyền bảng** | Request không có JWT hợp lệ (vai trò `anon`) bị chặn trước cả policy | `0003`, `0009`, `0011` |
-| **Route handler** | Mỗi `/api/*` tự kiểm đăng nhập (middleware cố ý bỏ qua `/api`) | `getRequestUser` / `getRequestContext` |
+| **Route handler** | Mỗi `/api/*` tự kiểm đăng nhập — `/api` bị `matcher` của middleware loại từ đầu nên không xác thực hai lần | `getRequestUser` / `getRequestContext`, [`src/middleware.ts`](../src/middleware.ts) |
 
 Client **không bao giờ** gửi `user_id` lên server: danh tính luôn lấy từ JWT.
 Không có endpoint nào nhận id người dùng làm tham số, nên không có chỗ để đổi id
