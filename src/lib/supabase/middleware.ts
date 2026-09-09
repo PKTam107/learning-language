@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { cspHeaderName } from "@/lib/csp";
+import { AUTH_COOKIE_OPTIONS } from "./cookie-options";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
@@ -48,6 +49,7 @@ export async function updateSession(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: AUTH_COOKIE_OPTIONS,
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -71,6 +73,25 @@ export async function updateSession(
     data: { user },
   } = await supabase.auth.getUser();
 
+  /**
+   * Chuyển hướng mà KHÔNG bỏ rơi cookie vừa gia hạn.
+   *
+   * `getUser()` ở trên tự làm mới phiên khi access token hết hạn, và cookie mới
+   * được ghi lên `supabaseResponse`. Response redirect là object khác, không tự
+   * mang theo — trả về trần là trình duyệt giữ refresh token CŨ. Supabase chỉ
+   * cho dùng lại token cũ trong khoảng reuse interval (mặc định 10 giây), nên
+   * lần gia hạn kế tiếp bị từ chối: người dùng bị đá ra giữa buổi học.
+   */
+  const redirectTo = (pathname: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies
+      .getAll()
+      .forEach((cookie) => response.cookies.set(cookie));
+    return withCsp(response);
+  };
+
   const { pathname } = request.nextUrl;
 
   // Route công khai (không cần login). `/` KHÔNG công khai — cổng gốc tự
@@ -87,16 +108,12 @@ export async function updateSession(
     pathname === "/offline";
 
   if (!user && !isPublic) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return withCsp(NextResponse.redirect(url));
+    return redirectTo("/login");
   }
 
   // Đã đăng nhập mà vào /login → đẩy về dashboard
   if (user && pathname.startsWith("/login")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return withCsp(NextResponse.redirect(url));
+    return redirectTo("/dashboard");
   }
 
   return withCsp(supabaseResponse);

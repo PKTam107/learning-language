@@ -45,6 +45,8 @@ lọt vào bundle trình duyệt.
 | `/auth/callback?next=` nhận thẳng giá trị từ URL rồi ghép vào redirect | Chỉ nhận đường dẫn nội bộ bắt đầu bằng **một** dấu `/`; chặn `//evil.com` và `/\evil.com` |
 | `review_events` (0004) và `user_devices` (0010) ra đời sau `0003` nên vẫn giữ quyền mặc định của vai trò `anon` | [`0011_harden_new_tables.sql`](../supabase/migrations/0011_harden_new_tables.sql) thu hồi |
 | Không có Content-Security-Policy — script lạ chèn được là đọc luôn cookie phiên (cookie này không `httpOnly`) | CSP theo **nonce** sinh trong middleware, xem §3.1 |
+| Cookie phiên không có `Secure`, site cũng không có HSTS — một lần lỡ mở `http://` là token đi dạng thô, mà cookie này không `httpOnly` nên đọc được là dùng được luôn | `cookieOptions.secure` dùng chung cho cả ba nơi tạo client ([`cookie-options.ts`](../src/lib/supabase/cookie-options.ts)) + `Strict-Transport-Security` trong [`next.config.js`](../next.config.js) |
+| Middleware chuyển hướng bằng response **mới**, không chép cookie → phiên `getUser()` vừa gia hạn bị bỏ rơi, trình duyệt giữ refresh token cũ; quá reuse interval (10s) là bị đá ra giữa buổi | `redirectTo()` chép cookie từ `supabaseResponse` sang response redirect, xem §3.2 |
 
 Riêng mục thứ ba: RLS vẫn đang chặn đúng (policy lọc theo `auth.uid()`, mà
 `anon` thì `uid` = null), nên đây là **lớp phòng thủ thứ hai** chứ không phải lỗ
@@ -87,12 +89,26 @@ deploy lại.
 **Thêm dịch vụ ngoài về sau** (analytics, Sentry, CDN ảnh…) thì phải bổ sung host
 vào đúng directive trong `csp.ts`, nếu không trình duyệt chặn im lặng.
 
+### 3.2 Cookie phiên khi middleware chuyển hướng
+
+`getUser()` trong [`middleware.ts`](../src/lib/supabase/middleware.ts) không chỉ
+đọc phiên — nó **tự gia hạn** khi access token hết hạn, và cookie mới được ghi
+lên `supabaseResponse`. Hai nhánh chuyển hướng (`/login` khi chưa đăng nhập,
+`/dashboard` khi đã đăng nhập) dựng response khác, nên phải chép cookie sang
+bằng tay; thiếu bước đó là trình duyệt giữ refresh token cũ và lần gia hạn kế
+tiếp bị Supabase từ chối (reuse interval mặc định 10 giây).
+
 ## 4. Việc còn lại (chấp nhận có ý thức)
 
 - **Cookie phiên không `httpOnly`** — bản chất thiết kế của `@supabase/ssr`
   (client trình duyệt phải đọc được token), không sửa được từ phía app. Hệ quả:
-  XSS là mất token. Bù bằng hai lớp: không có sink XSS nào (§2) và CSP theo
-  nonce chặn script lạ chạy ngay từ đầu (§3.1).
+  XSS là mất token. Bù bằng ba lớp: không có sink XSS nào (§2), CSP theo nonce
+  chặn script lạ chạy ngay từ đầu (§3.1), và `Secure` + HSTS để token không rò
+  qua đường truyền http (§3).
+- **`maxAge` của cookie phiên là 400 ngày** (mặc định thư viện) trong khi ý đồ ở
+  [docs/09](./09-auth-session.md) là phiên 1 tuần. Không phải lỗ hổng — token
+  bên trong hết hạn là cookie vô dụng — nhưng cái vỏ nằm lại trên máy dùng chung
+  rất lâu. Muốn khớp thì thêm `maxAge` vào `cookie-options.ts`.
 - **Mobile lưu session trong `AsyncStorage`** dạng thường (chuẩn của Supabase
   RN). Máy bị root/jailbreak hoặc bị lấy backup thì đọc được. Muốn chặt hơn thì
   đổi sang `expo-secure-store`.
