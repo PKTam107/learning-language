@@ -11,6 +11,15 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   // Sang site khác chỉ gửi origin, không gửi đường dẫn (URL có thể chứa id thẻ/bộ thẻ).
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // Chỉ đi HTTPS. Cần vì cookie phiên không httpOnly (client phải đọc token):
+  // một lần lỡ mở http:// là token đi dạng thô. Trình duyệt bỏ qua header này
+  // trên http nên dev localhost không ảnh hưởng.
+  // Lưu ý: includeSubDomains ép cả subdomain — bỏ nó ra nếu có subdomain nào
+  // còn chạy http. Không preload để còn rút lại được mà không phải chờ Chrome.
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains",
+  },
   // App không dùng camera/mic/vị trí — tắt hẳn để script lạ cũng không xin được.
   {
     key: "Permissions-Policy",
