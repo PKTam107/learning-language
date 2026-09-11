@@ -69,7 +69,9 @@ export async function buildDraftCard(
             fromCache: false,
             notFound: true, // vẫn báo client biết đây là tra cứu thủ công
           };
-          await writeCache(service, draft);
+          // Provider dự phòng không đủ thẩm quyền nói "không có từ này" →
+          // không đóng đinh vào cache, để lần sau tra lại bằng provider chính.
+          if (!result.degraded) await writeCache(service, draft);
           return draft;
         }
       } catch {
@@ -138,8 +140,10 @@ export async function buildDraftCard(
     draft.enriched = true; // đã chạy làm giàu → khi lưu sẽ set enriched_at
   }
 
-  // 4) Ghi cache (best-effort, không chặn nếu lỗi)
-  if (!translationSkipped) {
+  // 4) Ghi cache (best-effort, không chặn nếu lỗi). Bỏ qua khi thẻ đến từ
+  //    provider dự phòng: thiếu IPA/audio/ví dụ, cache lại thì lần sau vẫn
+  //    thiếu dù upstream đã hồi.
+  if (!translationSkipped && !result.degraded) {
     await writeCache(service, draft);
   }
 

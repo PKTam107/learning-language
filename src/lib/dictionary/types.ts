@@ -12,6 +12,8 @@ export interface DictionaryResult {
   definitions: Definition[]; // definitionVi để trống ở bước này
   examples: Example[]; // textVi để trống ở bước này
   notFound?: boolean;
+  /** Kết quả từ provider dự phòng (thiếu IPA/audio/ví dụ) → không ghi cache. */
+  degraded?: boolean;
 }
 
 export interface DictionaryProvider {

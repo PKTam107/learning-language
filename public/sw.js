@@ -11,7 +11,7 @@
  *
  * Đổi VERSION khi sửa file này để cache cũ bị dọn ở lần activate kế tiếp.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `linguacards-static-${VERSION}`;
 const OFFLINE_URL = "/offline";
 

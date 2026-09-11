@@ -17,6 +17,10 @@ const BodySchema = z.object({
 // của tài khoản; và 500 lượt/ngày để một người không vét sạch hạn ngạch chung.
 const LOOKUP_RULES = standardRules("lookup", 30, 20, 500);
 
+// Một lượt tra có thể phải chờ dictionary (có retry) + dịch + làm giàu. Mức mặc
+// định 10s của Vercel làm cụm nhiều từ bị cắt giữa chừng khi upstream chậm.
+export const maxDuration = 30;
+
 export async function POST(request: Request) {
   // Yêu cầu đăng nhập (tránh lạm dụng API key) — cookie (web) hoặc Bearer (mobile)
   const user = await getRequestUser(request);

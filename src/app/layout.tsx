@@ -1,12 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
-import { Inter } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { THEME_BOOTSTRAP, THEME_COLOR } from "@/lib/theme";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { DevicePing } from "@/components/DevicePing";
 
-const inter = Inter({ subsets: ["latin", "vietnamese"], variable: "--font-inter" });
+// Be Vietnam Pro được vẽ riêng cho tiếng Việt: dấu thanh đặt cao và thoáng hơn
+// Inter, nên "ẫ", "ệ", "ợ" không bị dính vào nhau hay vào dòng trên.
+// Font này không phải variable font trên Google Fonts nên phải liệt kê cân nặng.
+const sans = Be_Vietnam_Pro({
+  subsets: ["latin", "latin-ext", "vietnamese"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -43,7 +51,7 @@ export default function RootLayout({
   const nonce = headers().get("x-nonce") ?? undefined;
 
   return (
-    <html lang="vi" className={inter.variable} suppressHydrationWarning>
+    <html lang="vi" className={sans.variable} suppressHydrationWarning>
       <body className="font-sans">
         {/* Phải chạy trước khi trang vẽ, nếu không nền tối sẽ nháy trắng một nhịp. */}
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
