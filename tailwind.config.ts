@@ -18,7 +18,13 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        // Fallback phải nằm TRONG var(): nếu --font-sans không tồn tại (CSS của
+        // next/font chưa nạp, hoặc service worker trả về bản cũ mang hash khác)
+        // thì `var(--font-sans)` là invalid at computed-value time — trình duyệt
+        // vứt cả khai báo, kể cả "system-ui, sans-serif" đứng sau, rồi rơi về
+        // font khởi tạo là Times New Roman. Có fallback trong var() thì xấu nhất
+        // cũng chỉ là font hệ thống.
+        sans: ["var(--font-sans, ui-sans-serif)", "system-ui", "sans-serif"],
       },
     },
   },

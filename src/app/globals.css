@@ -21,6 +21,24 @@ body {
   @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
 }
 
+/* Tiếng Việt có dấu nặng (ạ, ộ, ợ) nằm ngay dưới đường chân chữ, đúng chỗ
+   trình duyệt vẽ gạch chân mặc định — chữ bị gạch cắt qua dấu, đọc rất mệt.
+   Đẩy gạch xuống dưới dấu và làm mảnh lại. `text-underline-offset` là thuộc
+   tính kế thừa nên đặt ở html là cả trang hưởng, kể cả các link chỉ gạch chân
+   khi hover; `text-decoration-thickness` thì không kế thừa nên phải đặt riêng. */
+html {
+  text-underline-offset: 0.22em;
+}
+
+a,
+u,
+ins,
+.underline {
+  text-decoration-thickness: 1px;
+  /* Gạch chân tự ngắt khi chạm nét thả xuống của g, y, p. */
+  text-decoration-skip-ink: auto;
+}
+
 /* Lưới an toàn cho tràn ngang: một phần tử lỡ rộng hơn viewport thì bị cắt,
    thay vì cho cả trang cuộn ngang — trên điện thoại việc đó làm chữ bị lệch ra
    ngoài lề và thanh điều hướng trông như bị hỏng.
