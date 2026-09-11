@@ -14,6 +14,24 @@
 
 Hạn chế: chỉ định nghĩa tiếng Anh → cần AI dịch sang tiếng Việt.
 
+### 1.1. Chống upstream sập — timeout, thử lại, provider dự phòng
+
+DictionaryAPI.dev chạy sau Cloudflare và không có SLA: có đợt trả **522**
+(Cloudflare không nối được origin) hoặc vẫn 200 nhưng TTFB ~20s. Ba lớp chống đỡ
+([lib/dictionary/](../src/lib/dictionary/)):
+
+| Lớp | Cách làm | Vì sao |
+| --- | --- | --- |
+| Timeout 7s + thử lại 1 lần | `dictionaryapi.ts` | 5xx của họ thường chập chờn, gọi lại là được. **Timeout thì không thử lại** — chỉ tốn thêm 7s rồi cũng hỏng. |
+| Provider dự phòng: Datamuse | `datamuse.ts` | Miễn phí, không key. Chỉ có **định nghĩa** (không IPA/audio/ví dụ) nhưng còn hơn không tra được từ nào. Chỉ nhận khi từ trùng khít — `sp=` là tìm gần đúng ("a number of" → "a number 1"). |
+| Cầu dao 60s | `chain.ts` | Provider vừa hỏng thì tạm cho nghỉ, khỏi phải chờ hết timeout ở mỗi lượt tra sau. Không bỏ hẳn — đẩy xuống cuối hàng, để mọi provider cùng nghỉ thì vẫn có cái để gọi. |
+
+Kết quả từ provider dự phòng gắn `degraded: true` và **không ghi vào
+`dictionary_cache`** — cache lại thì thẻ thiếu phiên âm bị đóng đinh cho cả
+những lần tra sau khi upstream đã hồi.
+
+Tắt dự phòng: `DICTIONARY_FALLBACK=off`.
+
 ## 2. Translate/AI provider
 
 Abstraction `TranslationProvider`:

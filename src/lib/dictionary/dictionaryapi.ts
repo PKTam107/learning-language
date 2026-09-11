@@ -24,6 +24,14 @@ interface ApiEntry {
 const MAX_DEFINITIONS = 6;
 const MAX_EXAMPLES = 4;
 
+/** Cắt request khi upstream treo. DictionaryAPI.dev có lúc TTFB ~20s — để mặc
+ *  thì serverless function hết giờ trước, người dùng chỉ thấy lỗi trắng. */
+const TIMEOUT_MS = 7000;
+/** Số lần gọi tối đa (1 lần thử + 1 lần lại): 5xx của upstream này thường là
+ *  chập chờn, gọi lại ngay là được. Timeout thì KHÔNG thử lại — xem dưới. */
+const MAX_ATTEMPTS = 2;
+const RETRY_DELAY_MS = 300;
+
 /** Provider mặc định: https://dictionaryapi.dev (miễn phí, không cần key, chỉ tiếng Anh). */
 export class DictionaryApiDevProvider implements DictionaryProvider {
   async lookup(word: string): Promise<DictionaryResult> {
@@ -32,7 +40,7 @@ export class DictionaryApiDevProvider implements DictionaryProvider {
       term
     )}`;
 
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetchWithRetry(url);
 
     if (res.status === 404) {
       return { term, definitions: [], examples: [], notFound: true };
@@ -48,6 +56,39 @@ export class DictionaryApiDevProvider implements DictionaryProvider {
 
     return parseEntries(term, entries);
   }
+}
+
+/**
+ * Gọi upstream, thử lại khi timeout/lỗi mạng hoặc 5xx (522 = Cloudflare không
+ * nối được origin của dictionaryapi.dev — lỗi của họ, không phải của từ cần tra).
+ * 4xx trả thẳng về cho caller xử lý (404 = không có từ).
+ */
+async function fetchWithRetry(url: string): Promise<Response> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch(url, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (res.status < 500) return res;
+      lastError = new Error(`DictionaryAPI error: ${res.status}`);
+    } catch (e) {
+      lastError = e;
+      // Timeout nghĩa là upstream đang chậm chứ không phải rớt gói: thử lại chỉ
+      // tốn thêm đúng TIMEOUT_MS nữa rồi cũng hỏng. Bỏ qua luôn cho nhanh xuống
+      // provider dự phòng.
+      if (e instanceof Error && e.name === "TimeoutError") break;
+    }
+    if (attempt < MAX_ATTEMPTS) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("DictionaryAPI không phản hồi");
 }
 
 function parseEntries(term: string, entries: ApiEntry[]): DictionaryResult {
