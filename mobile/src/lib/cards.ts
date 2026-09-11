@@ -346,6 +346,40 @@ function isUndefinedColumn(err: unknown): boolean {
   return code === "42703" || code === "PGRST204";
 }
 
+/**
+ * Tạm treo / bỏ treo một thẻ.
+ *
+ * Dùng cho thẻ "leech" — quên tới ngưỡng `LEECH_LAPSES` mà vẫn không vào. Thẻ
+ * treo bị rút khỏi mọi hàng đợi ôn (xem `isSuspended` trong `lib/queue.ts`)
+ * nhưng **không mất**: vẫn trong bộ thẻ, vẫn đếm vào tổng số từ, bỏ treo lại
+ * được. Đây là lối thoát thay cho việc xóa một từ chỉ vì nó khó.
+ *
+ * Thẻ chưa từng ôn cũng treo được — upsert sẽ tạo dòng progress ở trạng thái
+ * "chưa học", nên nó chỉ bị rút khỏi hàng đợi, không thành "đã học".
+ */
+export async function setCardSuspended(
+  cardId: string,
+  suspended: boolean
+): Promise<void> {
+  const userId = await requireUserId();
+  const { error } = await supabase.from("card_progress").upsert(
+    {
+      user_id: userId,
+      card_id: cardId,
+      suspended_at: suspended ? new Date().toISOString() : null,
+    },
+    { onConflict: "user_id,card_id" }
+  );
+  if (error) {
+    if (isUndefinedColumn(error)) {
+      throw new Error(
+        "Chưa có cột tạm treo — hãy chạy migration 0012_suspend_leech.sql trong Supabase."
+      );
+    }
+    throw error;
+  }
+}
+
 /** Ảnh chụp một lượt đánh giá — đủ để hoàn tác (xem `undoReview`). */
 export interface ReviewReceipt {
   cardId: string;

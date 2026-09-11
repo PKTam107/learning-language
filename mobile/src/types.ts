@@ -49,6 +49,8 @@ export interface DeckStats {
   byStatus: Record<CardStatus, number>;
   /** Hàng đợi hôm nay: thẻ tới hạn ôn lại + từ mới trong hạn mức (lib/queue.ts). */
   due: number;
+  /** Thẻ đang tạm treo (leech) — vẫn nằm trong bộ nhưng không vào hàng đợi ôn. */
+  suspended: number;
   /** Thẻ đã học và đã tới hạn ôn lại. */
   dueReviews: number;
   /** Từ mới sẽ được đưa vào học hôm nay, sau khi trừ hạn mức. */
@@ -113,6 +115,8 @@ export interface CardProgress {
   lapses: number;
   /** Lần ôn đầu tiên — dùng đếm hạn mức "từ mới mỗi ngày". */
   introduced_at: string | null;
+  /** Đang tạm treo từ lúc nào (null = không treo) — xem `lib/queue.ts`. */
+  suspended_at: string | null;
 }
 
 export interface CardWithProgress extends Card {

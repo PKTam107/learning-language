@@ -23,10 +23,39 @@ interface TranslationProvider {
   // Dịch nghĩa + ví dụ; trả về theo đúng thứ tự input.
 }
 ```
-- Mặc định `AI_PROVIDER=openai` (model `gpt-4o-mini`) — rẻ, đủ tốt cho dịch ngắn.
-- Có `GeminiProvider` thay thế (`AI_PROVIDER=gemini`, model `gemini-1.5-flash`).
+
+**Chuỗi provider có dự phòng** ([lib/ai/index.ts](../src/lib/ai/index.ts) +
+[lib/ai/chain.ts](../src/lib/ai/chain.ts)):
+
+| | Provider | Ghi chú |
+|---|---|---|
+| Chính | theo `AI_PROVIDER` | Để trống = tự dò: có `GEMINI_API_KEY` → gemini, có `OPENAI_API_KEY` → openai, không có gì → mymemory |
+| Dự phòng | theo `AI_FALLBACK` (mặc định `mymemory`) | `off` để tắt. Bỏ qua nếu trùng provider chính |
+
+- **Gemini** (mặc định `gemini-3.5-flash-lite`): dòng Flash có **free tier**, chất lượng
+  nghĩa/ví dụ hơn hẳn dịch máy thuần. Chọn Flash-Lite vì việc ở đây chỉ là dịch chuỗi ngắn,
+  mà hạn mức free của nó rộng nhất.
+  **Trần free theo phút chặt hơn rate limit của chính app** (`/api/lookup` cho 30 lượt/phút),
+  nên tra liên tiếp là chạm trần — dự phòng MyMemory là thành phần **chịu tải**, không phải
+  phòng hờ. Số cụ thể xem AI Studio → Rate limits (tài liệu Google không ghim con số).
+  **Model bị khai tử theo thời gian** (`gemini-2.0-flash` đã shut down, `gemini-1.5-flash`
+  không còn trong tài liệu) — dịch hỏng hàng loạt thì kiểm tra tên model trước tiên; chuỗi
+  dự phòng sẽ che lỗi này nên nó không tự lộ ra.
+- **OpenAI** (`gpt-4o-mini`) không có free tier — chỉ dùng nếu chấp nhận trả tiền.
+- **MyMemory** free, không cần key (~5k từ/ngày ẩn danh, ~50k nếu khai `MYMEMORY_EMAIL`).
+- **LibreTranslate** cho ai muốn self-host.
 - Prompt yêu cầu dịch ngắn gọn, tự nhiên, giữ thứ tự, trả JSON array để parse ổn định.
-- Nếu không cấu hình key AI → bỏ qua dịch (trả nghĩa tiếng Anh + flag `translationSkipped`), app vẫn chạy.
+- Không dựng được provider nào → bỏ qua bước dịch (`translationSkipped`), thẻ vẫn tạo được
+  với nghĩa tiếng Anh.
+
+**Khi nào coi là "provider hỏng" và rơi sang provider kế** (`FallbackProvider`):
+1. Ném lỗi (mạng, 4xx/5xx, hết quota).
+2. Trả về **sai số phần tử** so với input.
+3. Trả về **y hệt input**. Đây là ca dễ bỏ sót: provider LLM parse hỏng thì
+   `parseTranslationArray` trả về chính input thay vì ném lỗi — nhìn như thành công mà thực
+   chất không dịch gì. Chỉ xét khi batch có ít nhất một chuỗi không rỗng.
+
+Nhờ vậy hết quota chỉ làm **chất lượng dịch giảm**, không làm hỏng việc tạo thẻ.
 
 ## 3. Route handlers (server)
 
@@ -89,7 +118,10 @@ Dịch text rời (dùng khi người dùng sửa và muốn dịch lại 1 ví 
 | NEXT_PUBLIC_SUPABASE_URL | client | ✅ |
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | client | ✅ |
 | SUPABASE_SERVICE_ROLE_KEY | server | ✅ (cho cache/server ops) |
-| AI_PROVIDER | server | `openai`\|`gemini` (default openai) |
-| OPENAI_API_KEY | server | nếu dùng openai |
-| GEMINI_API_KEY | server | nếu dùng gemini |
+| AI_PROVIDER | server | không — để trống là tự dò theo key |
+| AI_FALLBACK | server | không — mặc định `mymemory`, `off` để tắt |
+| GEMINI_API_KEY / GEMINI_MODEL | server | nếu dùng gemini (khuyến nghị) |
+| OPENAI_API_KEY / OPENAI_MODEL | server | nếu dùng openai |
+| MYMEMORY_EMAIL | server | không — khai email để tăng quota |
+| LIBRETRANSLATE_URL / _API_KEY | server | nếu dùng libretranslate |
 | NEXT_PUBLIC_SITE_URL | client | cho redirect OAuth |

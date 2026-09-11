@@ -4,7 +4,7 @@ import { StatusDot } from "@/components/status/StatusDot";
 import { AudioButton } from "@/components/flashcard/AudioButton";
 import { radius, spacing, type ThemeColors } from "@/lib/theme";
 import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
-import { Check, Trash2 } from "lucide-react-native";
+import { Check, PauseCircle, PlayCircle, Trash2 } from "lucide-react-native";
 
 interface Props {
   card: Card;
@@ -16,6 +16,12 @@ interface Props {
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (card: Card) => void;
+  /** Thẻ đang bị tạm treo — rút khỏi mọi phiên ôn (xem `lib/queue.ts`). */
+  suspended?: boolean;
+  /** Quên quá nhiều lần ("leech") — gợi ý sửa thẻ hoặc tạm treo. */
+  leech?: boolean;
+  /** Có truyền thì hiện nút treo/bỏ treo. */
+  onToggleSuspend?: (card: Card) => void;
 }
 
 export function CardRow({
@@ -26,6 +32,9 @@ export function CardRow({
   selectMode = false,
   selected = false,
   onToggleSelect,
+  suspended = false,
+  leech = false,
+  onToggleSuspend,
 }: Props) {
   const colors = useThemeColors();
   const styles = useStyles(makeStyles);
@@ -33,7 +42,16 @@ export function CardRow({
     <View style={styles.info}>
       <View style={styles.termLine}>
         {!selectMode && status && <StatusDot status={status} />}
-        <Text style={styles.term}>{card.term}</Text>
+        <Text style={[styles.term, suspended && styles.termSuspended]}>
+          {card.term}
+        </Text>
+        {/* Treo và "hay quên" loại trừ nhau: treo rồi thì nhắc nó hay quên nữa
+            cũng chẳng để làm gì. */}
+        {suspended ? (
+          <Text style={styles.tag}>Tạm treo</Text>
+        ) : leech ? (
+          <Text style={[styles.tag, styles.tagDanger]}>Hay quên</Text>
+        ) : null}
         {!!card.phonetic && (
           <Text style={styles.phonetic}>{card.phonetic}</Text>
         )}
@@ -72,6 +90,22 @@ export function CardRow({
       {!selectMode && (
         <View style={styles.actions}>
           <AudioButton url={card.audio_us} text={card.term} label="US" />
+          {onToggleSuspend && (
+            <Pressable
+              onPress={() => onToggleSuspend(card)}
+              hitSlop={8}
+              style={styles.iconBtn}
+              accessibilityLabel={
+                suspended ? "Bỏ treo, ôn lại từ này" : "Tạm treo từ này"
+              }
+            >
+              {suspended ? (
+                <PlayCircle size={16} color={colors.textMuted} />
+              ) : (
+                <PauseCircle size={16} color={colors.textMuted} />
+              )}
+            </Pressable>
+          )}
           <Pressable
             onPress={() => onDelete(card)}
             hitSlop={8}
@@ -115,6 +149,18 @@ const makeStyles = (colors: ThemeColors) =>
     actions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
     termLine: { flexDirection: "row", alignItems: "baseline", gap: spacing.sm },
     term: { fontSize: 16, fontWeight: "700", color: colors.text },
+    termSuspended: { color: colors.textSubtle },
+    tag: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.textMuted,
+      backgroundColor: colors.sunken,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+      overflow: "hidden",
+    },
+    tagDanger: { color: colors.danger, backgroundColor: colors.tints.red.bg },
     phonetic: { fontSize: 14, color: colors.textSubtle },
     meaning: { marginTop: 2, fontSize: 14, color: colors.textMuted },
     pos: { color: colors.textSubtle },

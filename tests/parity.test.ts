@@ -19,6 +19,7 @@ const strip = (src: string) =>
 const pairs: [string, string][] = [
   ["src/lib/srs.ts", "mobile/src/lib/srs.ts"],
   ["src/lib/queue.ts", "mobile/src/lib/queue.ts"],
+  ["src/lib/quiz.ts", "mobile/src/lib/quiz.ts"],
   ["src/lib/flip.ts", "mobile/src/lib/flip.ts"],
 ];
 

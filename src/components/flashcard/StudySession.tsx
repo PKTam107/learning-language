@@ -14,9 +14,17 @@ import {
 } from "@/lib/db/cards";
 import { fetchWeakWords, WEAK_SESSION_SIZE } from "@/lib/db/weak";
 import { resolvePolicy } from "@/lib/db/policy";
-import { buildDueQueue, UNLIMITED, type QueuePolicy } from "@/lib/queue";
+import { buildDueQueue, isSuspended, UNLIMITED, type QueuePolicy } from "@/lib/queue";
 import { STATUS_META } from "@/lib/status";
-import { MCQ_TYPES, REVIEW_TYPES, type ReviewType } from "@/lib/quiz";
+import {
+  hasCloze,
+  MCQ_TYPES,
+  REVIEW_TYPES,
+  pickReviewType,
+  SESSION_TYPES,
+  type ReviewType,
+  type SessionReviewType,
+} from "@/lib/quiz";
 import { useSettings } from "@/lib/settings";
 import { speak } from "@/lib/speak";
 import { Button } from "@/components/ui/Button";
@@ -132,7 +140,12 @@ export function StudySession({ source }: { source: StudySource }) {
 
   // Tùy chọn phiên học
   const [mode, setMode] = useState<Mode>("all");
-  const [reviewType, setReviewType] = useState<ReviewType>("flashcard");
+  /**
+   * Kiểu ôn của phiên. "auto" không phải một dạng câu hỏi mà là chính sách chọn
+   * kiểu cho từng thẻ (xem `pickReviewType`), nên kiểu THẬT của thẻ đang học
+   * được tính riêng ở `currentType`.
+   */
+  const [sessionType, setSessionType] = useState<SessionReviewType>("flashcard");
   const [limit, setLimit] = useState(0);
   const [shuffle, setShuffle] = useState(false);
 
@@ -158,7 +171,15 @@ export function StudySession({ source }: { source: StudySource }) {
   const kind = source.kind;
   const deckId = source.kind === "deck" ? source.deckId : null;
 
+  /**
+   * Thẻ tạm treo (leech) bị loại khỏi MỌI nguồn học, kể cả "Ôn tất cả" và "Bạn
+   * hay quên" — treo mà vẫn hiện trong phiên thì thao tác treo chẳng có tác dụng
+   * gì. `buildDueQueue` cũng đã tự lọc, đây là chốt cho các chế độ không đi qua
+   * hàng đợi.
+   */
   const load = useCallback(async () => {
+    const usable = (list: CardWithProgress[]) => list.filter((c) => !isSuspended(c));
+
     if (kind === "deck" && deckId) {
       // Cần cả hạn mức từ mới: chế độ "Ôn hôm nay" của một bộ thẻ cũng phải tôn
       // trọng hạn mức chung của tài khoản.
@@ -166,19 +187,19 @@ export function StudySession({ source }: { source: StudySource }) {
         fetchCardsWithProgress(deckId),
         resolvePolicy(settings.newPerDay),
       ]);
-      setAll(cards);
+      setAll(usable(cards));
       setPolicy(queuePolicy);
       return;
     }
     if (kind === "due") {
       const queue = await fetchDueQueueAllDecks(settings.newPerDay);
-      setAll(queue.cards);
+      setAll(usable(queue.cards));
       setHeldBack(queue.newHeldBack);
       return;
     }
     // weak: xếp hạng theo số lần quên rồi lấy thẻ đầy đủ theo đúng thứ tự đó.
     const ranked = await fetchWeakWords(WEAK_SESSION_SIZE);
-    setAll(await fetchCardsByIds(ranked.map((w) => w.cardId)));
+    setAll(usable(await fetchCardsByIds(ranked.map((w) => w.cardId))));
   }, [kind, deckId, settings.newPerDay]);
 
   const meta = SOURCE_META[kind];
@@ -201,6 +222,25 @@ export function StudySession({ source }: { source: StudySource }) {
   const dueQueue = useMemo(() => buildDueQueue(all, policy), [all, policy]);
   const dueCount = dueQueue.cards.length;
 
+  /**
+   * Tập thẻ của phiên theo Mode đang chọn — chỉ nguồn "deck" mới lọc theo Mode,
+   * due/weak đã được lọc từ lúc nạp. Tính ở đây (không phải trong `start`) để
+   * các con số ở màn chuẩn bị nói về **đúng tập thẻ sắp học**.
+   */
+  const pool = useMemo(
+    () =>
+      kind !== "deck"
+        ? all
+        : mode === "weak"
+          ? all.filter(isWeak)
+          : mode === "due"
+            ? dueQueue.cards
+            : all,
+    [kind, all, mode, dueQueue]
+  );
+  /** Số thẻ có ví dụ khoét được chỗ trống — phiên cloze chỉ lấy được các thẻ này. */
+  const clozeCount = useMemo(() => pool.filter(hasCloze).length, [pool]);
+
   // Mặc định chọn "Ôn hôm nay" khi có thẻ đến hạn (khuyến nghị spaced repetition).
   useEffect(() => {
     if (kind !== "deck" || inited || all.length === 0) return;
@@ -209,16 +249,11 @@ export function StudySession({ source }: { source: StudySource }) {
   }, [all, dueCount, inited, kind]);
 
   function start() {
-    // Chỉ nguồn "deck" mới lọc theo Mode; due/weak đã được lọc từ lúc nạp.
-    const pool =
-      kind !== "deck"
-        ? all
-        : mode === "weak"
-          ? all.filter(isWeak)
-          : mode === "due"
-            ? dueQueue.cards
-            : all;
-    let list = shuffle ? shuffleArr(pool) : orderCards(pool);
+    // Phiên cloze chỉ gồm thẻ khoét được chỗ trống. Giữ thẻ không có ví dụ chỉ
+    // để hiện "không dựng được câu hỏi" là làm phiên học loãng đi vô ích — khác
+    // chế độ "Tự động", ở đó thẻ thiếu dữ liệu được hạ xuống kiểu khác.
+    const eligible = sessionType === "cloze" ? pool.filter(hasCloze) : pool;
+    let list = shuffle ? shuffleArr(eligible) : orderCards(eligible);
     if (limit > 0) list = list.slice(0, limit);
     setQueue(list);
     setIndex(0);
@@ -236,6 +271,16 @@ export function StudySession({ source }: { source: StudySource }) {
   }
 
   const current = queue[index];
+
+  /**
+   * Kiểu ôn THẬT của thẻ đang học. Chế độ "Tự động" quyết định theo từng thẻ —
+   * tất định theo dữ liệu thẻ nên không đổi giữa hai lần render (đổi giữa phiên
+   * là câu hỏi tự biến dạng dưới tay người học).
+   */
+  const currentType: ReviewType = useMemo(() => {
+    if (sessionType !== "auto") return sessionType;
+    return current ? pickReviewType(current, all) : "flashcard";
+  }, [sessionType, current, all]);
 
   const next = useCallback(() => {
     setFlipped(false);
@@ -300,16 +345,16 @@ export function StudySession({ source }: { source: StudySource }) {
 
   // Tự phát âm khi lật thẻ (chế độ lật thẻ) — nếu bật trong Cài đặt.
   useEffect(() => {
-    if (phase !== "studying" || reviewType !== "flashcard") return;
+    if (phase !== "studying" || currentType !== "flashcard") return;
     if (!flipped || !settings.autoSpeak || !current) return;
     speak({ url: current.audio_us, text: current.term, label: "US" });
     // Chỉ chạy khi trạng thái lật đổi (cùng thẻ) — không thêm `current`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flipped, phase, reviewType, settings.autoSpeak]);
+  }, [flipped, phase, currentType, settings.autoSpeak]);
 
   // Phím tắt khi đang học (chỉ chế độ lật thẻ)
   useEffect(() => {
-    if (phase !== "studying" || reviewType !== "flashcard") return;
+    if (phase !== "studying" || currentType !== "flashcard") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
@@ -327,7 +372,7 @@ export function StudySession({ source }: { source: StudySource }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, flipped, assess, next, reviewType]);
+  }, [phase, flipped, assess, next, currentType]);
 
   // Hoàn tác bằng bàn phím — dùng được ở mọi kiểu ôn, kể cả màn tóm tắt.
   useEffect(() => {
@@ -439,14 +484,20 @@ export function StudySession({ source }: { source: StudySource }) {
         <div className="mt-6">
           <p className="mb-2 text-sm font-medium text-slate-600 dark:text-slate-400">Kiểu ôn</p>
           <div className="flex flex-wrap gap-2">
-            {REVIEW_TYPES.map((rt) => {
-              // Cả hai chiều trắc nghiệm đều cần đủ thẻ để dựng đáp án nhiễu.
-              const disabled = MCQ_TYPES.includes(rt.value) && all.length < 4;
-              const active = reviewType === rt.value;
+            {SESSION_TYPES.map((rt) => {
+              // "Tự động" không bao giờ bị khóa: nó tự hạ xuống kiểu khả thi cho
+              // từng thẻ, nên kể cả bộ thẻ 1 từ không có ví dụ vẫn học được.
+              const disabled =
+                rt.value === "auto"
+                  ? false
+                  : // Cả hai chiều trắc nghiệm đều cần đủ thẻ để dựng đáp án nhiễu.
+                    (MCQ_TYPES.includes(rt.value as ReviewType) && all.length < 4) ||
+                    (rt.value === "cloze" && clozeCount === 0);
+              const active = sessionType === rt.value;
               return (
                 <button
                   key={rt.value}
-                  onClick={() => setReviewType(rt.value)}
+                  onClick={() => setSessionType(rt.value)}
                   disabled={disabled}
                   className={`rounded-full border px-3 py-1.5 text-sm transition-colors disabled:opacity-40 ${
                     active
@@ -459,6 +510,19 @@ export function StudySession({ source }: { source: StudySource }) {
               );
             })}
           </div>
+          {sessionType === "auto" && (
+            <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+              Mỗi thẻ một kiểu, khó dần theo mức thuộc: từ mới thì lật thẻ, chưa
+              thuộc thì trắc nghiệm, đang thuộc thì điền chỗ trống / Việt → Anh,
+              đã thuộc thì gõ lại và nghe.
+            </p>
+          )}
+          {sessionType === "cloze" && clozeCount < pool.length && (
+            <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+              Chỉ <strong>{clozeCount}</strong>/{pool.length} thẻ có ví dụ chứa từ để
+              khoét chỗ trống — phiên này sẽ chỉ gồm những thẻ đó.
+            </p>
+          )}
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -493,9 +557,10 @@ export function StudySession({ source }: { source: StudySource }) {
             className="flex-1"
             onClick={start}
             disabled={
-              kind === "deck" &&
-              ((mode === "weak" && weakCount === 0) ||
-                (mode === "due" && dueCount === 0))
+              (sessionType === "cloze" && clozeCount === 0) ||
+              (kind === "deck" &&
+                ((mode === "weak" && weakCount === 0) ||
+                  (mode === "due" && dueCount === 0)))
             }
           >
             Bắt đầu
@@ -567,6 +632,13 @@ export function StudySession({ source }: { source: StudySource }) {
         <div className="mb-1 flex items-center justify-between gap-3 text-sm text-slate-500 dark:text-slate-400">
           <span>
             Đang học: {index + 1}/{queue.length} từ
+            {/* Chế độ Tự động đổi kiểu theo từng thẻ — không nói ra thì người
+                học tưởng app đang lỗi khi câu hỏi đột nhiên khác dạng. */}
+            {sessionType === "auto" && (
+              <span className="ml-1 text-slate-400 dark:text-slate-500">
+                · {REVIEW_TYPES.find((r) => r.value === currentType)?.label}
+              </span>
+            )}
           </span>
           <span className="flex items-center gap-3">
             {history.length > 0 && (
@@ -593,7 +665,7 @@ export function StudySession({ source }: { source: StudySource }) {
         </div>
       </div>
 
-      {current && reviewType === "flashcard" && (
+      {current && currentType === "flashcard" && (
         <>
           <FlashcardFlip
             card={current}
@@ -640,12 +712,12 @@ export function StudySession({ source }: { source: StudySource }) {
         </>
       )}
 
-      {current && reviewType !== "flashcard" && (
+      {current && currentType !== "flashcard" && (
         <QuizCard
-          key={`${current.id}:${attempt}`}
+          key={`${current.id}:${currentType}:${attempt}`}
           card={current}
           pool={all}
-          type={reviewType}
+          type={currentType}
           autoSpeak={settings.autoSpeak}
           onAnswered={handleQuizAnswer}
         />

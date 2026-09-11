@@ -52,6 +52,21 @@ Bộ thẻ là một nhóm từ vựng người dùng tự đặt tên (ví dụ
 3. Hệ thống tự điền: phiên âm, từ loại, nghĩa tiếng Việt, các định nghĩa và ví dụ (kèm bản dịch), phát âm Anh–Mỹ.
 4. Người dùng xem lại, chỉnh sửa nếu muốn, rồi lưu vào bộ thẻ.
 
+**Chia sẻ từ ngoài app vào (nhanh nhất):** đã cài app ra màn hình chính thì LinguaCards
+xuất hiện trong danh sách **Chia sẻ** của hệ điều hành. Bôi đen một từ ở Chrome, app đọc
+sách, YouTube… → **Chia sẻ → LinguaCards** → thẻ được tra sẵn, chỉ còn bấm Lưu. Lý do có
+tính năng này: khoảnh khắc gặp từ mới xảy ra ở chỗ khác, không phải trong app — luồng cũ
+buộc người học nhớ từ đó rồi mở app gõ lại.
+
+- **Quy tắc:** chia sẻ **một từ / cụm ngắn** (≤ 4 từ, không kết thúc bằng dấu câu) thì tra
+  luôn. Chia sẻ **cả đoạn văn** thì app **không tra cả đoạn** (vô nghĩa, lại tốn hạn mức)
+  mà tách thành danh sách từ để chạm chọn.
+- **Quy tắc:** chia sẻ một *trang web* thì chỉ có địa chỉ, không có từ nào — app bỏ qua
+  phần địa chỉ thay vì tạo thẻ rác.
+- Chỉ hoạt động khi app **đã được cài**; mở bằng tab trình duyệt thường thì hệ điều hành
+  không biết tới lối vào này. Bản điện thoại (Expo) **chưa có** — trên Android thì bản web
+  đã cài đảm nhiệm việc này.
+
 **Quy tắc thêm từ:**
 - **Không cho trùng từ trong cùng một bộ thẻ.** Khi kiểm tra trùng, từ được chuẩn hóa trước (bỏ khoảng trắng đầu/cuối, gộp khoảng trắng giữa, không phân biệt hoa/thường). Nếu trùng, hệ thống báo và không lưu.
 - **Cùng một từ vẫn được phép nằm ở nhiều bộ thẻ khác nhau.**
@@ -60,7 +75,10 @@ Bộ thẻ là một nhóm từ vựng người dùng tự đặt tên (ví dụ
 
 **Quy tắc tra từ:**
 - Nếu từ đã từng được ai đó tra trước đây, hệ thống lấy lại kết quả đã lưu cho nhanh (không tra lại từ đầu).
-- Phần nghĩa và ví dụ được **dịch tự động sang tiếng Việt**. Nếu dịch tự động không khả dụng, thẻ vẫn tạo được nhưng nghĩa giữ nguyên tiếng Anh để người dùng tự sửa.
+- Phần nghĩa và ví dụ được **dịch tự động sang tiếng Việt**. Có **hai tầng dịch**: dịch vụ
+  chính (chất lượng cao hơn) và dịch vụ **dự phòng** miễn phí. Hết hạn mức hay lỗi mạng ở
+  tầng chính chỉ làm **chất lượng dịch giảm**, không làm hỏng việc tạo thẻ. Cả hai đều không
+  khả dụng thì thẻ vẫn tạo được nhưng nghĩa giữ nguyên tiếng Anh để người dùng tự sửa.
 - Nếu gõ vào **một cụm từ không có trong từ điển**, hệ thống vẫn cố dịch cả cụm để tạo được thẻ, thay vì báo lỗi trắng.
 - Sau khi lưu, ô tạo thẻ **giữ nguyên** để người dùng gõ từ tiếp theo (nhập liên tục nhanh).
 - **Giới hạn tần suất:** mỗi người tra tối đa **30 từ/phút** (chống lạm dụng dịch vụ dịch). Vượt mức sẽ được nhắc thử lại sau ít giây.
@@ -93,6 +111,27 @@ Mở một bộ thẻ, người dùng thấy danh sách các từ và có thể:
 **Quy tắc xóa:** xóa thẻ (một hoặc hàng loạt) **không mất ngay** — thẻ được chuyển vào
 **Thùng rác** và phục hồi được trong 30 ngày (xem mục 12).
 
+**Thẻ hay quên & tạm treo:**
+
+Có những từ ôn mãi không vào. Chúng quay lại hàng đợi gần như mỗi ngày, chiếm chỗ của những
+thẻ còn học được, và là lý do kinh điển để người học bỏ cuộc.
+
+- Thẻ bị **quên từ 6 lần trở lên** (sau khi đã tốt nghiệp khỏi giai đoạn học) được gắn nhãn
+  **"Hay quên"** trong danh sách.
+- Mỗi thẻ có nút **tạm treo**. Thẻ đã treo hiện nhãn **"Tạm treo"**, chữ mờ đi, và **bị rút
+  khỏi mọi phiên ôn** — kể cả "Ôn tất cả" và "Ôn từ hay quên".
+- **Quy tắc:** treo **không phải xóa**. Thẻ vẫn nằm trong bộ, vẫn đếm vào tổng số từ và vào
+  tỷ lệ trạng thái; **bỏ treo lại được bất cứ lúc nào**.
+- **Quy tắc:** thẻ treo **không ăn hạn mức từ mới mỗi ngày** và không bị tính là "từ mới đang
+  chờ tới lượt" — nếu không thì thao tác treo chẳng có tác dụng gì.
+- **Quy tắc:** trước khi treo, app gợi ý **hai lối thoát khác** — sửa thẻ cho nghĩa ngắn gọn
+  hơn (nghĩa dài dòng, mơ hồ là nguyên nhân thường gặp nhất), hoặc thêm một mẹo nhớ vào ghi
+  chú. Treo là biện pháp cuối.
+- **Quy tắc:** *reset tiến độ* xóa luôn trạng thái treo — treo là một phần của tiến độ học.
+- Bộ thẻ có thẻ treo thì đầu trang hiện *"· N tạm treo"*, và có thêm **bộ lọc "Tạm treo"** để
+  tìm lại chúng (bộ thẻ lớn không có lối vào này thì thẻ đã treo bị lẫn mất luôn).
+- **Có ở cả web và điện thoại.**
+
 **Hành động hàng loạt:** bật chế độ **Chọn** để tick nhiều thẻ (hoặc "Chọn tất cả"), rồi thực hiện một lần cho cả nhóm:
 - **Xóa** các thẻ đã chọn.
 - **Chuyển** sang bộ thẻ khác — thẻ nào trùng từ (đã có ở bộ đích) sẽ được bỏ qua và báo lại số lượng.
@@ -119,13 +158,47 @@ số thẻ mỗi phiên và xáo trộn.
 - **Ôn hôm nay:** chỉ những từ đã đến hạn ôn (theo lịch nhớ). *Mặc định chọn sẵn nếu có từ tới hạn.*
 - **Ôn tất cả:** toàn bộ thẻ trong bộ.
 - **Chỉ từ chưa thuộc:** những từ chưa học và những từ đã bị đánh giá "chưa thuộc".
-- **Kiểu ôn:** chọn cách kiểm tra. Năm kiểu, chia theo **chiều** kiểm tra:
+- **Kiểu ôn:** chọn cách kiểm tra. Sáu kiểu, chia theo **chiều** kiểm tra:
   - *Nhận diện* (thấy từ Anh → nhớ nghĩa): **Lật thẻ**, **Trắc nghiệm** (chọn nghĩa đúng).
   - *Sản sinh* (thấy nghĩa Việt → nhớ ra từ Anh — khó hơn, và mới là thứ cần khi nói/viết):
     **Việt → Anh** (chọn từ đúng) và **Gõ từ** (gõ lại từ tiếng Anh).
   - **Nghe** (nghe rồi gõ lại).
+  - **Điền chỗ trống:** app khoét từ đang học ra khỏi **chính câu ví dụ của thẻ**, người học
+    điền lại. Đây là kiểu gần với việc *dùng* từ thật nhất — đúng ngữ pháp, đúng ngữ cảnh.
+
+  …cộng một lựa chọn **Tự động** ở đầu danh sách (xem ngay dưới).
 
   *Hai kiểu trắc nghiệm cần ít nhất 4 từ để dựng đáp án nhiễu.*
+
+**Chế độ "Tự động" — mỗi thẻ một kiểu, khó dần theo mức thuộc:**
+
+Ôn 30 thẻ cùng một kiểu vừa nhàm, vừa dễ khiến người học **nhớ vẹt theo hình thức câu hỏi**
+thay vì nhớ từ. Chọn *Tự động* thì app tự quyết kiểu cho từng thẻ:
+
+| Trạng thái thẻ | Kiểu ôn | Vì sao |
+|---|---|---|
+| **Chưa học** | Lật thẻ | Chưa gặp lần nào thì phải được xem đáp án trước |
+| **Chưa thuộc** | Trắc nghiệm | Nhẹ nhất, để gây dựng lại |
+| **Đang thuộc** | Điền chỗ trống → Việt → Anh → Gõ từ | Bắt đầu đòi nhớ ra từ |
+| **Đã thuộc** | Gõ từ / Nghe (luân phiên theo số lượt ôn) | Kiểm tra chặt nhất |
+
+- **Quy tắc:** thẻ **thiếu dữ liệu** cho kiểu ưu tiên thì được **hạ xuống** kiểu khả thi kế
+  tiếp (cuối cùng luôn còn Lật thẻ) — **không bỏ thẻ**, vì thẻ vẫn đang tới hạn ôn.
+- **Quy tắc:** kiểu ôn được chốt theo dữ liệu của thẻ nên **không đổi giữa phiên** — câu hỏi
+  không tự biến dạng dưới tay người học. Thanh tiến độ ghi rõ thẻ hiện tại đang ở kiểu nào,
+  để đổi dạng câu hỏi không bị hiểu là app lỗi.
+
+**Quy tắc riêng của "Điền chỗ trống":**
+- Chỉ dựng được khi thẻ có **ví dụ chứa chính từ đó**, và câu dài **từ 3 từ trở lên** (khoét
+  xong phải còn ngữ cảnh). App tính cả **dạng chia**: *run* khớp *running*, *study* khớp
+  *studies*, *plan* khớp *planned*. Bất quy tắc (*go → went*) thì coi như không có cloze —
+  thà bỏ còn hơn khoét sai chỗ.
+- Chấm nhận **cả dạng trong câu lẫn dạng nguyên thể** của thẻ (đề khoét mất *running* mà gõ
+  *run* vẫn đúng), và vẫn cho **sai 1 ký tự** như kiểu Gõ từ.
+- Đề bài hiện **nghĩa tiếng Việt làm gợi ý**: một chỗ trống trong câu có thể điền được nhiều
+  từ — đây là bài "dùng đúng từ trong ngữ cảnh", không phải bài đoán chữ.
+- Chọn riêng kiểu này thì phiên **chỉ gồm những thẻ khoét được**, và app nói rõ *"chỉ N/M thẻ
+  có ví dụ"*. (Khác chế độ *Tự động*: ở đó thẻ thiếu ví dụ được hạ xuống kiểu khác.)
 
   **Quy tắc dựng đáp án nhiễu:** nhiễu lấy từ các thẻ khác trong cùng phiên, ưu tiên **cùng
   từ loại** cho khó hơn. Thẻ nào **cùng đề bài** với thẻ đang hỏi thì bị loại — nếu không sẽ
@@ -167,6 +240,9 @@ Mỗi từ luôn ở một trong bốn trạng thái, dùng thống nhất ở m
 | **Đã thuộc** | Đánh giá "đã thuộc" | Xanh |
 
 Trạng thái này quyết định màu chấm ở danh sách, tỷ lệ "đã thuộc" của bộ thẻ, và bộ lọc.
+
+**Tạm treo** (mục 5) **không phải** trạng thái thứ năm: thẻ treo vẫn giữ nguyên một trong bốn
+trạng thái trên, chỉ thêm cờ "đang không ôn". Nhờ vậy tổng bốn cột vẫn bằng số từ hiển thị.
 
 ---
 
@@ -348,8 +424,9 @@ chuyển vào **Thùng rác** và giữ **30 ngày**.
   thì mở web thấy ngay, và ngược lại — không cần thao tác đồng bộ thủ công.
 - Tiến độ học, lịch ôn, trạng thái từng từ, và **nhật ký ôn (streak)** đều dùng chung.
 - Hai bản **đã ngang bằng ở phần học**: trạng thái, các chế độ học, **kiểu ôn đa dạng**
-  (lật thẻ / trắc nghiệm / gõ / nghe), lịch ôn, **streak**, tự phát âm, chống trùng từ, và
-  **hành động hàng loạt** (chọn nhiều thẻ để xóa / chuyển bộ / reset tiến độ).
+  (lật thẻ / trắc nghiệm / gõ / nghe / **điền chỗ trống**) và **chế độ "Tự động"**, lịch ôn,
+  **streak**, tự phát âm, chống trùng từ, và **hành động hàng loạt** (chọn nhiều thẻ để xóa /
+  chuyển bộ / reset tiến độ).
 - Cũng ngang bằng ở **làm giàu thẻ** (badge CEFR, họ từ, collocations), **"Bạn hay quên"**,
   và nút **"Làm giàu N thẻ"** cho thẻ cũ. *(Bản mobile hiện chưa có sửa/xem chi tiết chỉnh sửa
   một thẻ như web, nhưng phần hiển thị thông tin làm giàu thì có.)*
@@ -357,11 +434,13 @@ chuyển vào **Thùng rác** và giữ **30 ngày**.
   ôn tập — cùng cách tính nên hai bên hiện cùng số liệu.
 - Ngang bằng cả ở **giao diện Sáng/Tối** (mục 11) và **hiệu ứng ăn mừng cuối phiên học** (mục 6).
 - Ngang bằng cả ở **lịch ôn mới** (mục 8), **hạn mức từ mới mỗi ngày**, **hoàn tác lượt đánh
-  giá** (mục 6) và **đưa thẻ đã xóa vào thùng rác** (mục 12).
+  giá** (mục 6), **đưa thẻ đã xóa vào thùng rác** (mục 12) và **thẻ hay quên / tạm treo** (mục 5).
 - **Cài đặt** (tự phát âm, từ mới/ngày, nhắc học) nay đi theo **tài khoản** nên hai bản dùng
   chung một cấu hình; riêng giao diện sáng/tối vẫn theo từng thiết bị.
-- Hai điểm khác còn lại: **cách nhắc học** (điện thoại dùng thông báo hệ thống, web dùng
-  banner trong app — mục 11) và **quản lý thùng rác** (xem/phục hồi hiện chỉ có trên web).
+- Ba điểm khác còn lại: **cách nhắc học** (điện thoại dùng thông báo hệ thống, web dùng
+  banner trong app — mục 11), **quản lý thùng rác** (xem/phục hồi hiện chỉ có trên web) và
+  **chia sẻ từ vào app** (mục 4 — chỉ bản web đã cài; trên Android thì chính bản web đã cài
+  nhận thao tác Chia sẻ, nên nhu cầu vẫn được đáp ứng).
 
 ---
 
@@ -371,6 +450,9 @@ Bản web là một **PWA**: mở trên điện thoại hoặc Chrome/Edge trên
 mời **"Cài đặt LinguaCards"** (Safari trên iOS: nút Chia sẻ → *Thêm vào Màn hình chính*).
 Sau khi cài, app chạy **toàn màn hình, không có thanh địa chỉ**, có icon riêng, và mở thẳng
 vào trang chủ. Giữ icon còn có lối tắt nhanh tới **Bộ thẻ** và **Tiến độ học**.
+
+Cài rồi thì LinguaCards cũng xuất hiện trong danh sách **Chia sẻ** của hệ điều hành —
+bôi đen một từ ở app khác là tạo được thẻ ngay (xem mục 4).
 
 **Quy tắc offline:** app cần mạng để tải thẻ và lưu tiến độ. Khi mất mạng, app hiện một
 **trang báo ngoại tuyến** kèm nút thử lại thay vì màn hình lỗi trắng của trình duyệt.
@@ -387,4 +469,7 @@ lưu lại sẽ rò sang người khác nếu dùng chung máy.
 - **Học offline thật sự** — hiện web đã **cài được ra màn hình chính** (xem mục 14) nhưng
   vẫn cần mạng để tải thẻ và lưu tiến độ; mất mạng chỉ hiện trang báo ngoại tuyến.
 - **Nhắc học khi đóng tab trên web** (cần hạ tầng push).
+- **Tra hàng loạt từ một đoạn văn** (hiện chia sẻ cả đoạn vào chỉ tách từ để chạm chọn từng
+  từ — xem mục 4).
+- **Chia sẻ từ vào bản điện thoại** (Expo) — bản web đã cài thì đã làm được.
 - **Phục hồi thùng rác trên điện thoại** (hiện chỉ xóa vào thùng rác được, xem/phục hồi làm trên web).

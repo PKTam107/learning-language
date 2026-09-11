@@ -3,8 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/currentUser";
 import type { CardWithProgress, Deck, DeckStats } from "@/types";
-import { emptyByStatus } from "@/lib/status";
-import { computeStats } from "@/lib/queue";
+import { computeStats, emptyStats } from "@/lib/queue";
 import { fetchAllRows } from "@/lib/db/paginate";
 import { resolvePolicy } from "@/lib/db/policy";
 import { trashDeck } from "@/lib/db/trash";
@@ -23,18 +22,6 @@ export async function fetchDecks(): Promise<Deck[]> {
     ...d,
     card_count: d.cards?.[0]?.count ?? 0,
   }));
-}
-
-/** DeckStats rỗng cho bộ thẻ chưa có từ nào. */
-function emptyStats(): DeckStats {
-  return {
-    total: 0,
-    byStatus: emptyByStatus(),
-    due: 0,
-    dueReviews: 0,
-    newToday: 0,
-    newHeldBack: 0,
-  };
 }
 
 /**

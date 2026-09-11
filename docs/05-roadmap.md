@@ -30,6 +30,16 @@
       — cache dữ liệu bài học — vẫn còn ở backlog.*
 - [x] Dark mode cho bản mobile (đã chuyển 31 file StyleSheet sang theme động).
 
+## Milestone 2.5 — Đợt 1 của [13-de-xuat-tinh-nang.md](./13-de-xuat-tinh-nang.md) ✅
+- [x] **Chia sẻ từ ngoài app vào** (share target PWA → `/share`): bôi đen từ ở Chrome/app khác
+      → Chia sẻ → LinguaCards → thẻ tra sẵn.
+- [x] **Kiểu ôn "Điền chỗ trống"** (cloze) — khoét từ khỏi chính ví dụ của thẻ.
+- [x] **Chế độ ôn "Tự động"** — mỗi thẻ một kiểu, khó dần theo mức thuộc.
+- [x] **Chuỗi provider dịch có dự phòng** — Gemini (free tier) → MyMemory; hết quota chỉ giảm
+      chất lượng dịch, không làm hỏng việc tạo thẻ.
+- [x] **Tạm treo thẻ leech** — `lapses ≥ 6` gắn nhãn "Hay quên", treo rút thẻ khỏi mọi phiên ôn.
+- [x] Mobile ngang bằng ở cả bốn hạng mục học (share target là đặc thù PWA).
+
 ## Milestone 3 — Spaced Repetition thật
 - [x] Triển khai SM-2 dùng `next_due_at`, `ease_factor` (đã để sẵn cột).
 - [x] **Lịch ôn có bước học** (migration `0009`): learning → review → relearning, khoảng ôn lưu
@@ -65,6 +75,8 @@ Client thứ 2, dùng chung backend với web (chi tiết: [06-mobile.md](./06-m
 ## Backlog / ý tưởng
 - Chia sẻ deck công khai, marketplace deck.
 - Import Anki (.apkg). *(đã có import Excel + export CSV/Excel/JSON)*
-- Xử lý thẻ "leech" (cột `lapses` đã có sẵn từ `0009`): tạm treo thẻ quên quá nhiều lần.
-- Thêm từ từ đoạn văn (mining) + tra hàng loạt; kiểu ôn điền chỗ trống (cloze); luyện nói.
+- ~~Xử lý thẻ "leech"~~ — ✅ đợt 1: nhãn "Hay quên" + **tạm treo** (`suspended_at`, `0012`).
+- ~~Kiểu ôn điền chỗ trống (cloze)~~ — ✅ đợt 1. Còn lại: **thêm từ từ đoạn văn (mining)** +
+  tra hàng loạt; luyện nói.
 - Phục hồi thùng rác trên bản mobile; web push; học offline thật sự.
+- Ưu tiên chi tiết + phân tích chi phí: [13-de-xuat-tinh-nang.md](./13-de-xuat-tinh-nang.md).

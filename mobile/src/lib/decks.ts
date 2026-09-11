@@ -1,7 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { CardWithProgress, Deck, DeckStats } from "@/types";
-import { emptyByStatus } from "@/lib/status";
-import { computeStats } from "@/lib/queue";
+import { computeStats, emptyStats } from "@/lib/queue";
 import { fetchAllRows } from "@/lib/paginate";
 import { resolvePolicy } from "@/lib/policy";
 import { trashDeck } from "@/lib/trash";
@@ -18,18 +17,6 @@ export async function fetchDecks(): Promise<Deck[]> {
     ...d,
     card_count: d.cards?.[0]?.count ?? 0,
   }));
-}
-
-/** DeckStats rỗng cho bộ thẻ chưa có từ nào. */
-function emptyStats(): DeckStats {
-  return {
-    total: 0,
-    byStatus: emptyByStatus(),
-    due: 0,
-    dueReviews: 0,
-    newToday: 0,
-    newHeldBack: 0,
-  };
 }
 
 export interface DecksWithStats {

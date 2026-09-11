@@ -5,7 +5,7 @@ import type { Deck, DeckStats } from "@/types";
 import { fetchDecksWithStats, deleteDeck } from "@/lib/db/decks";
 import { useSettings } from "@/lib/settings";
 import { exportAccountBackup } from "@/lib/export";
-import { emptyByStatus } from "@/lib/status";
+import { emptyStats } from "@/lib/queue";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -71,14 +71,7 @@ export function DecksManager({ showStats }: DecksManagerProps) {
 
   const agg = useMemo<DeckStats>(
     () =>
-      account ?? {
-        total: 0,
-        byStatus: emptyByStatus(),
-        due: 0,
-        dueReviews: 0,
-        newToday: 0,
-        newHeldBack: 0,
-      },
+      account ?? emptyStats(),
     [account]
   );
 

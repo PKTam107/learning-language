@@ -23,11 +23,13 @@ export const DEFAULT_NEW_PER_DAY = 15;
 /** Các mức chọn được trong Cài đặt (0 = không giới hạn). */
 export const NEW_PER_DAY_OPTIONS = [5, 10, 15, 20, 30, 50, 0];
 
-/** Chỉ cần hai cột này để xếp hàng đợi — không buộc phải là CardWithProgress đầy đủ. */
+/** Chỉ cần vài cột này để xếp hàng đợi — không buộc phải là CardWithProgress đầy đủ. */
 export interface QueueCard {
   progress?: {
     next_due_at?: string | null;
     last_reviewed_at?: string | null;
+    /** Thẻ bị tạm treo (leech) — xem `isSuspended`. */
+    suspended_at?: string | null;
   } | null;
 }
 
@@ -38,6 +40,15 @@ export interface QueuePolicy {
   introducedToday: number;
 }
 
+/**
+ * Thẻ đang bị **tạm treo**: người dùng đã rút nó khỏi việc ôn (thường là thẻ
+ * "leech" — quên mãi không vào). Thẻ vẫn nằm trong bộ và vẫn đếm vào tổng số
+ * từ, chỉ không bao giờ vào hàng đợi cho tới khi được bỏ treo.
+ */
+export function isSuspended(card: QueueCard): boolean {
+  return !!card.progress?.suspended_at;
+}
+
 /** Thẻ chưa từng ôn. Reset tiến độ xóa hẳn dòng progress → thành từ mới trở lại. */
 export function isNewCard(card: QueueCard): boolean {
   return !card.progress?.last_reviewed_at;
@@ -45,7 +56,7 @@ export function isNewCard(card: QueueCard): boolean {
 
 /** Thẻ đã học và đã tới hạn ôn lại. */
 export function isDueReview(card: QueueCard, nowMs: number = Date.now()): boolean {
-  if (isNewCard(card)) return false;
+  if (isSuspended(card) || isNewCard(card)) return false;
   return isDue(card.progress?.next_due_at, nowMs);
 }
 
@@ -69,6 +80,10 @@ export function splitDue<T extends QueueCard>(
   const reviews: T[] = [];
   const news: T[] = [];
   for (const c of cards) {
+    // Thẻ tạm treo bị loại khỏi CẢ hai nhánh — treo mà vẫn tính là "từ mới chưa
+    // học" thì nó vẫn ăn hạn mức từ mới mỗi ngày, đúng thứ người dùng vừa bảo
+    // là đừng bắt học nữa.
+    if (isSuspended(c)) continue;
     if (isNewCard(c)) news.push(c);
     else if (isDue(c.progress?.next_due_at, nowMs)) reviews.push(c);
   }
@@ -115,6 +130,19 @@ export function dueTodayCount(
   return Math.max(0, counts.dueReviews) + Math.max(0, news);
 }
 
+/** DeckStats rỗng — bộ thẻ chưa có từ nào, hoặc chỗ giữ trước khi dữ liệu về. */
+export function emptyStats(): DeckStats {
+  return {
+    total: 0,
+    byStatus: emptyByStatus(),
+    suspended: 0,
+    due: 0,
+    dueReviews: 0,
+    newToday: 0,
+    newHeldBack: 0,
+  };
+}
+
 /** Hạn mức "không giới hạn" — dùng khi chưa nạp xong cài đặt. */
 export const UNLIMITED: QueuePolicy = { newPerDay: 0, introducedToday: 0 };
 
@@ -131,13 +159,19 @@ export function computeStats(
   nowMs: number = Date.now()
 ): DeckStats {
   const byStatus = emptyByStatus();
+  let suspended = 0;
   for (const c of cards) {
+    // Thẻ tạm treo vẫn đếm theo trạng thái học của nó: nó vẫn là một từ trong
+    // bộ thẻ, chỉ tạm không ôn. Cắt khỏi byStatus là tổng các cột không còn
+    // bằng số từ hiển thị.
     byStatus[(c.progress?.status ?? "new") as CardStatus]++;
+    if (isSuspended(c)) suspended++;
   }
   const q = buildDueQueue(cards, policy, nowMs);
   return {
     total: cards.length,
     byStatus,
+    suspended,
     due: q.cards.length,
     dueReviews: q.reviewCount,
     newToday: q.newCount,

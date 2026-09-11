@@ -22,10 +22,18 @@ import {
 import { fetchWeakWords, WEAK_SESSION_SIZE } from "@/lib/weak";
 import { STATUS_META } from "@/lib/status";
 import { resolvePolicy } from "@/lib/policy";
-import { buildDueQueue, UNLIMITED, type QueuePolicy } from "@/lib/queue";
+import { buildDueQueue, isSuspended, UNLIMITED, type QueuePolicy } from "@/lib/queue";
 import { useSettings } from "@/lib/settings";
 import { playPronunciation } from "@/lib/audio";
-import { MCQ_TYPES, REVIEW_TYPES, type ReviewType } from "@/lib/quiz";
+import {
+  hasCloze,
+  MCQ_TYPES,
+  pickReviewType,
+  REVIEW_TYPES,
+  SESSION_TYPES,
+  type ReviewType,
+  type SessionReviewType,
+} from "@/lib/quiz";
 import { FlashcardFlip } from "@/components/flashcard/FlashcardFlip";
 import { QuizCard } from "@/components/flashcard/QuizCard";
 import { StatusDot } from "@/components/status/StatusDot";
@@ -137,7 +145,12 @@ export default function StudyScreen() {
   const [inited, setInited] = useState(false);
 
   const [mode, setMode] = useState<Mode>("all");
-  const [reviewType, setReviewType] = useState<ReviewType>("flashcard");
+  /**
+   * Kiểu ôn của phiên. "auto" không phải một dạng câu hỏi mà là chính sách chọn
+   * kiểu cho từng thẻ (xem `pickReviewType`) — kiểu THẬT của thẻ đang học tính
+   * riêng ở `currentType`.
+   */
+  const [sessionType, setSessionType] = useState<SessionReviewType>("flashcard");
   const [limit, setLimit] = useState(0);
   const [shuffle, setShuffle] = useState(false);
 
@@ -160,17 +173,24 @@ export default function StudyScreen() {
     deckId === "today" ? "due" : deckId === "weak" ? "weak" : "deck";
   const meta = SOURCE_META[kind];
 
+  /**
+   * Thẻ tạm treo (leech) bị loại khỏi MỌI nguồn học, kể cả "Ôn tất cả" và "Bạn
+   * hay quên" — treo mà vẫn hiện trong phiên thì thao tác treo vô nghĩa.
+   * `buildDueQueue` cũng tự lọc; đây là chốt cho các chế độ không qua hàng đợi.
+   */
   const load = useCallback(async () => {
+    const usable = (list: CardWithProgress[]) => list.filter((c) => !isSuspended(c));
+
     if (kind === "due") {
       const queue = await fetchDueQueueAllDecks(settings.newPerDay);
-      setAll(queue.cards);
+      setAll(usable(queue.cards));
       setHeldBack(queue.newHeldBack);
       return;
     }
     if (kind === "weak") {
       // Xếp hạng theo số lần quên rồi lấy thẻ đầy đủ theo đúng thứ tự đó.
       const ranked = await fetchWeakWords(WEAK_SESSION_SIZE);
-      setAll(await fetchCardsByIds(ranked.map((w) => w.cardId)));
+      setAll(usable(await fetchCardsByIds(ranked.map((w) => w.cardId))));
       return;
     }
     if (!deckId) return;
@@ -180,7 +200,7 @@ export default function StudyScreen() {
       fetchCardsWithProgress(deckId),
       resolvePolicy(settings.newPerDay),
     ]);
-    setAll(cards);
+    setAll(usable(cards));
     setPolicy(queuePolicy);
   }, [kind, deckId, settings.newPerDay]);
 
@@ -195,6 +215,25 @@ export default function StudyScreen() {
   const dueQueue = useMemo(() => buildDueQueue(all, policy), [all, policy]);
   const dueCount = dueQueue.cards.length;
 
+  /**
+   * Tập thẻ của phiên theo Mode đang chọn — chỉ nguồn "deck" mới lọc theo Mode,
+   * due/weak đã được lọc từ lúc nạp. Tính ở đây (không phải trong `start`) để
+   * các con số ở màn chuẩn bị nói về **đúng tập thẻ sắp học**.
+   */
+  const pool = useMemo(
+    () =>
+      kind !== "deck"
+        ? all
+        : mode === "weak"
+          ? all.filter(isWeak)
+          : mode === "due"
+            ? dueQueue.cards
+            : all,
+    [kind, all, mode, dueQueue]
+  );
+  /** Số thẻ có ví dụ khoét được chỗ trống — phiên cloze chỉ lấy được các thẻ này. */
+  const clozeCount = useMemo(() => pool.filter(hasCloze).length, [pool]);
+
   useEffect(() => {
     if (kind !== "deck" || inited || all.length === 0) return;
     setInited(true);
@@ -202,16 +241,10 @@ export default function StudyScreen() {
   }, [all, dueCount, inited, kind]);
 
   function start() {
-    // Chỉ nguồn "deck" mới lọc theo Mode; due/weak đã được lọc từ lúc nạp.
-    const pool =
-      kind !== "deck"
-        ? all
-        : mode === "weak"
-          ? all.filter(isWeak)
-          : mode === "due"
-            ? dueQueue.cards
-            : all;
-    let list = shuffle ? shuffleArr(pool) : orderCards(pool);
+    // Phiên cloze chỉ gồm thẻ khoét được chỗ trống (khác chế độ "Tự động", ở đó
+    // thẻ thiếu dữ liệu được hạ xuống kiểu khác chứ không bị bỏ).
+    const eligible = sessionType === "cloze" ? pool.filter(hasCloze) : pool;
+    let list = shuffle ? shuffleArr(eligible) : orderCards(eligible);
     if (limit > 0) list = list.slice(0, limit);
     setQueue(list);
     setIndex(0);
@@ -229,6 +262,15 @@ export default function StudyScreen() {
   }
 
   const current = queue[index];
+
+  /**
+   * Kiểu ôn THẬT của thẻ đang học. Tất định theo dữ liệu thẻ nên không đổi giữa
+   * hai lần render (đổi giữa phiên là câu hỏi tự biến dạng dưới tay người học).
+   */
+  const currentType: ReviewType = useMemo(() => {
+    if (sessionType !== "auto") return sessionType;
+    return current ? pickReviewType(current, all) : "flashcard";
+  }, [sessionType, current, all]);
 
   // Tự phát âm khi lật thẻ (nếu bật trong Cài đặt).
   useEffect(() => {
@@ -389,24 +431,30 @@ export default function StudyScreen() {
 
           <Text style={styles.optLabel}>Kiểu ôn</Text>
           <View style={styles.chipRow}>
-            {REVIEW_TYPES.map((rt) => {
-              // Cả hai chiều trắc nghiệm đều cần đủ thẻ để dựng đáp án nhiễu.
-              const disabled = MCQ_TYPES.includes(rt.value) && all.length < 4;
+            {SESSION_TYPES.map((rt) => {
+              // "Tự động" không bao giờ bị khóa: nó tự hạ xuống kiểu khả thi cho
+              // từng thẻ, nên bộ thẻ nhỏ / không có ví dụ vẫn học được.
+              const disabled =
+                rt.value === "auto"
+                  ? false
+                  : // Cả hai chiều trắc nghiệm đều cần đủ thẻ để dựng đáp án nhiễu.
+                    (MCQ_TYPES.includes(rt.value as ReviewType) && all.length < 4) ||
+                    (rt.value === "cloze" && clozeCount === 0);
               return (
                 <Pressable
                   key={rt.value}
-                  onPress={() => setReviewType(rt.value)}
+                  onPress={() => setSessionType(rt.value)}
                   disabled={disabled}
                   style={[
                     styles.chip,
-                    reviewType === rt.value && styles.chipActive,
+                    sessionType === rt.value && styles.chipActive,
                     disabled && styles.modeDisabled,
                   ]}
                 >
                   <Text
                     style={[
                       styles.chipText,
-                      reviewType === rt.value && styles.chipTextActive,
+                      sessionType === rt.value && styles.chipTextActive,
                     ]}
                   >
                     {rt.label}
@@ -415,6 +463,19 @@ export default function StudyScreen() {
               );
             })}
           </View>
+          {sessionType === "auto" && (
+            <Text style={styles.quotaNote}>
+              Mỗi thẻ một kiểu, khó dần theo mức thuộc: từ mới thì lật thẻ, chưa
+              thuộc thì trắc nghiệm, đang thuộc thì điền chỗ trống / Việt → Anh,
+              đã thuộc thì gõ lại và nghe.
+            </Text>
+          )}
+          {sessionType === "cloze" && clozeCount < pool.length && (
+            <Text style={styles.quotaNote}>
+              Chỉ {clozeCount}/{pool.length} thẻ có ví dụ chứa từ để khoét chỗ
+              trống — phiên này sẽ chỉ gồm những thẻ đó.
+            </Text>
+          )}
 
           <Text style={styles.optLabel}>Số thẻ/phiên</Text>
           <View style={styles.chipRow}>
@@ -509,6 +570,10 @@ export default function StudyScreen() {
         <View style={styles.progressRow}>
           <Text style={styles.progressLabel}>
             Đang học: {index + 1}/{queue.length} từ
+            {/* Chế độ Tự động đổi kiểu theo từng thẻ — không nói ra thì người
+                học tưởng app đang lỗi khi câu hỏi đột nhiên khác dạng. */}
+            {sessionType === "auto" &&
+              ` · ${REVIEW_TYPES.find((r) => r.value === currentType)?.label}`}
           </Text>
           {history.length > 0 && (
             <Pressable onPress={() => void undo()} disabled={undoing}>
@@ -523,26 +588,26 @@ export default function StudyScreen() {
         </View>
 
         <View style={styles.cardWrap}>
-          {current && reviewType === "flashcard" && (
+          {current && currentType === "flashcard" && (
             <FlashcardFlip
               card={current}
               flipped={flipped}
               onFlip={() => setFlipped((f) => !f)}
             />
           )}
-          {current && reviewType !== "flashcard" && (
+          {current && currentType !== "flashcard" && (
             <QuizCard
               key={`${current.id}:${attempt}`}
               card={current}
               pool={all}
-              type={reviewType}
+              type={currentType}
               autoSpeak={settings.autoSpeak}
               onAnswered={handleQuizAnswer}
             />
           )}
         </View>
 
-        {reviewType === "flashcard" &&
+        {currentType === "flashcard" &&
           (flipped ? (
             <View style={styles.assessRow}>
               <Button
