@@ -26,6 +26,7 @@ import {
   moveCards,
   resetProgress,
   importCards,
+  setCardSuspended,
 } from "@/lib/cards";
 import { fetchDecks } from "@/lib/decks";
 import { pickAndParseXlsx } from "@/lib/import/xlsx";
@@ -40,7 +41,8 @@ import {
   STATUS_ORDER,
   masteredPercent,
 } from "@/lib/status";
-import { computeStats, UNLIMITED, type QueuePolicy } from "@/lib/queue";
+import { computeStats, isSuspended, UNLIMITED, type QueuePolicy } from "@/lib/queue";
+import { isLeech } from "@/lib/srs";
 import { resolvePolicy } from "@/lib/policy";
 import { useSettings } from "@/lib/settings";
 import { CardRow } from "@/components/card/CardRow";
@@ -54,6 +56,15 @@ import { radius, spacing, type ThemeColors } from "@/lib/theme";
 import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 const statusOf = (c: CardWithProgress): CardStatus => c.progress?.status ?? "new";
+/** Quên quá nhiều lần ở giai đoạn ôn giãn cách — ôn tiếp gần như vô ích. */
+const leechOf = (c: CardWithProgress) => isLeech(c.progress?.lapses ?? 0);
+
+/**
+ * Bộ lọc danh sách thẻ. "suspended" nằm cùng chỗ với các trạng thái học vì với
+ * người dùng nó cũng là một cách phân loại thẻ — và không có lối vào này thì thẻ
+ * đã treo bị lẫn mất trong bộ thẻ lớn, không còn cách nào bỏ treo.
+ */
+type CardFilter = CardStatus | "all" | "suspended";
 
 export default function DeckDetailScreen() {
   const colors = useThemeColors();
@@ -66,7 +77,7 @@ export default function DeckDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<CardStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<CardFilter>("all");
 
   // Chọn nhiều thẻ (hành động hàng loạt)
   const [selectMode, setSelectMode] = useState(false);
@@ -113,7 +124,11 @@ export default function DeckDetailScreen() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return cards.filter((c) => {
-      if (statusFilter !== "all" && statusOf(c) !== statusFilter) return false;
+      if (statusFilter === "suspended") {
+        if (!isSuspended(c)) return false;
+      } else if (statusFilter !== "all" && statusOf(c) !== statusFilter) {
+        return false;
+      }
       if (!q) return true;
       return (
         c.term.toLowerCase().includes(q) ||
@@ -142,6 +157,44 @@ export default function DeckDetailScreen() {
         },
       },
     ]);
+  }
+
+  /**
+   * Tạm treo / bỏ treo. Lời xác nhận cố tình nêu **lối thoát khác** cho thẻ hay
+   * quên: sửa nghĩa cho ngắn gọn hơn (bản web) hoặc thêm mẹo nhớ. Treo là biện
+   * pháp cuối, không phải biện pháp đầu.
+   */
+  function handleToggleSuspend(card: Card) {
+    const full = cards.find((c) => c.id === card.id);
+    const suspended = !!full && isSuspended(full);
+
+    const apply = async () => {
+      try {
+        await setCardSuspended(card.id, !suspended);
+        load();
+      } catch (e) {
+        Alert.alert("Lỗi", (e as Error).message);
+      }
+    };
+
+    if (suspended) {
+      void apply();
+      return;
+    }
+    const lapses = full?.progress?.lapses ?? 0;
+    Alert.alert(
+      "Tạm treo từ này",
+      [
+        lapses > 0 ? `Bạn đã quên "${card.term}" ${lapses} lần.` : "",
+        "Thẻ sẽ được rút khỏi các phiên ôn nhưng vẫn nằm trong bộ thẻ — bỏ treo lại được bất cứ lúc nào.",
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+      [
+        { text: "Hủy", style: "cancel" },
+        { text: "Tạm treo", onPress: () => void apply() },
+      ]
+    );
   }
 
   async function handleImport() {
@@ -352,6 +405,13 @@ export default function DeckDetailScreen() {
                 onPress={() => setStatusFilter(s)}
               />
             ))}
+            {stats.suspended > 0 && (
+              <FilterChip
+                label={`Tạm treo ${stats.suspended}`}
+                active={statusFilter === "suspended"}
+                onPress={() => setStatusFilter("suspended")}
+              />
+            )}
           </ScrollView>
         </View>
       )}
@@ -380,6 +440,7 @@ export default function DeckDetailScreen() {
               {stats.due > 0 && (
                 <Text style={styles.due}> · {stats.due} cần ôn</Text>
               )}
+              {stats.suspended > 0 && ` · ${stats.suspended} tạm treo`}
             </Text>
             {!!error && <Text style={styles.error}>{error}</Text>}
 
@@ -515,6 +576,9 @@ export default function DeckDetailScreen() {
             selectMode={selectMode}
             selected={selected.has(item.id)}
             onToggleSelect={toggleSelect}
+            suspended={isSuspended(item)}
+            leech={leechOf(item)}
+            onToggleSuspend={handleToggleSuspend}
           />
         )}
       />

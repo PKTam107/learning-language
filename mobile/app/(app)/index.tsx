@@ -20,7 +20,7 @@ import {
   buildDailyChallenge,
   type DailyChallenge as Challenge,
 } from "@/lib/challenge";
-import { emptyByStatus } from "@/lib/status";
+import { emptyStats } from "@/lib/queue";
 import { useSettings } from "@/lib/settings";
 import { DeckCard } from "@/components/deck/DeckCard";
 import { DeckForm } from "@/components/deck/DeckForm";
@@ -96,14 +96,7 @@ export default function DecksScreen() {
 
   const agg = useMemo<DeckStats>(
     () =>
-      account ?? {
-        total: 0,
-        byStatus: emptyByStatus(),
-        due: 0,
-        dueReviews: 0,
-        newToday: 0,
-        newHeldBack: 0,
-      },
+      account ?? emptyStats(),
     [account]
   );
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Pencil, ArrowLeftRight, Trash2 } from "lucide-react";
+import { Pencil, ArrowLeftRight, Trash2, PauseCircle, PlayCircle } from "lucide-react";
 import type { Card, CardStatus, CardWithProgress, Deck, DraftCard } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -14,10 +14,12 @@ import {
   deleteCards,
   moveCards,
   resetProgress,
+  setCardSuspended,
 } from "@/lib/db/cards";
 import { fetchDecks } from "@/lib/db/decks";
 import { STATUS_META, STATUS_ORDER, masteredPercent } from "@/lib/status";
-import { computeStats, UNLIMITED, type QueuePolicy } from "@/lib/queue";
+import { computeStats, isSuspended, UNLIMITED, type QueuePolicy } from "@/lib/queue";
+import { isLeech } from "@/lib/srs";
 import { resolvePolicy } from "@/lib/db/policy";
 import { useSettings } from "@/lib/settings";
 import { Button } from "@/components/ui/Button";
@@ -35,8 +37,17 @@ import { ImportButton } from "@/components/deck/ImportButton";
 import { ExportMenu } from "@/components/deck/ExportMenu";
 
 const statusOf = (c: CardWithProgress): CardStatus => c.progress?.status ?? "new";
+/** Quên quá nhiều lần ở giai đoạn ôn giãn cách — ôn tiếp gần như vô ích. */
+const leechOf = (c: CardWithProgress) => isLeech(c.progress?.lapses ?? 0);
 
 type Mode = "detail" | "edit" | "move";
+
+/**
+ * Bộ lọc danh sách thẻ. "suspended" nằm cùng chỗ với các trạng thái học vì với
+ * người dùng nó cũng là một cách phân loại thẻ — và không có lối vào này thì thẻ
+ * đã treo bị lẫn mất trong bộ thẻ lớn, không còn cách nào bỏ treo.
+ */
+type CardFilter = CardStatus | "all" | "suspended";
 
 export function DeckDetail({ deckId }: { deckId: string }) {
   const [deck, setDeck] = useState<Deck | null>(null);
@@ -45,7 +56,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
   const [loading, setLoading] = useState(true);
   const { settings, ready } = useSettings();
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<CardStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<CardFilter>("all");
 
   // Modal đang mở cho 1 card cụ thể
   const [active, setActive] = useState<{ card: Card; mode: Mode } | null>(null);
@@ -88,7 +99,11 @@ export function DeckDetail({ deckId }: { deckId: string }) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return cards.filter((c) => {
-      if (statusFilter !== "all" && statusOf(c) !== statusFilter) return false;
+      if (statusFilter === "suspended") {
+        if (!isSuspended(c)) return false;
+      } else if (statusFilter !== "all" && statusOf(c) !== statusFilter) {
+        return false;
+      }
       if (!q) return true;
       return (
         c.term.toLowerCase().includes(q) ||
@@ -162,6 +177,33 @@ export function DeckDetail({ deckId }: { deckId: string }) {
       return;
     await deleteCard(card.id);
     load();
+  }
+
+  /**
+   * Tạm treo / bỏ treo. Lời xác nhận cố tình nêu **hai lối thoát khác** cho thẻ
+   * hay quên: sửa thẻ (nghĩa dài dòng hoặc mơ hồ là nguyên nhân thường gặp nhất)
+   * hoặc thêm ghi chú/mẹo nhớ. Treo là biện pháp cuối, không phải biện pháp đầu.
+   */
+  async function toggleSuspend(card: CardWithProgress) {
+    const suspended = isSuspended(card);
+    if (!suspended) {
+      const lapses = card.progress?.lapses ?? 0;
+      const msg = [
+        `Tạm treo từ "${card.term}"?`,
+        lapses > 0 ? `Bạn đã quên từ này ${lapses} lần.` : "",
+        "Thẻ sẽ được rút khỏi các phiên ôn nhưng vẫn nằm trong bộ thẻ — bỏ treo lại được bất cứ lúc nào.",
+        "Trước khi treo, thử sửa thẻ cho nghĩa ngắn gọn hơn hoặc thêm một mẹo nhớ vào ghi chú.",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      if (!confirm(msg)) return;
+    }
+    try {
+      await setCardSuspended(card.id, !suspended);
+      await load();
+    } catch (e) {
+      alert((e as Error).message);
+    }
   }
 
   // ----- Chọn nhiều thẻ -----
@@ -292,6 +334,7 @@ export function DeckDetail({ deckId }: { deckId: string }) {
             {stats.due > 0 && (
               <span className="text-amber-600 dark:text-amber-400"> · {stats.due} cần ôn</span>
             )}
+            {stats.suspended > 0 && ` · ${stats.suspended} tạm treo`}
           </p>
         </div>
         {/* Màn hẹp: nút phụ tự xuống hàng, "Học ngay" tràn hàng cho dễ bấm. */}
@@ -345,6 +388,15 @@ export function DeckDetail({ deckId }: { deckId: string }) {
                 {STATUS_META[s].label} {stats.byStatus[s]}
               </FilterChip>
             ))}
+            {stats.suspended > 0 && (
+              <FilterChip
+                active={statusFilter === "suspended"}
+                onClick={() => setStatusFilter("suspended")}
+              >
+                <PauseCircle size={14} />
+                Tạm treo {stats.suspended}
+              </FilterChip>
+            )}
           </div>
         </>
       )}
@@ -420,7 +472,27 @@ export function DeckDetail({ deckId }: { deckId: string }) {
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <StatusDot status={statusOf(card)} />
-                  <span className="truncate font-semibold">{card.term}</span>
+                  <span
+                    className={`truncate font-semibold ${
+                      isSuspended(card) ? "text-slate-400 dark:text-slate-500" : ""
+                    }`}
+                  >
+                    {card.term}
+                  </span>
+                  {/* Treo và "hay quên" loại trừ nhau: treo rồi thì nhắc nó hay
+                      quên nữa cũng chẳng để làm gì. */}
+                  {isSuspended(card) ? (
+                    <Tag>Tạm treo</Tag>
+                  ) : (
+                    leechOf(card) && (
+                      <Tag
+                        danger
+                        title={`Đã quên ${card.progress?.lapses ?? 0} lần — nên sửa thẻ hoặc tạm treo`}
+                      >
+                        Hay quên
+                      </Tag>
+                    )
+                  )}
                   {/* Phiên âm là phụ — màn hẹp ẩn đi, nhường chỗ cho từ chính. */}
                   {card.phonetic && (
                     <span className="hidden shrink-0 text-sm text-slate-400 sm:inline dark:text-slate-500">
@@ -446,6 +518,16 @@ export function DeckDetail({ deckId }: { deckId: string }) {
                   </IconBtn>
                   <IconBtn label="Chuyển bộ thẻ" onClick={() => openMove(card)}>
                     <ArrowLeftRight size={16} />
+                  </IconBtn>
+                  <IconBtn
+                    label={isSuspended(card) ? "Bỏ treo, ôn lại từ này" : "Tạm treo từ này"}
+                    onClick={() => void toggleSuspend(card)}
+                  >
+                    {isSuspended(card) ? (
+                      <PlayCircle size={16} />
+                    ) : (
+                      <PauseCircle size={16} />
+                    )}
                   </IconBtn>
                   <IconBtn
                     label="Xóa từ"
@@ -627,5 +709,29 @@ function IconBtn({
     >
       {children}
     </button>
+  );
+}
+
+/** Nhãn nhỏ cạnh từ (tạm treo / hay quên). */
+function Tag({
+  children,
+  danger,
+  title,
+}: {
+  children: React.ReactNode;
+  danger?: boolean;
+  title?: string;
+}) {
+  return (
+    <span
+      title={title}
+      className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${
+        danger
+          ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
+          : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+      }`}
+    >
+      {children}
+    </span>
   );
 }

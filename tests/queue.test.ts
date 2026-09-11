@@ -7,6 +7,7 @@ import {
   dueTodayCount,
   isDueReview,
   isNewCard,
+  isSuspended,
   remainingNew,
   splitDue,
 } from "@/lib/queue";
@@ -22,6 +23,11 @@ const newCard = (id: string): TestCard => ({ id });
 const learned = (id: string, dueInDays: number): TestCard => ({
   id,
   progress: { last_reviewed_at: iso(-1), next_due_at: iso(dueInDays) },
+});
+/** Thẻ đã bị tạm treo (leech) — dù tới hạn hay chưa học. */
+const suspend = (card: TestCard): TestCard => ({
+  ...card,
+  progress: { ...(card.progress ?? {}), suspended_at: iso(-1) },
 });
 
 describe("phân loại thẻ", () => {
@@ -42,6 +48,51 @@ describe("phân loại thẻ", () => {
   it("dòng tiến độ thiếu next_due_at vẫn coi là tới hạn", () => {
     const card = { id: "x", progress: { last_reviewed_at: iso(-2), next_due_at: null } };
     expect(isDueReview(card, NOW)).toBe(true);
+  });
+});
+
+describe("thẻ tạm treo (leech)", () => {
+  it("thẻ treo không tính là tới hạn ôn lại", () => {
+    expect(isSuspended(suspend(learned("a", -1)))).toBe(true);
+    expect(isSuspended(learned("a", -1))).toBe(false);
+    expect(isDueReview(suspend(learned("a", -1)), NOW)).toBe(false);
+  });
+
+  it("bị loại khỏi hàng đợi, KỂ CẢ khi là từ mới chưa học", () => {
+    const cards = [
+      learned("due", -1),
+      suspend(learned("due-suspended", -1)),
+      newCard("new"),
+      suspend(newCard("new-suspended")),
+    ];
+    const q = buildDueQueue(cards, { newPerDay: 15, introducedToday: 0 }, NOW);
+    expect(q.cards.map((c) => c.id)).toEqual(["due", "new"]);
+    expect(q.reviewCount).toBe(1);
+    expect(q.newCount).toBe(1);
+  });
+
+  it("thẻ treo không ăn hạn mức từ mới, cũng không bị coi là đang chờ", () => {
+    // Treo mà vẫn đếm vào newHeldBack thì app báo "còn N từ mới đang chờ" cho
+    // những từ người dùng vừa bảo là đừng bắt học nữa.
+    const cards = [newCard("n1"), suspend(newCard("n2")), suspend(newCard("n3"))];
+    const q = buildDueQueue(cards, { newPerDay: 1, introducedToday: 0 }, NOW);
+    expect(q.cards.map((c) => c.id)).toEqual(["n1"]);
+    expect(q.newHeldBack).toBe(0);
+  });
+
+  it("vẫn nằm trong bộ thẻ: đếm ở total và byStatus, chỉ không ở due", () => {
+    const cards = [
+      { ...learned("a", -1), progress: { ...learned("a", -1).progress, status: "hard" } },
+      {
+        ...suspend(learned("b", -1)),
+        progress: { ...suspend(learned("b", -1)).progress, status: "hard" },
+      },
+    ] as never[];
+    const stats = computeStats(cards, { newPerDay: 0, introducedToday: 0 }, NOW);
+    expect(stats.total).toBe(2);
+    expect(stats.byStatus.hard).toBe(2);
+    expect(stats.suspended).toBe(1);
+    expect(stats.due).toBe(1);
   });
 });
 
