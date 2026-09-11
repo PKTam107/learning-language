@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Volume2, X } from "lucide-react";
 import type { CardWithProgress } from "@/types";
-import { buildMcq, checkTyped, type ReviewType } from "@/lib/quiz";
+import { buildCloze, buildMcq, checkCloze, checkTyped, type ReviewType } from "@/lib/quiz";
 import { speak } from "@/lib/speak";
 import { Button } from "@/components/ui/Button";
 import { AudioButton } from "./AudioButton";
@@ -32,6 +32,15 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
     [card.id, type]
   );
 
+  // Câu khoét chỗ trống dựng từ chính ví dụ của thẻ (không cần pool).
+  const cloze = useMemo(
+    () => (type === "cloze" ? buildCloze(card) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [card.id, type]
+  );
+  /** Ba kiểu gõ tay: gõ từ, nghe, điền chỗ trống. */
+  const isTyped = !isMcq;
+
   const [selected, setSelected] = useState<number | null>(null);
   const [text, setText] = useState("");
   const [result, setResult] = useState<boolean | null>(null);
@@ -47,7 +56,7 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
       spokeRef.current = true;
       say();
     }
-    if (type === "typing" || type === "listening") {
+    if (isTyped) {
       inputRef.current?.focus();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -66,13 +75,21 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
 
   function submitText() {
     if (result !== null) return;
-    reveal(checkTyped(text, card.term));
+    reveal(
+      cloze ? checkCloze(text, cloze, card.term) : checkTyped(text, card.term)
+    );
   }
 
   const answered = result !== null;
+  /**
+   * Không dựng được câu hỏi cho thẻ này (thiếu thẻ làm nhiễu, hoặc không có ví
+   * dụ chứa từ). Hiện thẳng đáp án để tự đánh giá — dựng câu hỏng còn tệ hơn.
+   */
+  const unbuildable = (isMcq && !mcq) || (type === "cloze" && !cloze);
   // Đáp án đúng để hiện lúc phản hồi: chỉ chiều nhận diện (mcq) mới là nghĩa
   // tiếng Việt; ba kiểu còn lại đáp án đều là từ tiếng Anh.
-  const correctAnswer = type === "mcq" ? card.meaning_vi : card.term;
+  const correctAnswer =
+    type === "mcq" ? card.meaning_vi : (cloze?.answer ?? card.term);
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
@@ -102,6 +119,42 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
           )}
           <AudioButton url={card.audio_us} text={card.term} label="US" />
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Chọn nghĩa đúng:</p>
+        </div>
+      ) : type === "cloze" ? (
+        <div className="flex flex-col gap-2 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+            Điền vào chỗ trống
+          </p>
+          {cloze ? (
+            <p className="text-lg leading-8 text-slate-800 dark:text-slate-100">
+              {cloze.before}
+              <span
+                className={`mx-0.5 inline-block min-w-[5rem] border-b-2 px-2 font-semibold ${
+                  answered
+                    ? result
+                      ? "border-green-600 text-green-700 dark:text-green-400"
+                      : "border-red-500 text-red-500"
+                    : "border-brand text-transparent"
+                }`}
+              >
+                {/* Trước khi trả lời vẫn phải chiếm chỗ, không thì câu bị co lại. */}
+                {answered ? cloze.answer : "\u00a0"}
+              </span>
+              {cloze.after}
+            </p>
+          ) : (
+            <p className="text-slate-500 dark:text-slate-400">
+              Thẻ này chưa có ví dụ chứa từ để khoét chỗ trống.
+            </p>
+          )}
+          {/* Chỗ trống trong câu có thể điền được nhiều từ — nghĩa tiếng Việt
+              chốt lại là đang hỏi từ nào. Đây là bài "dùng đúng từ trong ngữ
+              cảnh", không phải bài đoán chữ. */}
+          {!!card.meaning_vi && (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Gợi ý: {card.meaning_vi}
+            </p>
+          )}
         </div>
       ) : type === "typing" ? (
         <div className="flex flex-col items-center gap-1 text-center">
@@ -163,11 +216,10 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
               );
             })}
           </div>
-        ) : isMcq ? (
-          // Không dựng được trắc nghiệm cho thẻ này → hiện đáp án để tự đánh giá.
+        ) : unbuildable ? (
           <p className="text-center text-slate-500 dark:text-slate-400">
-            Không đủ dữ liệu để tạo trắc nghiệm. Đáp án:{" "}
-            {reverse ? card.term : card.meaning_vi}
+            Không đủ dữ liệu để tạo câu hỏi. Đáp án:{" "}
+            {type === "mcq" ? card.meaning_vi : card.term}
           </p>
         ) : (
           <input
@@ -207,16 +259,22 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
           >
             {result ? "✓ Chính xác!" : `✗ Đáp án: ${correctAnswer}`}
           </p>
-          {/* Chiều nhận diện đã hiện nghĩa ngay trong đáp án → không nhắc lại. */}
-          {type !== "mcq" && !!card.meaning_vi && (
+          {/* Chiều nhận diện đã hiện nghĩa ngay trong đáp án → không nhắc lại.
+              Cloze thì nghĩa đã nằm ở phần gợi ý của đề. */}
+          {type !== "mcq" && type !== "cloze" && !!card.meaning_vi && (
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{card.meaning_vi}</p>
+          )}
+          {!!cloze?.translation && (
+            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+              {cloze.translation}
+            </p>
           )}
         </div>
       )}
 
       {/* ----- Hành động ----- */}
       <div className="mt-5">
-        {!answered && !isMcq && (
+        {!answered && isTyped && !unbuildable && (
           <Button
             size="lg"
             className="w-full"
@@ -235,7 +293,7 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
             Câu tiếp →
           </Button>
         )}
-        {!answered && isMcq && !mcq && (
+        {!answered && unbuildable && (
           <Button
             size="lg"
             className="w-full"

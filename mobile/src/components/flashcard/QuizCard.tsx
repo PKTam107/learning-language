@@ -8,7 +8,13 @@ import {
   View,
 } from "react-native";
 import type { CardWithProgress } from "@/types";
-import { buildMcq, checkTyped, type ReviewType } from "@/lib/quiz";
+import {
+  buildCloze,
+  buildMcq,
+  checkCloze,
+  checkTyped,
+  type ReviewType,
+} from "@/lib/quiz";
 import { playPronunciation } from "@/lib/audio";
 import { AudioButton } from "@/components/flashcard/AudioButton";
 import { Button } from "@/components/ui/Button";
@@ -42,6 +48,15 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
     [card.id, type]
   );
 
+  // Câu khoét chỗ trống dựng từ chính ví dụ của thẻ (không cần pool).
+  const cloze = useMemo(
+    () => (type === "cloze" ? buildCloze(card) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [card.id, type]
+  );
+  /** Ba kiểu gõ tay: gõ từ, nghe, điền chỗ trống. */
+  const isTyped = !isMcq;
+
   const [selected, setSelected] = useState<number | null>(null);
   const [text, setText] = useState("");
   const [result, setResult] = useState<boolean | null>(null);
@@ -72,13 +87,22 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
 
   function submitText() {
     if (result !== null) return;
-    reveal(checkTyped(text, card.term));
+    reveal(
+      cloze ? checkCloze(text, cloze, card.term) : checkTyped(text, card.term)
+    );
   }
 
   const answered = result !== null;
   // Đáp án đúng để hiện lúc phản hồi: chỉ chiều nhận diện (mcq) mới là nghĩa
-  // tiếng Việt; ba kiểu còn lại đáp án đều là từ tiếng Anh.
-  const correctAnswer = type === "mcq" ? card.meaning_vi : card.term;
+  // tiếng Việt; các kiểu còn lại đáp án đều là từ tiếng Anh (cloze thì đúng
+  // dạng chia có trong câu).
+  const correctAnswer =
+    type === "mcq" ? card.meaning_vi : (cloze?.answer ?? card.term);
+  /**
+   * Không dựng được câu hỏi cho thẻ này (thiếu thẻ làm nhiễu, hoặc không có ví
+   * dụ chứa từ). Hiện thẳng đáp án để tự đánh giá — dựng câu hỏng còn tệ hơn.
+   */
+  const unbuildable = (isMcq && !mcq) || (type === "cloze" && !cloze);
 
   return (
     <ScrollView
@@ -104,6 +128,34 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
           {!!card.phonetic && <Text style={styles.phonetic}>{card.phonetic}</Text>}
           <AudioButton url={card.audio_us} text={card.term} label="US" />
           <Text style={styles.ask}>Chọn nghĩa đúng:</Text>
+        </View>
+      ) : type === "cloze" ? (
+        <View style={styles.prompt}>
+          <Text style={styles.qLabel}>Điền vào chỗ trống</Text>
+          {cloze ? (
+            <Text style={styles.sentence}>
+              {cloze.before}
+              <Text
+                style={[
+                  styles.blank,
+                  answered && (result ? styles.blankOk : styles.blankBad),
+                ]}
+              >
+                {answered ? cloze.answer : "______"}
+              </Text>
+              {cloze.after}
+            </Text>
+          ) : (
+            <Text style={styles.fallback}>
+              Thẻ này chưa có ví dụ chứa từ để khoét chỗ trống.
+            </Text>
+          )}
+          {/* Chỗ trống trong câu có thể điền được nhiều từ — nghĩa tiếng Việt
+              chốt lại là đang hỏi từ nào. Đây là bài "dùng đúng từ trong ngữ
+              cảnh", không phải bài đoán chữ. */}
+          {!!card.meaning_vi && (
+            <Text style={styles.ask}>Gợi ý: {card.meaning_vi}</Text>
+          )}
         </View>
       ) : type === "typing" ? (
         <View style={styles.prompt}>
@@ -149,11 +201,10 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
             );
           })}
         </View>
-      ) : isMcq ? (
-        // Không dựng được trắc nghiệm cho thẻ này → hiện đáp án để tự đánh giá.
+      ) : unbuildable ? (
         <Text style={styles.fallback}>
-          Không đủ dữ liệu để tạo trắc nghiệm. Đáp án:{" "}
-          {reverse ? card.term : card.meaning_vi}
+          Không đủ dữ liệu để tạo câu hỏi. Đáp án:{" "}
+          {type === "mcq" ? card.meaning_vi : card.term}
         </Text>
       ) : (
         <TextInput
@@ -178,16 +229,20 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
           <Text style={[styles.fbText, result ? styles.fbTextOk : styles.fbTextBad]}>
             {result ? "✓ Chính xác!" : `✗ Đáp án: ${correctAnswer}`}
           </Text>
-          {/* Chiều nhận diện đã hiện nghĩa ngay trong đáp án → không nhắc lại. */}
-          {type !== "mcq" && (
+          {/* Chiều nhận diện đã hiện nghĩa ngay trong đáp án → không nhắc lại.
+              Cloze thì nghĩa đã nằm ở phần gợi ý của đề. */}
+          {type !== "mcq" && type !== "cloze" && (
             <Text style={styles.fbMeaning}>{card.meaning_vi}</Text>
+          )}
+          {!!cloze?.translation && (
+            <Text style={styles.fbMeaning}>{cloze.translation}</Text>
           )}
         </View>
       )}
 
       {/* ----- Hành động ----- */}
       <View style={styles.actions}>
-        {!answered && !isMcq && (
+        {!answered && isTyped && !unbuildable && (
           <Button
             title="Kiểm tra"
             onPress={submitText}
@@ -197,7 +252,7 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
         {answered && (
           <Button title="Câu tiếp →" onPress={() => onAnswered(!!result)} />
         )}
-        {!answered && isMcq && !mcq && (
+        {!answered && unbuildable && (
           <Button title="Câu tiếp →" onPress={() => onAnswered(false)} />
         )}
       </View>
@@ -256,6 +311,15 @@ const makeStyles = (colors: ThemeColors) =>
     },
     optionText: { flex: 1, fontSize: 16, color: colors.text },
     fallback: { fontSize: 15, color: colors.textMuted, textAlign: "center" },
+    sentence: {
+      fontSize: 18,
+      lineHeight: 30,
+      color: colors.text,
+      textAlign: "center",
+    },
+    blank: { fontWeight: "700", color: colors.brandDark },
+    blankOk: { color: colors.success },
+    blankBad: { color: colors.danger },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
