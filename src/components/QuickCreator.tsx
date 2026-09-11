@@ -17,12 +17,24 @@ interface QuickCreatorProps {
   defaultDeckId?: string;
   /** Callback sau khi lưu thành công. */
   onSaved?: () => void;
+  /**
+   * Từ điền sẵn vào ô nhập, và tra luôn khi modal mở (dùng cho luồng "chia sẻ
+   * từ ngoài app vào" — xem `/share`).
+   */
+  initialWord?: string;
+  /** Mở modal ngay khi mount, không chờ bấm nút "+". */
+  autoOpen?: boolean;
 }
 
 /** FAB "+" cố định + modal tạo thẻ nhanh: gõ từ → tra → sửa → lưu. */
-export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
-  const [open, setOpen] = useState(false);
-  const [word, setWord] = useState("");
+export function QuickCreator({
+  defaultDeckId,
+  onSaved,
+  initialWord,
+  autoOpen,
+}: QuickCreatorProps) {
+  const [open, setOpen] = useState(!!autoOpen);
+  const [word, setWord] = useState(initialWord ?? "");
   const [looking, setLooking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<DraftCard | null>(null);
@@ -30,6 +42,9 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
   const [deckId, setDeckId] = useState(defaultDeckId ?? "");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  /** Chỉ tra tự động MỘT lần cho `initialWord` — không thì mỗi render là một
+   *  lượt tra, ăn hết hạn mức 30 lượt/phút trong vài giây. */
+  const autoLookedRef = useRef(false);
 
   useEffect(() => {
     if (open) {
@@ -42,6 +57,15 @@ export function QuickCreator({ defaultDeckId, onSaved }: QuickCreatorProps) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [open, defaultDeckId, deckId]);
+
+  // Từ được chia sẻ từ ngoài vào: tra ngay, người dùng chỉ còn việc bấm Lưu.
+  useEffect(() => {
+    if (!open || autoLookedRef.current) return;
+    if (!initialWord?.trim()) return;
+    autoLookedRef.current = true;
+    void handleLookup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialWord]);
 
   async function handleLookup() {
     if (!word.trim()) return;

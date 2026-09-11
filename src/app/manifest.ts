@@ -8,6 +8,20 @@ import { THEME_COLOR } from "@/lib/theme";
  *
  * Icon do `scripts/generate-icons.mjs` sinh ra trong `public/`.
  */
+
+/**
+ * `share_target` đúng chuẩn Web App Manifest: `params` là **object** ánh xạ
+ * tên tham số query (title/text/url). Kiểu của Next lại khai báo `params` là
+ * mảng `{name, value}` — không khớp chuẩn, mà Next thì chỉ JSON.stringify
+ * object này ra file, nên cast ở đúng một trường và giữ nguyên type-check cho
+ * phần còn lại của manifest.
+ */
+const SHARE_TARGET = {
+  action: "/share",
+  method: "get",
+  params: { title: "title", text: "text", url: "url" },
+} as unknown as MetadataRoute.Manifest["share_target"];
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "LinguaCards — Học từ vựng qua Flashcard",
@@ -37,5 +51,17 @@ export default function manifest(): MetadataRoute.Manifest {
       { name: "Bộ thẻ", short_name: "Bộ thẻ", url: "/decks" },
       { name: "Tiến độ học", short_name: "Tiến độ", url: "/progress" },
     ],
+    /**
+     * Nhận nội dung từ thao tác **Chia sẻ** của hệ điều hành: bôi đen một từ ở
+     * Chrome/Kindle/YouTube → Chia sẻ → LinguaCards → mở thẳng ô tạo thẻ đã tra
+     * sẵn (xem `app/share/page.tsx`).
+     *
+     * Dùng `method: "get"` nên không cần route handler POST và không cần
+     * multipart — mọi thứ nằm trong query string.
+     *
+     * Chỉ chạy khi app **đã được cài** ra màn hình chính; mở bằng tab trình
+     * duyệt thường thì hệ điều hành không biết tới share target này.
+     */
+    share_target: SHARE_TARGET,
   };
 }
