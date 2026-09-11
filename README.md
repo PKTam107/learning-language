@@ -11,7 +11,8 @@ MVP: **English → Vietnamese**, kiến trúc DB đã sẵn sàng cho đa ngôn 
 - **PWA** — cài được ra màn hình chính, có trang dự phòng khi mất mạng
 - **Supabase** — Postgres + Auth (Google OAuth) + RLS
 - **DictionaryAPI.dev** — phiên âm / audio / nghĩa tiếng Anh / ví dụ
-- **OpenAI / Gemini** — dịch nghĩa & ví dụ sang tiếng Việt (qua provider abstraction)
+- **Gemini (free tier) / OpenAI / MyMemory** — dịch nghĩa & ví dụ sang tiếng Việt,
+  có **chuỗi dự phòng**: provider chính hết quota thì tự rơi về MyMemory (free, không key)
 
 ## Tài liệu
 
@@ -28,6 +29,7 @@ Xem thư mục [`docs/`](./docs):
 - [10 — Sơ đồ luồng (Mermaid)](./docs/10-flows.md)
 - [11 — Thiết bị đăng nhập & rate limit](./docs/11-devices-rate-limit.md)
 - [12 — Bảo mật & quyền riêng tư](./docs/12-bao-mat.md)
+- [13 — Phân tích & đề xuất tính năng (free)](./docs/13-de-xuat-tinh-nang.md)
 
 ## Bắt đầu
 
@@ -39,7 +41,7 @@ npm install
 ### 2. Tạo Supabase project
 1. Vào https://supabase.com → New Project.
 2. Mở **SQL Editor** → chạy lần lượt các file trong [`supabase/migrations/`](./supabase/migrations)
-   **theo đúng thứ tự số** (`0001_init.sql` → `0011_harden_new_tables.sql`): dán nội dung từng file → **Run**.
+   **theo đúng thứ tự số** (`0001_init.sql` → `0012_suspend_leech.sql`): dán nội dung từng file → **Run**.
 3. Bật **Google OAuth**: Dashboard → Authentication → Providers → Google
    (tạo OAuth Client ID/Secret ở [Google Cloud Console](https://console.cloud.google.com/),
    thêm redirect URL: `https://<project>.supabase.co/auth/v1/callback`).
@@ -51,8 +53,11 @@ cp .env.example .env.local
 ```
 Điền:
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (Settings → API).
-- `AI_PROVIDER` = `openai` hoặc `gemini` + key tương ứng.
-  *(Bỏ trống key AI vẫn chạy được — chỉ là nghĩa giữ tiếng Anh, bạn tự sửa khi tạo thẻ.)*
+- `AI_PROVIDER` — để trống là tự dò theo key có sẵn (khuyến nghị `gemini`: dòng Flash có
+  free tier, lấy key ở [aistudio.google.com/apikey](https://aistudio.google.com/apikey);
+  hạn mức free theo phút chặt hơn rate limit của app nên **dự phòng là thành phần chịu tải**).
+  *(Không có key nào vẫn chạy: tự dùng MyMemory — free, không cần key. MyMemory cũng là
+  provider dự phòng khi provider chính lỗi/hết quota, đổi bằng `AI_FALLBACK`.)*
 
 ### 4. Chạy dev
 ```bash
@@ -87,8 +92,12 @@ Chi tiết (đăng nhập, tạo env, keystore, tra từ): xem [`mobile/docs/cha
 1. Đăng nhập (Google hoặc email).
 2. Tạo bộ thẻ (vd "TOEIC 900").
 3. Bấm nút **+** góc dưới phải → gõ từ → Enter → sửa nếu cần → **Lưu**.
-4. Bấm **Học ngay** → lật thẻ: chạm, **kéo/vuốt ngang** (thẻ xoay bám theo tay) hoặc phím
-   Space → đánh giá **Chưa thuộc / Tạm nhớ / Đã thuộc** (phím 1/2/3).
+4. Bấm **Học ngay** → chọn kiểu ôn (để **Tự động** thì mỗi thẻ một kiểu, khó dần theo mức
+   thuộc) → lật thẻ: chạm, **kéo/vuốt ngang** (thẻ xoay bám theo tay) hoặc phím Space →
+   đánh giá **Chưa thuộc / Tạm nhớ / Đã thuộc** (phím 1/2/3).
+
+Đã cài app ra màn hình chính thì còn một lối vào nhanh hơn: bôi đen một từ ở Chrome/app
+khác → **Chia sẻ → LinguaCards** → thẻ được tra sẵn, chỉ bấm Lưu.
 
 ## Lệnh hữu ích
 

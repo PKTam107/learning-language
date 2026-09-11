@@ -1,8 +1,9 @@
 # Current State & Development Plan — LinguaCards
 
 Đặc tả **hiện trạng thực tế (as-built)** của web app + kế hoạch phát triển tiếp.
-Cập nhật lần cuối: thêm **trang Tiến độ** (huy hiệu, heatmap 1 năm, lịch ôn) + **thử thách
-hôm nay** trên trang chủ — có cả ở web và mobile.
+Cập nhật lần cuối (đợt 1 của [13-de-xuat-tinh-nang.md](./13-de-xuat-tinh-nang.md)): **kiểu ôn
+điền chỗ trống (cloze)** + **chế độ ôn "Tự động"**, **tạm treo thẻ leech**, **chia sẻ từ ngoài
+app vào** (share target), và **chuỗi provider dịch có dự phòng**.
 
 > Các luồng dưới đây có sơ đồ ở [10 — Sơ đồ luồng](./10-flows.md).
 
@@ -27,6 +28,7 @@ hôm nay** trên trang chủ — có cả ở web và mobile.
 | `decks` | Bộ thẻ (+ `source/target_language`) | `createDeck` **hardcode `en`/`vi`** |
 | `cards` | Thẻ từ: term, phonetic, audio_us/uk, POS, meaning_vi, definitions/examples (jsonb) | |
 | `card_progress` | Tiến độ (status, review_count, last_reviewed_at) | `next_due_at`, `ease_factor` để sẵn cho SM-2 — **chưa dùng** |
+| ↳ *(0009, 0012)* | `interval_days`, `srs_phase`, `learning_step`, `lapses`, `introduced_at`, `suspended_at` | Lịch ôn thật + hạn mức từ mới + **tạm treo thẻ leech** |
 | `dictionary_cache` | Cache lookup dùng chung | Ghi qua service role |
 
 Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`.
@@ -39,10 +41,14 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
 | Cards | Thêm qua tra từ, list, xóa | [DeckDetail.tsx](../src/components/deck/DeckDetail.tsx) |
 | Tra & tạo thẻ | FAB "+" → gõ → tra → sửa (DraftEditor) → lưu; giữ modal cho flow nhanh | [QuickCreator.tsx](../src/components/QuickCreator.tsx) |
 | Lookup pipeline | cache → DictionaryAPI.dev → AI dịch → fallback dịch cả cụm nếu notFound → ghi cache | [lib/lookup.ts](../src/lib/lookup.ts) |
-| Translate providers | mymemory (default, free), openai, gemini, libretranslate | [lib/ai/index.ts](../src/lib/ai/index.ts) |
+| Translate providers | Chuỗi có dự phòng: chính theo `AI_PROVIDER` (để trống = tự dò theo key) → dự phòng `AI_FALLBACK` (mặc định mymemory, free). Rơi provider khi lỗi / sai số phần tử / **trả về y hệt input** | [lib/ai/index.ts](../src/lib/ai/index.ts), [lib/ai/chain.ts](../src/lib/ai/chain.ts) |
 | Study mode | Lật thẻ: chạm / **kéo ngang bám theo con trỏ, ngón tay** / Space; đánh giá 1/2/3, progress bar, sắp xếp ưu tiên hard→new→good→easy | [StudySession.tsx](../src/components/flashcard/StudySession.tsx) |
 | Cử chỉ lật thẻ | Góc xoay **cộng dồn** (không tua ngược) + bám theo tay khi kéo; thả tay ra lật hẳn nếu kéo quá 30% bề ngang **hoặc** vuốt nhanh. Web: Pointer Events. Mobile: gesture-handler + reanimated **worklet trên UI thread** | [flip.ts](../src/lib/flip.ts) (hàm thuần, đánh dấu `"worklet"`, nhân bản sang mobile), [FlashcardFlip.tsx](../src/components/flashcard/FlashcardFlip.tsx) |
-| Kiểu ôn đa dạng | Lật thẻ / trắc nghiệm (MCQ) / gõ từ (sai ≤1 ký tự) / nghe; tự chấm → good/hard | [quiz.ts](../src/lib/quiz.ts), [QuizCard.tsx](../src/components/flashcard/QuizCard.tsx) |
+| Kiểu ôn đa dạng | Lật thẻ / trắc nghiệm (MCQ) / gõ từ (sai ≤1 ký tự) / nghe / **cloze**; tự chấm → good/hard | [quiz.ts](../src/lib/quiz.ts), [QuizCard.tsx](../src/components/flashcard/QuizCard.tsx) |
+| Cloze (điền chỗ trống) | Khoét từ khỏi chính ví dụ của thẻ; regex có luật **biến cách** (run→running, study→studies, plan→planned); chấm nhận cả dạng trong câu lẫn nguyên thể | [quiz.ts](../src/lib/quiz.ts) `buildCloze`/`checkCloze` |
+| Chế độ ôn "Tự động" | Chọn kiểu **theo từng thẻ** theo trạng thái (new→flashcard, hard→mcq, good→cloze/sản sinh, easy→typing/listening luân phiên); **tất định**, thiếu dữ liệu thì hạ xuống kiểu khả thi | [quiz.ts](../src/lib/quiz.ts) `pickReviewType`/`canUseReviewType` |
+| Tạm treo thẻ leech | `lapses ≥ 6` → nhãn "Hay quên"; nút treo rút thẻ khỏi **mọi** phiên ôn (kể cả "Ôn tất cả"/"hay quên") nhưng vẫn đếm ở total/byStatus; bộ lọc "Tạm treo" | [0012](../supabase/migrations/0012_suspend_leech.sql), [queue.ts](../src/lib/queue.ts) `isSuspended`, [db/cards.ts](../src/lib/db/cards.ts) `setCardSuspended` |
+| Chia sẻ từ vào app | `share_target` trong manifest PWA → `GET /share`; một từ/cụm ngắn thì tra luôn, cả đoạn thì tách từ để chạm chọn | [manifest.ts](../src/app/manifest.ts), [/share](../src/app/share/page.tsx), [ShareTarget.tsx](../src/components/ShareTarget.tsx) |
 | Audio | US/UK từ DictionaryAPI + TTS fallback; tự phát âm khi lật thẻ (theo cài đặt) | [speak.ts](../src/lib/speak.ts), [AudioButton.tsx](../src/components/flashcard/AudioButton.tsx) |
 | Streak | Nhật ký `review_events` → streak + lượt hôm nay/tuần + biểu đồ 7 ngày (dashboard) | [db/stats.ts](../src/lib/db/stats.ts), [StreakCard.tsx](../src/components/StreakCard.tsx), [StudyOverview.tsx](../src/components/StudyOverview.tsx) |
 | Cài đặt & nhắc học | localStorage (autoSpeak, reminder giờ) + banner nhắc trên dashboard | [settings.ts](../src/lib/settings.ts), [SettingsForm.tsx](../src/components/SettingsForm.tsx) |
@@ -60,7 +66,7 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
 | Hoàn tác lượt ôn | `recordProgress` trả receipt (ảnh chụp progress + id review_event) → `undoReview` khôi phục & xóa lượt khỏi nhật ký | [db/cards.ts](../src/lib/db/cards.ts), [StudySession.tsx](../src/components/flashcard/StudySession.tsx) |
 | Cài đặt theo tài khoản | `profiles.settings` (jsonb) + cache localStorage; đọc local trước → remote ghi đè | [settings.ts](../src/lib/settings.ts), [db/settings.ts](../src/lib/db/settings.ts) |
 | Thùng rác | Xóa = chuyển bản ghi sang `deleted_items` (jsonb) rồi xóa; phục hồi kèm tiến độ; tự dọn sau 30 ngày | [db/trash.ts](../src/lib/db/trash.ts), [/trash](../src/app/trash/page.tsx) |
-| Test | Vitest cho `srs.ts`, `queue.ts` + test canh bản sao web/mobile không trôi (42 case) | [tests/](../tests) |
+| Test | Vitest cho `srs.ts`, `queue.ts`, `quiz.ts` + test canh bản sao web/mobile không trôi (89 case) | [tests/](../tests) |
 | Trang Tiến độ | `/progress`: 4 ô số + heatmap + huy hiệu + lịch ôn, **1 lần nạp** dùng chung dữ liệu (3 query song song) | [/progress](../src/app/progress/page.tsx), [ProgressDashboard.tsx](../src/components/ProgressDashboard.tsx), [db/insights.ts](../src/lib/db/insights.ts) |
 
 ### A4. Khoảng trống & nợ kỹ thuật
@@ -85,7 +91,17 @@ Trigger: tự tạo `profile` khi có user mới; tự cập nhật `updated_at`
 12. ~~**Cài đặt lưu theo thiết bị**~~ — ✅ đã làm (P0): `profiles.settings`; riêng theme
     vẫn cố ý theo thiết bị.
 13. ~~**Xóa là mất vĩnh viễn**~~ — ✅ đã làm (P0): thùng rác 30 ngày.
-14. *Còn lại:* phục hồi thùng rác trên mobile, web push, học offline thật, đa ngôn ngữ.
+14. ~~**Thẻ leech không có đường ra**~~ — ✅ đã làm (đợt 1): `isLeech()` có từ 0009 nhưng
+    chưa nơi nào dùng; nay có nhãn "Hay quên" + **tạm treo** (`suspended_at`, migration 0012).
+15. ~~**Ôn cả phiên một kiểu câu hỏi**~~ — ✅ đã làm (đợt 1): thêm **cloze** + chế độ
+    **"Tự động"** chọn kiểu theo từng thẻ.
+16. ~~**Chỉ tạo được thẻ khi đang ở trong app**~~ — ✅ đã làm (đợt 1, bản web đã cài):
+    `share_target` → `/share`.
+17. ~~**Hết quota dịch là thẻ mất nghĩa tiếng Việt**~~ — ✅ đã làm (đợt 1): chuỗi provider
+    có dự phòng.
+18. *Còn lại:* **tra hàng loạt từ một đoạn văn** (mining), phục hồi thùng rác trên mobile,
+    web push, học offline thật, đa ngôn ngữ. Xem
+    [13-de-xuat-tinh-nang.md](./13-de-xuat-tinh-nang.md) cho thứ tự ưu tiên.
 
 ---
 
@@ -199,6 +215,31 @@ Nguồn sự thật nhãn/màu: [src/lib/status.ts](../src/lib/status.ts).
   về được khi bộ thẻ gốc còn (nếu không thì phải phục hồi bộ thẻ trước).
 - [x] Trang `/trash` (web) + tự dọn mục quá hạn khi mở trang. Mobile: xóa vào thùng rác, phần
   xem/phục hồi để sau.
+
+### Đợt 1 của [13-de-xuat-tinh-nang.md](./13-de-xuat-tinh-nang.md) ✅ (migration `0012`)
+
+Chủ đề: *"vào nhanh hơn, học đa dạng hơn"* — không thêm bảng mới, không thêm nguồn dữ liệu
+ngoài, không đụng trần quota nào.
+
+- [x] **A2 — Chia sẻ từ ngoài app vào**: `share_target` (manifest PWA) → `GET /share`.
+  Một từ/cụm ngắn thì tra luôn; cả đoạn thì tách thành chip để chạm chọn (bản rút gọn của
+  A1 mining sẽ làm ở đợt 2). `QuickCreator` nhận thêm `initialWord`/`autoOpen`, có ref chốt
+  **chỉ tra tự động một lần** — không thì mỗi render là một lượt tra, ăn hết 30 lượt/phút.
+- [x] **C1 — Cloze**: `buildCloze`/`checkCloze` trong `quiz.ts`. Regex có luật biến cách; câu
+  dưới 3 từ thì bỏ. Chọn riêng kiểu này thì phiên **lọc còn thẻ khoét được**.
+- [x] **C2 — Chế độ "Tự động"**: `pickReviewType`/`canUseReviewType`. `SessionReviewType =
+  ReviewType | "auto"`; kiểu thật của thẻ tính ở `currentType` trong StudySession, `key` của
+  QuizCard gồm cả kiểu để đổi kiểu là mount lại.
+- [x] **B2 — Chuỗi provider dịch**: `FallbackProvider`. Điểm dễ bỏ sót: provider LLM parse
+  hỏng thì `parseTranslationArray` **trả về chính input** thay vì ném lỗi → chain phải coi
+  "trả về y hệt input" là hỏng, không thì dự phòng không bao giờ được gọi.
+- [x] **C3 — Tạm treo thẻ leech**: cột `suspended_at` (0012). `splitDue` loại thẻ treo khỏi
+  **cả hai** nhánh (tới hạn *và* từ mới) — treo mà vẫn tính là từ mới thì nó vẫn ăn hạn mức
+  mỗi ngày. `computeStats` vẫn đếm nó ở `total`/`byStatus` + thêm `suspended`.
+- [x] Mobile ngang bằng cả 4 hạng mục học (cloze, Tự động, treo, chuỗi dịch dùng chung API).
+  Riêng share target là đặc thù PWA — trên Android thì bản web đã cài đảm nhiệm.
+- [x] Test: `tests/quiz.test.ts` (19 case) + 4 case tạm treo trong `queue.test.ts`;
+  `quiz.ts` được thêm vào danh sách **canh bản sao web/mobile** của `parity.test.ts`.
 
 ### P3 — Đa ngôn ngữ (mở khóa kiến trúc DB có sẵn)
 - [ ] Dùng `profiles.default_source/target_language`; chọn ngôn ngữ khi tạo deck (bỏ hardcode).
