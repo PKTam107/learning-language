@@ -20,11 +20,14 @@ Mọi đề xuất dưới đây phải nằm trong hạ tầng và nguồn dữ
 | MyMemory (dịch) | Free | ~5k từ/ngày ẩn danh, ~50k nếu khai email |
 | Gemini / OpenAI | Free tier / trả tiền | Gemini có free tier; OpenAI **không** — hiện đang để tùy chọn |
 | CEFR-J, Tatoeba, NGSL | Dữ liệu mở (CC) | Tải một lần, bundle offline hoặc đổ vào DB |
+| GitHub Actions | Free cho repo | Cron **chạy dày tùy ý** — nguồn job nền rẻ nhất, tài liệu này ban đầu bỏ sót (xem G3) |
 
 **Ba luật chơi rút ra:**
 1. **Ưu tiên dữ liệu tải-một-lần** (bundle/DB) hơn là gọi API mỗi lần dùng — vừa nhanh, vừa không đụng quota, vừa chạy được offline.
 2. **Mọi thứ gọi mạng phải best-effort**: hỏng thì bỏ qua, không chặn việc học. (Nguyên tắc này code đã theo ở `enrich.ts`, cần giữ.)
 3. **Cẩn thận với cron và job nền** — đây là chỗ gói free bóp chặt nhất, và cũng là chỗ tính năng "web push" phụ thuộc.
+   *(Đính chính sau đợt 1: chỗ bóp chặt là **Vercel Hobby**, không phải "gói free" nói chung —
+   GitHub Actions cho cron dày và miễn phí. Xem G3.)*
 
 ---
 
@@ -186,41 +189,113 @@ Mỗi mục ghi: **vấn đề → giải pháp → quy tắc nghiệp vụ → 
 - SM-2 rút gọn hiện tại **đang chạy tốt và đã có 24 test bảo vệ**. FSRS hiện đại hơn (dự đoán theo xác suất quên) và **miễn phí**,
   nhưng là **đại phẫu phần lõi**. Chỉ nên làm khi F1 cho thấy tỷ lệ nhớ lệch xa mục tiêu — **có dữ liệu rồi mới đổi.**
 
+### Nhóm G — Phát sinh sau đợt 1 (rút ra khi đọc lại code thật)
+
+Ba mục đầu là **sửa đánh giá sai của chính tài liệu này**, không phải ý tưởng mới.
+
+**G1. Chia sẻ từ ngoài app vào cho bản APK (Android intent)** — *giá trị cao, công rất thấp — đã làm*
+
+- **Vấn đề:** A2 được gọi là "đòn bẩy tốt nhất toàn tài liệu", nhưng nó dựa vào `share_target`
+  của **manifest PWA** — chỉ chạy với bản web đã cài. Bản **APK cài bằng EAS** (chính là cách
+  README hướng dẫn cài) không khai `intent-filter` nào, nên trong danh sách "Chia sẻ" của
+  Android **không có LinguaCards**. Tính năng đòn bẩy nhất đang tắt ở client dùng hằng ngày.
+- **Giải pháp:** khai `ACTION_SEND` / `text/*` cho app Android, nhận nội dung chia sẻ rồi đưa
+  vào đúng luồng của trang `/share` bên web.
+- **Quy tắc:** phân loại nội dung (một từ → tra luôn; cả đoạn → tách chip) phải **giống hệt web**
+  → tách thành `lib/share-text.ts` dùng chung, canh bằng `parity.test.ts`.
+- **Free:** thuần khai báo + một màn hình; không thêm dịch vụ, không đụng quota.
+
+**G2. Ghi ngữ cảnh vào nhật ký ôn** — *giá trị cao (là nền của F1), công rất thấp*
+
+- **Vấn đề:** `review_events` (migration `0004`) chỉ có `status` + `reviewed_at`. Thiếu **thẻ có
+  đến hạn hay không**, **khoảng ôn trước đó**, và **kiểu ôn đã dùng**.
+  → F1 ở trên bị chấm "công thấp, chỉ đọc dữ liệu sẵn có" là **sai**: tính "tỷ lệ nhớ khi tới hạn"
+  trên dữ liệu hiện có sẽ lẫn cả thẻ đang học lần đầu, ra một con số vô nghĩa.
+- **Giải pháp:** thêm `review_type`, `was_due`, `interval_before` vào `review_events`.
+- **Quy tắc nghiệp vụ quan trọng:** đây là loại việc **càng làm muộn càng vô dụng** — báo cáo chỉ
+  đọc được dữ liệu kể từ ngày thêm cột. Vì vậy **tách khỏi F1**: phần ghi log làm ngay, phần màn
+  hình báo cáo làm sau, lúc nào cũng được.
+- **Phần thưởng kèm theo:** có `review_type` thì trả lời được "kiểu ôn nào hay sai nhất" — dữ liệu
+  để chỉnh chính sách chọn kiểu của chế độ **Tự động** (C2), hiện đang đặt bằng phỏng đoán.
+
+**G3. Giữ project khỏi ngủ + dọn `dictionary_cache`** — *giá trị cao (sống còn), công rất thấp*
+
+- **Vấn đề:** mục 5 của tài liệu này liệt kê "Supabase ngủ khi vắng người dùng" và "`dictionary_cache`
+  phình" là rủi ro, nhưng **không có đề xuất nào xử lý** — cách phòng ghi là "sao lưu + báo lỗi tử tế",
+  tức là chấp nhận chết rồi báo cho đẹp.
+- **Điều bị bỏ sót:** kết luận "cron gói free quá thưa" chỉ đúng với **Vercel Hobby**. Repo chưa dùng
+  **GitHub Actions** — với repo thì đây là cron **miễn phí và chạy dày tùy ý**.
+- **Giải pháp:** một workflow theo lịch: ping nhẹ Supabase (giữ project sống) + xóa dòng
+  `dictionary_cache` quá cũ.
+- **Quy tắc:** ping phải là **truy vấn rẻ nhất có thể** và không ghi gì; dọn cache theo **tuổi**,
+  không theo số dòng, để từ hay tra vẫn được giữ.
+- **Hệ quả cho D1:** rào cản lớn nhất của web push (cron quá thưa) **không còn là rào cản kỹ thuật**
+  — nhưng xem lại đánh giá D1 bên dưới trước khi làm.
+
+**G4. "Sức khỏe kho thẻ"** — *giá trị vừa, công thấp*
+
+- Liệt kê thẻ **thiếu nghĩa tiếng Việt / thiếu ví dụ / nghĩa dài bất thường** — ba nguyên nhân
+  thường gặp khiến một thẻ thành leech. Đọc dữ liệu đã có, không gọi mạng.
+- Ghép tự nhiên với C3: thay vì chỉ báo "thẻ này bạn hay quên", chỉ luôn **vì sao có thể quên**.
+
+**G5. Sửa / chuyển / xóa hàng loạt cho bản web** — *giá trị vừa, công thấp*
+
+- Roadmap ghi "bulk vẫn để sau" từ hồi kho còn nhỏ. Bản mobile **đã có** chọn nhiều thẻ để chuyển
+  bộ; web thì chưa. Kho càng lớn thì việc này càng thành nhu cầu thật.
+
+**G6. Phục hồi thùng rác trên bản mobile** — *giá trị thấp–vừa, công thấp*
+
+- `mobile/src/lib/trash.ts` đã có, màn Cài đặt đang ghi thẳng "phục hồi hiện làm trên bản web".
+  Chỉ còn thiếu giao diện.
+
 ---
 
 ## 4. Ưu tiên
 
-> **Trạng thái:** đợt 1 (A2, C1, C2, B2, C3) **đã triển khai** — chi tiết as-built ở
-> [07-current-state.md](./07-current-state.md#đợt-1-của-13-de-xuat-tinh-nangmd--migration-0012).
-> Việc kế tiếp là đợt 2, mở đầu bằng **A1 — mining từ đoạn văn** (share target hiện đã tách
-> đoạn thành chip chọn từng từ, A1 là bản đầy đủ: lọc từ đã có, xếp theo CEFR, tạo hàng loạt).
-
+> **Trạng thái:**
+> - Đợt 1 (A2, C1, C2, B2, C3) **đã triển khai** — as-built ở
+>   [07-current-state.md](./07-current-state.md#đợt-1-của-13-de-xuat-tinh-nangmd--migration-0012).
+> - **G1 đã triển khai** (đầu đợt 2): "Chia sẻ → LinguaCards" nay chạy cả trên **bản APK**,
+>   không chỉ PWA — xem [as-built](./07-current-state.md#g1--chia-sẻ-từ-ngoài-app-vào-cho-bản-apk).
+> - Bảng dưới đây đã **xếp lại** so với bản đầu: lý do nằm ở nhóm G (§3) — F1 đắt hơn tưởng,
+>   D1 rẻ hơn tưởng nhưng giá trị hẹp hơn tưởng, và A2 chưa từng hoàn tất như tài liệu ghi.
 
 
 Xếp theo **giá trị cho người học / công bỏ ra**, tất cả đều $0.
 
 | Đợt | Mã | Tính năng | Giá trị | Công | Ghi chú |
 |---|---|---|---|---|---|
-| **1** ✅ | A2 | Chia sẻ từ vào app | Cao | Rất thấp | Đòn bẩy tốt nhất; chạm đúng khoảnh khắc gặp từ |
+| **1** ✅ | A2 | Chia sẻ từ vào app (PWA) | Cao | Rất thấp | Đòn bẩy tốt nhất; chạm đúng khoảnh khắc gặp từ |
 | **1** ✅ | C1 | Cloze (điền chỗ trống) | Cao | Thấp | Không cần dữ liệu mới |
 | **1** ✅ | C2 | Trộn kiểu ôn ("Tự động") | Cao | Thấp | Dùng lại toàn bộ kiểu ôn đã có |
 | **1** ✅ | B2 | Gemini free tier + chuỗi dự phòng | Cao | Rất thấp | Code provider đã sẵn |
 | **1** ✅ | C3 | Xử lý leech | Vừa | Rất thấp | `isLeech()` đã viết, chỉ thiếu UI |
+| **2** ✅ | G1 | Chia sẻ từ vào app **trên bản APK** | Cao | Rất thấp | A2 chưa hoàn tất ở client dùng hằng ngày |
+| **2** | G2 | Ngữ cảnh cho nhật ký ôn | Cao | Rất thấp | **Làm sớm**: báo cáo chỉ có dữ liệu từ ngày thêm cột |
+| **2** | G3 | Chống project ngủ + dọn cache | Cao | Rất thấp | Bảo hiểm hạ tầng; mở đường cho D1 |
 | **2** | A1 | Mining từ đoạn văn | Cao | Vừa | Nút thắt nạp từ; cần canh rate limit |
+| **2** | D3 | Phiên 5 thẻ / 60 giây | Vừa | Thấp | Rào cản thật là *quyết định bắt đầu* |
 | **2** | D2 | Ngày nghỉ giữ chuỗi | Vừa | Thấp | Chống bỏ cuộc |
-| **2** | D3 | Phiên 5 thẻ / 60 giây | Vừa | Thấp | |
-| **2** | F1 | Tỷ lệ nhớ thật + gợi ý chỉnh hạn mức | Vừa | Thấp | Chỉ đọc dữ liệu sẵn có |
-| **2** | A3 | Bộ thẻ khởi đầu | Vừa | Thấp | Chú ý giấy phép danh sách từ |
+| **3** | F1 | Tỷ lệ nhớ thật + gợi ý chỉnh hạn mức | Vừa | Thấp | **Phụ thuộc G2**, và cần vài tuần dữ liệu |
+| **3** | G4 | Sức khỏe kho thẻ | Vừa | Thấp | Ghép với C3: chỉ ra *vì sao* hay quên |
 | **3** | B1 | Ví dụ song ngữ Tatoeba | Cao | Vừa | Canh dung lượng DB free |
-| **3** | D1 | Web push | Cao | Cao | **Chốt cách chạy job trước khi làm** |
+| **3** | G5 | Sửa/chuyển/xóa hàng loạt (web) | Vừa | Thấp | Mobile đã có, web chưa |
 | **3** | B3 | Ảnh + mẹo nhớ | Vừa | Vừa | |
 | **3** | E3 | Chia sẻ bộ thẻ | Vừa | Vừa | |
-| **3** | E1 | Offline thật | Vừa | Cao | Rủi ro rò dữ liệu nếu làm ẩu |
+| **3** | G6 | Thùng rác trên mobile | Thấp–Vừa | Thấp | `trash.ts` đã có, thiếu màn hình |
+| **Sau** | D1 | Web push | Vừa | Cao | **Hạ ưu tiên**: mobile đã nhắc được thật bằng local notification; phần hụt chỉ còn người chỉ dùng web |
+| **Sau** | E1 | Offline thật | Vừa | Cao | Rủi ro rò dữ liệu nếu làm ẩu |
 | **Sau** | C4 | Luyện phát âm | Vừa | Vừa | Tương thích thiết bị lệch nhau |
+| **Sau** | A3 | Bộ thẻ khởi đầu | Thấp | Thấp | **Hạ ưu tiên**: giải bài toán "kho rỗng" của người dùng mới — nhóm hiện chưa tồn tại |
 | **Sau** | F2 | FSRS | Vừa | Cao | Chỉ khi F1 chỉ ra vấn đề |
 
 **Đợt 1 gộp lại là một chủ đề rõ ràng:** *"vào nhanh hơn, học đa dạng hơn"* — và toàn bộ đợt 1
 **không cần thêm bảng mới, không thêm nguồn dữ liệu mới, không đụng trần quota nào**.
+
+**Đợt 2 có chủ đề khác:** *"đóng nốt những thứ tưởng đã xong, và bắt đầu đo"*. Ba việc đầu
+(G1–G3) đều là **công rất thấp** nhưng chạm vào ba loại rủi ro khác nhau: tính năng bật nhầm chỗ,
+dữ liệu không thu thập được nữa nếu chậm, và hạ tầng tự chết. Làm xong ba mục đó thì A1 — nút thắt
+nạp từ — mới là việc lớn tiếp theo đáng đổ công.
 
 ---
 
@@ -228,10 +303,11 @@ Xếp theo **giá trị cho người học / công bỏ ra**, tất cả đều 
 
 | Rủi ro | Ảnh hưởng | Cách phòng |
 |---|---|---|
-| Project Supabase **ngủ khi vắng người dùng** | App chết lâm sàng, người dùng tưởng hỏng | E2 (sao lưu) + màn hình báo lỗi tử tế thay vì trắng |
-| **Dung lượng DB free** (B1 kho câu, `dictionary_cache` phình theo thời gian) | Chạm trần 500 MB | Lọc kho câu trước khi nạp; đặt **hạn dọn `dictionary_cache`** theo tuổi |
+| Project Supabase **ngủ khi vắng người dùng** | App chết lâm sàng, người dùng tưởng hỏng | **G3** (cron ping) là cách phòng thật; E2 (sao lưu) + màn hình báo lỗi tử tế là lưới an toàn |
+| **Dung lượng DB free** (B1 kho câu, `dictionary_cache` phình theo thời gian) | Chạm trần 500 MB | Lọc kho câu trước khi nạp; **G3** dọn `dictionary_cache` theo tuổi |
 | **Quota dịch** (MyMemory / Gemini free) | Thẻ tạo ra thiếu nghĩa tiếng Việt | Chuỗi dự phòng B2 + cache đã có |
-| **Cron gói free quá thưa** cho D1 | Nhắc học sai giờ → phản tác dụng | Chốt phương án job trước; hoặc công khai rằng chỉ có khung giờ cố định |
+| ~~**Cron gói free quá thưa** cho D1~~ | Nhắc học sai giờ → phản tác dụng | **Đã gỡ:** GitHub Actions cho cron dày và free (G3). Rào cản còn lại của D1 là công bỏ ra, không phải hạ tầng |
+| **Tính năng bật nhầm client** (A2 chỉ có trên PWA suốt một đợt) | Tính năng giá trị nhất nằm im mà không ai biết | Mỗi đề xuất phải ghi rõ **chạy ở client nào**; khi đọc lại tài liệu thì đối chiếu với code, đừng tin trạng thái đã đánh dấu |
 | **Giấy phép dữ liệu** (A3, B1) | Rủi ro pháp lý dù là app cá nhân | Chỉ dùng nguồn CC/mở, ghi nguồn đầy đủ |
 | Vercel Hobby **cấm dùng thương mại** | Nếu sau này thu phí là phải đổi gói | Biết trước, không phải xử lý bây giờ |
 
@@ -244,5 +320,8 @@ Xếp theo **giá trị cho người học / công bỏ ra**, tất cả đều 
   công lớn, phục vụ nhóm người dùng hiện **chưa tồn tại**. Để sau A1/A2.
 - **Nhập Anki (.apkg):** định dạng nặng (SQLite trong zip, kèm media, nhiều phiên bản schema),
   trong khi **import Excel đã che gần hết nhu cầu thực tế**.
+- **A3 — Bộ thẻ khởi đầu** (hạ từ đợt 2 xuống): nó giải bài toán "tài khoản mới là kho rỗng" —
+  vấn đề của sản phẩm **có người dùng mới**. Với kho đã đầy của người dùng hiện tại, giá trị gần
+  bằng 0. Công không lớn, nhưng làm bây giờ là làm cho một nhóm chưa tồn tại.
 - **Marketplace bộ thẻ:** cần kiểm duyệt nội dung, chống spam, xử lý báo cáo vi phạm — đó là **vận hành**, không phải tính năng.
   E3 (chia sẻ bằng link) lấy được 80% giá trị với 5% công.

@@ -3,11 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { QuickCreator } from "@/components/QuickCreator";
-
-/** Nhiều nhất bao nhiêu từ ứng viên hiện ra để chạm chọn. */
-const MAX_CHIPS = 40;
-/** Dài hơn mức này thì coi là "một đoạn văn", không phải một từ cần tra. */
-const MAX_TERM_WORDS = 4;
+import { parseSharedText } from "@/lib/share-text";
 
 /**
  * Đích đến của thao tác **Chia sẻ** từ app khác (Chrome, Kindle, YouTube...).
@@ -16,38 +12,16 @@ const MAX_TERM_WORDS = 4;
  * cũ buộc người học nhớ từ đó, mở app, gõ lại. Nay bôi đen → Chia sẻ →
  * LinguaCards là xong.
  *
- * Hai kiểu nội dung được chia sẻ, xử lý khác nhau:
- *  - **Một từ / cụm ngắn**: tra luôn, người dùng chỉ còn bấm Lưu.
- *  - **Cả đoạn văn**: không tra cả đoạn (vô nghĩa, lại tốn hạn mức) mà tách
- *    thành các từ để chạm chọn — bản rút gọn của luồng "tra hàng loạt" sẽ làm
- *    ở đợt sau.
+ * Việc phân loại nội dung (một từ hay cả đoạn) nằm ở `lib/share-text.ts` để bản
+ * mobile dùng chung — xem `app/(app)/share.tsx` bên mobile.
  */
 export function ShareTarget({ shared }: { shared: string }) {
-  const text = shared.trim();
-  const isSingleTerm =
-    !!text && text.split(/\s+/).length <= MAX_TERM_WORDS && !/[.!?]$/.test(text);
-
-  const [picked, setPicked] = useState<string | null>(
-    isSingleTerm ? text : null
+  const { text, isSingleTerm, term, candidates } = useMemo(
+    () => parseSharedText(shared),
+    [shared]
   );
 
-  /** Ứng viên từ trong đoạn: bỏ dấu câu, bỏ trùng, giữ nguyên thứ tự xuất hiện. */
-  const candidates = useMemo(() => {
-    if (isSingleTerm) return [];
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const raw of text.split(/[^A-Za-z'-]+/)) {
-      const w = raw.replace(/^['-]+|['-]+$/g, "");
-      // Từ 1 ký tự gần như luôn là rác ("I" thì không ai cần tra).
-      if (w.length < 2) continue;
-      const key = w.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(w);
-      if (out.length >= MAX_CHIPS) break;
-    }
-    return out;
-  }, [text, isSingleTerm]);
+  const [picked, setPicked] = useState<string | null>(term);
 
   if (!text) {
     return (

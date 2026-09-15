@@ -38,7 +38,18 @@
 - [x] **Chuỗi provider dịch có dự phòng** — Gemini (free tier) → MyMemory; hết quota chỉ giảm
       chất lượng dịch, không làm hỏng việc tạo thẻ.
 - [x] **Tạm treo thẻ leech** — `lapses ≥ 6` gắn nhãn "Hay quên", treo rút thẻ khỏi mọi phiên ôn.
-- [x] Mobile ngang bằng ở cả bốn hạng mục học (share target là đặc thù PWA).
+- [x] Mobile ngang bằng ở cả bốn hạng mục học.
+      *(Share target lúc này còn là đặc thù PWA — đã gỡ ở Milestone 2.6 bên dưới.)*
+
+## Milestone 2.6 — Đợt 2 của [13-de-xuat-tinh-nang.md](./13-de-xuat-tinh-nang.md)
+
+- [x] **G1 — Chia sẻ từ vào app trên bản APK**: `ACTION_SEND` cho Android, dùng chung
+      `lib/share-text.ts` với web. Trước đó "Chia sẻ → LinguaCards" chỉ có ở bản PWA đã cài.
+- [ ] **G2 — Ngữ cảnh cho nhật ký ôn** (`review_type`, `was_due`, `interval_before`) — làm sớm,
+      vì báo cáo chỉ đọc được dữ liệu kể từ ngày thêm cột.
+- [ ] **G3 — Cron GitHub Actions**: giữ project Supabase khỏi ngủ + dọn `dictionary_cache` theo tuổi.
+- [ ] **A1 — Mining từ đoạn văn**: lọc từ đã có trong kho, xếp theo CEFR, tra và tạo hàng loạt.
+- [ ] **D3 — Phiên 5 thẻ / 60 giây**, **D2 — Ngày nghỉ giữ chuỗi**.
 
 ## Milestone 3 — Spaced Repetition thật
 - [x] Triển khai SM-2 dùng `next_due_at`, `ease_factor` (đã để sẵn cột).
@@ -78,5 +89,7 @@ Client thứ 2, dùng chung backend với web (chi tiết: [06-mobile.md](./06-m
 - ~~Xử lý thẻ "leech"~~ — ✅ đợt 1: nhãn "Hay quên" + **tạm treo** (`suspended_at`, `0012`).
 - ~~Kiểu ôn điền chỗ trống (cloze)~~ — ✅ đợt 1. Còn lại: **thêm từ từ đoạn văn (mining)** +
   tra hàng loạt; luyện nói.
-- Phục hồi thùng rác trên bản mobile; web push; học offline thật sự.
+- Phục hồi thùng rác trên bản mobile (G6); học offline thật sự.
+- Web push (D1) — **hạ ưu tiên**: bản mobile đã nhắc được thật bằng local notification, phần hụt
+  chỉ còn người dùng chỉ dùng web.
 - Ưu tiên chi tiết + phân tích chi phí: [13-de-xuat-tinh-nang.md](./13-de-xuat-tinh-nang.md).

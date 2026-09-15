@@ -18,7 +18,8 @@ export default function SharePage({
 }: {
   searchParams: { title?: string; text?: string; url?: string };
 }) {
-  const shared = (searchParams.text || searchParams.title || "").slice(0, 2000);
+  // Độ dài được cắt trong `parseSharedText` (xem `lib/share-text.ts`).
+  const shared = searchParams.text || searchParams.title || "";
 
   return (
     <>

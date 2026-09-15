@@ -241,6 +241,41 @@ ngoài, không đụng trần quota nào.
 - [x] Test: `tests/quiz.test.ts` (19 case) + 4 case tạm treo trong `queue.test.ts`;
   `quiz.ts` được thêm vào danh sách **canh bản sao web/mobile** của `parity.test.ts`.
 
+### G1 — Chia sẻ từ ngoài app vào cho bản APK ✅ (đợt 2, không cần migration)
+
+**Vì sao có mục này:** đợt 1 đánh dấu A2 là xong, nhưng nó dựa vào `share_target` của manifest
+PWA — chỉ chạy với bản web đã cài. Bản **APK build bằng EAS** không khai `intent-filter` nào nên
+không hề xuất hiện trong danh sách "Chia sẻ" của Android. Tính năng được đánh giá là đòn bẩy tốt
+nhất nằm im ở đúng client dùng hằng ngày. Xem [13 §G1](./13-de-xuat-tinh-nang.md).
+
+- [x] **Logic phân loại nội dung tách thành `lib/share-text.ts`** — `parseSharedText()` quyết định
+  một-từ (tra luôn) hay cả-đoạn (tách chip để chạm chọn). Web và mobile **dùng chung một bản**,
+  canh bằng `tests/parity.test.ts`; 9 case trong `tests/share-text.test.ts`.
+- [x] **Bỏ link trước khi phân loại.** Chia sẻ một trang web thì nội dung thường *chỉ là địa chỉ*,
+  mà địa chỉ lại đếm là "một từ" → luồng cũ sẽ đem cả URL đi tra và dựng ra thẻ rác. Nay URL bị
+  gỡ khỏi nội dung trước, phần chữ còn lại mới đem phân loại.
+- [x] **Android**: `expo-share-intent` (config plugin) sinh `intent-filter` `ACTION_SEND` +
+  `text/*`, kèm `launchMode=singleTask`. Đã kiểm chứng bằng `expo prebuild` — manifest sinh ra có
+  đúng filter (thư mục `android/` **không commit**, xem `mobile/.gitignore`).
+- [x] **iOS tắt** (`disableIOS: true`): share extension của iOS cần thêm một extension target,
+  kéo theo rắc rối credential khi build EAS. Dự án mới chỉ phát hành APK nên không trả giá đó.
+- [x] **Expo Go không chạy được tính năng này** (cần mã native). `ShareIntentProvider` nhận
+  `disabled` khi `executionEnvironment === StoreClient` → chạy `expo start` vẫn dùng app bình
+  thường, chỉ thiếu lối vào chia sẻ. Muốn thử thật thì phải build APK mới.
+- [x] **Điều hướng**: `hasShareIntent && session` → đẩy sang `app/(app)/share.tsx`. Ràng buộc
+  `session` là cố ý — chưa đăng nhập thì layout `Redirect` về màn login trước, nội dung chia sẻ
+  vẫn nằm trong provider nên đăng nhập xong quay lại là đi tiếp được.
+- [x] **Nội dung được chụp lại một lần lúc mount** rồi `resetShareIntent()`. Provider tự dọn khi
+  app ra nền, mà người dùng thì hay nhảy qua lại giữa app nguồn và LinguaCards ngay giữa chừng —
+  đọc trực tiếp từ context sẽ mất nội dung giữa luồng.
+- [x] **`QuickCreator` bản mobile cho ngang web**: thêm `initialWord` / `autoOpen` / `hideFab` /
+  `onClose`, và **`deckId` thành tùy chọn** — luồng chia sẻ không biết deck nào nên phải tự hiện
+  ô chọn bộ thẻ. Giữ nguyên ref chốt "chỉ tra tự động một lần" như web.
+- [x] `versionCode` lên 2 — cài đè bản cũ mới nhận cấu hình native mới.
+
+**Chưa kiểm chứng được ở đây:** luồng chia sẻ đầu-cuối chỉ chạy trên máy thật với APK mới. Phần
+đã kiểm chứng: manifest sinh đúng, typecheck web + mobile sạch, 99/99 test qua.
+
 ### P3 — Đa ngôn ngữ (mở khóa kiến trúc DB có sẵn)
 - [ ] Dùng `profiles.default_source/target_language`; chọn ngôn ngữ khi tạo deck (bỏ hardcode).
 - [ ] Dictionary provider **theo source language** (ngoài DictionaryAPI.dev).
