@@ -64,8 +64,9 @@ buộc người học nhớ từ đó rồi mở app gõ lại.
 - **Quy tắc:** chia sẻ một *trang web* thì chỉ có địa chỉ, không có từ nào — app bỏ qua
   phần địa chỉ thay vì tạo thẻ rác.
 - Chỉ hoạt động khi app **đã được cài**; mở bằng tab trình duyệt thường thì hệ điều hành
-  không biết tới lối vào này. Bản điện thoại (Expo) **chưa có** — trên Android thì bản web
-  đã cài đảm nhiệm việc này.
+  không biết tới lối vào này.
+- **Bản điện thoại (Android) cũng nhận Chia sẻ** như bản web đã cài, theo đúng hai quy tắc
+  trên. Cần bản cài mới — bản APK cũ chưa có lối vào này. Bản iOS thì chưa (xem mục 15).
 
 **Quy tắc thêm từ:**
 - **Không cho trùng từ trong cùng một bộ thẻ.** Khi kiểm tra trùng, từ được chuẩn hóa trước (bỏ khoảng trắng đầu/cuối, gộp khoảng trắng giữa, không phân biệt hoa/thường). Nếu trùng, hệ thống báo và không lưu.
@@ -437,10 +438,9 @@ chuyển vào **Thùng rác** và giữ **30 ngày**.
   giá** (mục 6), **đưa thẻ đã xóa vào thùng rác** (mục 12) và **thẻ hay quên / tạm treo** (mục 5).
 - **Cài đặt** (tự phát âm, từ mới/ngày, nhắc học) nay đi theo **tài khoản** nên hai bản dùng
   chung một cấu hình; riêng giao diện sáng/tối vẫn theo từng thiết bị.
-- Ba điểm khác còn lại: **cách nhắc học** (điện thoại dùng thông báo hệ thống, web dùng
-  banner trong app — mục 11), **quản lý thùng rác** (xem/phục hồi hiện chỉ có trên web) và
-  **chia sẻ từ vào app** (mục 4 — chỉ bản web đã cài; trên Android thì chính bản web đã cài
-  nhận thao tác Chia sẻ, nên nhu cầu vẫn được đáp ứng).
+- Hai điểm khác còn lại: **cách nhắc học** (điện thoại dùng thông báo hệ thống, web dùng
+  banner trong app — mục 11) và **quản lý thùng rác** (xem/phục hồi hiện chỉ có trên web).
+  *Chia sẻ từ vào app* nay có ở cả hai (mục 4), trừ bản iOS.
 
 ---
 
@@ -471,5 +471,6 @@ lưu lại sẽ rò sang người khác nếu dùng chung máy.
 - **Nhắc học khi đóng tab trên web** (cần hạ tầng push).
 - **Tra hàng loạt từ một đoạn văn** (hiện chia sẻ cả đoạn vào chỉ tách từ để chạm chọn từng
   từ — xem mục 4).
-- **Chia sẻ từ vào bản điện thoại** (Expo) — bản web đã cài thì đã làm được.
+- **Chia sẻ từ vào bản điện thoại trên iOS** — Android đã có (mục 4); iOS cần thêm một
+  "extension" riêng của hệ điều hành nên để sau, trong khi dự án mới chỉ phát hành bản Android.
 - **Phục hồi thùng rác trên điện thoại** (hiện chỉ xóa vào thùng rác được, xem/phục hồi làm trên web).

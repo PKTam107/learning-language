@@ -87,6 +87,13 @@ Cây thư mục chi tiết: [`mobile/README.md`](../mobile/README.md#cấu-trúc
 | 4 | Study mode: lật thẻ, đánh giá, audio US/UK | ✅ |
 | 5 | Tra cứu & thêm từ (QuickCreator → `/api/lookup`) | ✅ |
 | 6 | Google OAuth, dashboard thống kê | ⬜ |
+| 7 | Nhận **Chia sẻ → LinguaCards** từ app khác (Android) | ✅ |
+
+> Mục 7 cần **mã native** (`expo-share-intent` sinh `intent-filter` `ACTION_SEND`), nên chỉ
+> chạy trong bản **build thật**, không chạy trong Expo Go, và chỉ vào app khi **build lại**.
+> iOS đang tắt (`disableIOS`) vì share extension kéo theo một extension target riêng khi build
+> EAS, mà dự án mới chỉ phát hành APK. Logic phân loại nội dung chia sẻ dùng chung với web ở
+> `lib/share-text.ts` — canh bằng `tests/parity.test.ts`.
 
 ## 6. Chạy nhanh
 

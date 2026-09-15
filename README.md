@@ -96,8 +96,9 @@ Chi tiết (đăng nhập, tạo env, keystore, tra từ): xem [`mobile/docs/cha
    thuộc) → lật thẻ: chạm, **kéo/vuốt ngang** (thẻ xoay bám theo tay) hoặc phím Space →
    đánh giá **Chưa thuộc / Tạm nhớ / Đã thuộc** (phím 1/2/3).
 
-Đã cài app ra màn hình chính thì còn một lối vào nhanh hơn: bôi đen một từ ở Chrome/app
-khác → **Chia sẻ → LinguaCards** → thẻ được tra sẵn, chỉ bấm Lưu.
+Còn một lối vào nhanh hơn: bôi đen một từ ở Chrome/app khác → **Chia sẻ → LinguaCards** →
+thẻ được tra sẵn, chỉ bấm Lưu. Chạy được với **bản web đã cài ra màn hình chính** và với
+**app Android** (cần APK build từ 2026-09 trở đi).
 
 ## Lệnh hữu ích
 

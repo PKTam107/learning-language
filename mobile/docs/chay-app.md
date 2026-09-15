@@ -100,11 +100,18 @@ Vì WSL2 ở sau NAT, điện thoại khó với tới Metro qua LAN → dùng *
 > **Tra từ** trên điện thoại thật: đặt `EXPO_PUBLIC_API_BASE_URL` trong `mobile/.env`
 > trỏ tới IP LAN máy chạy web (vd `http://192.168.1.x:3000`) thay vì `localhost`.
 
+> **Expo Go không có "Chia sẻ → LinguaCards".** Tính năng đó cần mã native mà Expo Go không
+> chứa sẵn; app tự tắt nó khi chạy trong Expo Go nên mọi thứ khác vẫn bình thường. Muốn thử
+> luồng chia sẻ thì phải dùng **APK build ở mục 3**.
+
 ---
 
 ## 3. Build APK (cài điện thoại thật)
 
 APK chạy độc lập, **không cần** Metro/PC. Build trên cloud Expo (~10–15 phút).
+
+> Cấu hình native (`intent-filter` cho Chia sẻ, thông báo…) chỉ vào app **khi build lại**.
+> Đổi `app.json` xong mà vẫn cài bản APK cũ thì không thấy gì thay đổi.
 
 ```bash
 cd mobile
