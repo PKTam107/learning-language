@@ -21,6 +21,7 @@ const pairs: [string, string][] = [
   ["src/lib/queue.ts", "mobile/src/lib/queue.ts"],
   ["src/lib/quiz.ts", "mobile/src/lib/quiz.ts"],
   ["src/lib/flip.ts", "mobile/src/lib/flip.ts"],
+  ["src/lib/share-text.ts", "mobile/src/lib/share-text.ts"],
 ];
 
 describe("web ↔ mobile dùng chung logic thuần", () => {

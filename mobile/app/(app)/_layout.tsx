@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Redirect, Stack, useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Settings as SettingsIcon, TrendingUp } from "lucide-react-native";
+import { useShareIntentContext } from "expo-share-intent";
 import { useAuth } from "@/contexts/AuthContext";
 import { configureNotificationHandler } from "@/lib/notifications";
 import { type ThemeColors } from "@/lib/theme";
@@ -12,10 +13,21 @@ export default function AppLayout() {
   const styles = useStyles(makeStyles);
   const { session, initializing, signOut } = useAuth();
   const router = useRouter();
+  const { hasShareIntent } = useShareIntentContext();
 
   useEffect(() => {
     configureNotificationHandler();
   }, []);
+
+  /**
+   * Người dùng vừa chọn "Chia sẻ → LinguaCards" ở app khác. Chỉ đẩy sang màn
+   * chia sẻ khi đã đăng nhập — chưa đăng nhập thì `Redirect` bên dưới đưa về
+   * màn login trước, nội dung chia sẻ vẫn nằm trong provider nên quay lại đây
+   * sau khi đăng nhập là đi tiếp được.
+   */
+  useEffect(() => {
+    if (hasShareIntent && session) router.push("/share");
+  }, [hasShareIntent, session, router]);
 
   if (initializing) {
     return (
@@ -70,6 +82,7 @@ export default function AppLayout() {
       <Stack.Screen name="study/[deckId]" options={{ title: "Học" }} />
       <Stack.Screen name="progress" options={{ title: "Tiến độ" }} />
       <Stack.Screen name="settings" options={{ title: "Cài đặt" }} />
+      <Stack.Screen name="share" options={{ title: "Thêm từ được chia sẻ" }} />
     </Stack>
   );
 }
