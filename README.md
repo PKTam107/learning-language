@@ -41,7 +41,7 @@ npm install
 ### 2. Tạo Supabase project
 1. Vào https://supabase.com → New Project.
 2. Mở **SQL Editor** → chạy lần lượt các file trong [`supabase/migrations/`](./supabase/migrations)
-   **theo đúng thứ tự số** (`0001_init.sql` → `0013_review_context_and_housekeeping.sql`): dán nội dung từng file → **Run**.
+   **theo đúng thứ tự số** (`0001_init.sql` → `0014_daily_heartbeat.sql`): dán nội dung từng file → **Run**.
 3. Bật **Google OAuth**: Dashboard → Authentication → Providers → Google
    (tạo OAuth Client ID/Secret ở [Google Cloud Console](https://console.cloud.google.com/),
    thêm redirect URL: `https://<project>.supabase.co/auth/v1/callback`).
@@ -63,7 +63,7 @@ cp .env.example .env.local
 
 Supabase Free **tạm dừng project sau ~7 ngày không có hoạt động** — nghỉ học một tuần là mở app
 lên thấy hỏng. [`.github/workflows/supabase-keepalive.yml`](./.github/workflows/supabase-keepalive.yml)
-ping nhẹ mỗi ngày và dọn `dictionary_cache` nguội (>90 ngày kể từ lần tra cuối).
+cập nhật một dòng `system_heartbeat` mỗi ngày lúc **09:17 giờ Việt Nam** và dọn `dictionary_cache` nguội (>90 ngày kể từ lần tra cuối).
 
 Chỉ cần khai hai secret ở **Settings → Secrets and variables → Actions**:
 
@@ -71,6 +71,16 @@ Chỉ cần khai hai secret ở **Settings → Secrets and variables → Actions
 |---|---|
 | `SUPABASE_URL` | `https://<project-ref>.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Settings → API → **service_role** (không phải anon) |
+
+Chạy migration `0014_daily_heartbeat.sql` trước khi bật job. Job chỉ cập nhật dòng `id = daily`,
+không sửa dữ liệu học và không tạo thêm dòng mỗi ngày. Xem thời gian chạy gần nhất ở
+`system_heartbeat.last_seen_at`. Có thể chạy script thủ công với hai biến môi trường trên:
+
+```bash
+bash scripts/supabase-keepalive.sh
+```
+
+Đây là hoạt động database định kỳ, không phải bảo đảm Supabase sẽ không pause project.
 
 Chạy thử ngay: tab **Actions** → *Giữ Supabase sống & dọn dẹp* → **Run workflow**.
 Hai bước dọn dẹp cần migration `0013`; chưa chạy thì chúng chỉ cảnh báo, không làm job đỏ.
