@@ -257,6 +257,10 @@ Ba mục đầu là **sửa đánh giá sai của chính tài liệu này**, kh�
 >   [07-current-state.md](./07-current-state.md#đợt-1-của-13-de-xuat-tinh-nangmd--migration-0012).
 > - **G1 đã triển khai** (đầu đợt 2): "Chia sẻ → LinguaCards" nay chạy cả trên **bản APK**,
 >   không chỉ PWA — xem [as-built](./07-current-state.md#g1--chia-sẻ-từ-ngoài-app-vào-cho-bản-apk).
+> - **G2 + G3 đã triển khai** (migration `0013`) — as-built ở
+>   [07-current-state.md](./07-current-state.md#g2--g3--đo-được-việc-học--hạ-tầng-tự-sống--đợt-2-migration-0013).
+>   G2 mới chỉ là **phần ghi log**; màn hình báo cáo F1 cố ý để sau, và F1 vẫn cần vài tuần
+>   dữ liệu mới đọc được gì.
 > - Bảng dưới đây đã **xếp lại** so với bản đầu: lý do nằm ở nhóm G (§3) — F1 đắt hơn tưởng,
 >   D1 rẻ hơn tưởng nhưng giá trị hẹp hơn tưởng, và A2 chưa từng hoàn tất như tài liệu ghi.
 
@@ -271,8 +275,8 @@ Xếp theo **giá trị cho người học / công bỏ ra**, tất cả đều 
 | **1** ✅ | B2 | Gemini free tier + chuỗi dự phòng | Cao | Rất thấp | Code provider đã sẵn |
 | **1** ✅ | C3 | Xử lý leech | Vừa | Rất thấp | `isLeech()` đã viết, chỉ thiếu UI |
 | **2** ✅ | G1 | Chia sẻ từ vào app **trên bản APK** | Cao | Rất thấp | A2 chưa hoàn tất ở client dùng hằng ngày |
-| **2** | G2 | Ngữ cảnh cho nhật ký ôn | Cao | Rất thấp | **Làm sớm**: báo cáo chỉ có dữ liệu từ ngày thêm cột |
-| **2** | G3 | Chống project ngủ + dọn cache | Cao | Rất thấp | Bảo hiểm hạ tầng; mở đường cho D1 |
+| **2** ✅ | G2 | Ngữ cảnh cho nhật ký ôn | Cao | Rất thấp | Ghi log xong; màn báo cáo (F1) tách ra làm sau |
+| **2** ✅ | G3 | Chống project ngủ + dọn cache | Cao | Rất thấp | GitHub Actions; cần khai 2 secret mới chạy |
 | **2** | A1 | Mining từ đoạn văn | Cao | Vừa | Nút thắt nạp từ; cần canh rate limit |
 | **2** | D3 | Phiên 5 thẻ / 60 giây | Vừa | Thấp | Rào cản thật là *quyết định bắt đầu* |
 | **2** | D2 | Ngày nghỉ giữ chuỗi | Vừa | Thấp | Chống bỏ cuộc |
@@ -303,8 +307,8 @@ nạp từ — mới là việc lớn tiếp theo đáng đổ công.
 
 | Rủi ro | Ảnh hưởng | Cách phòng |
 |---|---|---|
-| Project Supabase **ngủ khi vắng người dùng** | App chết lâm sàng, người dùng tưởng hỏng | **G3** (cron ping) là cách phòng thật; E2 (sao lưu) + màn hình báo lỗi tử tế là lưới an toàn |
-| **Dung lượng DB free** (B1 kho câu, `dictionary_cache` phình theo thời gian) | Chạm trần 500 MB | Lọc kho câu trước khi nạp; **G3** dọn `dictionary_cache` theo tuổi |
+| ~~Project Supabase **ngủ khi vắng người dùng**~~ | App chết lâm sàng, người dùng tưởng hỏng | **Đã xử lý (G3):** ping ngày một lần bằng GitHub Actions. Còn một kẽ hở: GitHub tắt cron ở repo 60 ngày không commit |
+| **Dung lượng DB free** (B1 kho câu, `dictionary_cache` phình theo thời gian) | Chạm trần 500 MB | **G3 đã dọn** `dictionary_cache` theo tuổi (90 ngày kể từ lần tra cuối). Phần B1 vẫn phải lọc kho câu trước khi nạp |
 | **Quota dịch** (MyMemory / Gemini free) | Thẻ tạo ra thiếu nghĩa tiếng Việt | Chuỗi dự phòng B2 + cache đã có |
 | ~~**Cron gói free quá thưa** cho D1~~ | Nhắc học sai giờ → phản tác dụng | **Đã gỡ:** GitHub Actions cho cron dày và free (G3). Rào cản còn lại của D1 là công bỏ ra, không phải hạ tầng |
 | **Tính năng bật nhầm client** (A2 chỉ có trên PWA suốt một đợt) | Tính năng giá trị nhất nằm im mà không ai biết | Mỗi đề xuất phải ghi rõ **chạy ở client nào**; khi đọc lại tài liệu thì đối chiếu với code, đừng tin trạng thái đã đánh dấu |

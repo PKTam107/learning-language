@@ -276,6 +276,53 @@ nhất nằm im ở đúng client dùng hằng ngày. Xem [13 §G1](./13-de-xuat
 **Chưa kiểm chứng được ở đây:** luồng chia sẻ đầu-cuối chỉ chạy trên máy thật với APK mới. Phần
 đã kiểm chứng: manifest sinh đúng, typecheck web + mobile sạch, 99/99 test qua.
 
+### G2 + G3 — Đo được việc học & hạ tầng tự sống ✅ (đợt 2, migration `0013`)
+
+Hai mục **công rất thấp** nhưng chạm hai loại rủi ro khác hẳn nhau: dữ liệu không thu thập được
+nữa nếu làm chậm, và hạ tầng tự chết khi vắng người dùng. Xem
+[13 §G2–G3](./13-de-xuat-tinh-nang.md).
+
+**G2 — ngữ cảnh cho nhật ký ôn**
+
+- [x] `review_events` thêm `review_type`, `was_due`, `interval_before` (đều **nullable**: dòng cũ
+  không suy ra được, để null thì báo cáo tự loại ra thay vì đoán bừa rồi tính sai).
+- [x] **`was_due` chốt theo thời điểm ôn**, không theo lúc mở phiên — phiên dài vắt qua nửa đêm
+  vẫn ghi đúng tình trạng từng thẻ lúc người học thật sự trả lời nó.
+- [x] **Thẻ chưa từng ôn → `was_due = false`**, không phải null. Học lần đầu (chắc chắn chưa
+  thuộc) mà bị trộn vào tỷ lệ nhớ là ra đúng con số vô nghĩa mà F1 đang muốn tránh.
+- [x] **Nơi gọi truyền `currentType` xuống**, không phải `sessionType`: ở chế độ "Tự động" mỗi thẻ
+  một kiểu, `recordProgress` không tự suy ra được. Sửa ở cả `StudySession.tsx` (web) và
+  `app/(app)/study/[deckId].tsx` (mobile).
+- [x] **Chưa chạy 0013 vẫn học được**: insert hỏng vì thiếu cột thì ghi lại bằng bộ cột cũ
+  (cùng cách `card_progress` xử lý migration 0009). Mất phần ngữ cảnh của đúng những ngày đó,
+  nhưng streak và hoàn tác vẫn nguyên.
+- [ ] Màn hình báo cáo (**F1**) — cố ý **chưa làm**. Phần ghi log càng làm muộn càng mất dữ liệu;
+  phần đọc thì lúc nào làm cũng được, và còn cần vài tuần dữ liệu mới có gì để đọc.
+
+**G3 — job nền `.github/workflows/supabase-keepalive.yml`**
+
+- [x] **GitHub Actions, không phải Vercel cron**: kết luận "cron gói free quá thưa" của tài liệu 13
+  chỉ đúng với Vercel Hobby. Với repo thì Actions là cron miễn phí và chạy dày tùy ý.
+- [x] **Ping chỉ đọc** (`select=id&limit=1`), mỗi ngày — Supabase Free tạm dừng project sau ~7 ngày
+  vắng hoạt động. Bước này hỏng thì để job **đỏ**: đó đúng là thứ cần biết.
+- [x] **Dọn `dictionary_cache` theo tuổi, không theo số dòng** — `prune_dictionary_cache(p_days)`,
+  mặc định 90 ngày, có sàn 7 ngày để một lệnh gọi sai không quét sạch cache.
+- [x] **Thêm cột `updated_at` + trigger `set_updated_at()` cho `dictionary_cache`.** Điểm dễ sai:
+  `created_at` là lần *đầu* một từ được cache và không bao giờ đổi (lookup ghi bằng upsert, nhánh
+  update không đụng tới) → dọn theo nó là xóa nhầm đúng những từ hay tra nhất.
+- [x] Gọi luôn `prune_rate_limit_counters()` — có từ 0010, tài liệu ghi "tùy chọn: pg_cron" và từ
+  đó tới nay **chưa nơi nào gọi**.
+- [x] Chưa chạy 0013 → hai bước dọn dẹp chỉ `::warning::`, không để job đỏ: phần sống còn (ping)
+  đã xong, dọn trễ vài hôm không sao.
+
+**Chưa kiểm chứng được ở đây:** workflow chỉ chạy thật sau khi push và khai hai secret
+`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (Settings → Secrets → Actions); chạy thử bằng
+**Run workflow** (`workflow_dispatch`). Phần đã kiểm chứng: YAML hợp lệ, logic phân nhánh của
+bước dọn dẹp chạy thử bằng shell, typecheck web + mobile sạch, 99/99 test qua.
+
+**Giới hạn đã biết:** GitHub tự tắt workflow theo lịch ở repo **60 ngày không có commit nào** —
+bỏ hoang lâu thì phải vào bật lại bằng tay. Đây là giới hạn của gói free, không có cách vá.
+
 ### P3 — Đa ngôn ngữ (mở khóa kiến trúc DB có sẵn)
 - [ ] Dùng `profiles.default_source/target_language`; chọn ngôn ngữ khi tạo deck (bỏ hardcode).
 - [ ] Dictionary provider **theo source language** (ngoài DictionaryAPI.dev).
