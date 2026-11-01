@@ -5,7 +5,7 @@
 #
 #  1. Supabase Free TẠM DỪNG project sau khoảng 7 ngày không có hoạt động.
 #     Nghỉ học một tuần là mở app lên thấy hỏng — mà không có lỗi nào để đọc.
-#     Một request đọc mỗi ngày là đủ để đếm là "có hoạt động".
+#     Job ghi heartbeat mỗi ngày để tạo hoạt động database; không bảo đảm tránh pause.
 #
 #  2. `dictionary_cache` phình VÔ HẠN (mỗi từ ai đó tra là một dòng jsonb,
 #     không bao giờ tự mất). Trần Postgres của gói free là ~500 MB.
@@ -32,6 +32,9 @@ on:
   workflow_dispatch: # chạy tay khi cần kiểm chứng
 
 # Chạy chồng nhau không có ích gì; giữ đúng một lượt.
+permissions:
+  contents: read
+
 concurrency:
   group: supabase-keepalive
   cancel-in-progress: false
@@ -50,18 +53,12 @@ jobs:
           : "${SUPABASE_URL:?Thiếu secret SUPABASE_URL}"
           : "${SUPABASE_SERVICE_ROLE_KEY:?Thiếu secret SUPABASE_SERVICE_ROLE_KEY}"
 
-      # Truy vấn rẻ nhất có thể và KHÔNG GHI GÌ: một dòng, một cột, có index.
-      # Bước này hỏng thì coi như project không với tới được → để job đỏ, vì đó
-      # đúng là thứ cần biết.
-      - name: Ping (chỉ đọc)
-        run: |
-          set -euo pipefail
-          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
-            "$SUPABASE_URL/rest/v1/dictionary_cache?select=id&limit=1" \
-            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" || true)
-          echo "HTTP $code"
-          [ "$code" = "200" ] || { echo "::error::Supabase không phản hồi 200"; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Cập nhật heartbeat hằng ngày
+        run: bash scripts/supabase-keepalive.sh
 
       # Dọn theo TUỔI, không theo số dòng: từ nào còn được tra thì `updated_at`
       # tự mới lại và ở lại mãi — chỉ từ tra một lần rồi thôi mới bị xóa. Xóa
