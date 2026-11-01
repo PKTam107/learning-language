@@ -32,6 +32,18 @@ export async function buildDraftCard(
       .eq("target_language", target)
       .maybeSingle();
     if (data?.payload) {
+      // Cache hit cũng là một lần sử dụng: giữ từ hay tra khỏi job dọn cache.
+      // Best-effort để vẫn tra được khi migration 0013 chưa chạy.
+      await service
+        .from("dictionary_cache")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("term", term)
+        .eq("source_language", source)
+        .eq("target_language", target)
+        .then(
+          () => undefined,
+          () => undefined
+        );
       return { ...(data.payload as DraftCard), fromCache: true };
     }
   }

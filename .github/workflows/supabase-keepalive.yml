@@ -1,0 +1,103 @@
+# ============================================================
+# LinguaCards — G3: giữ project Supabase khỏi ngủ + dọn dẹp theo tuổi
+# ============================================================
+# Hai rủi ro hạ tầng của gói $0, cùng một chỗ xử lý:
+#
+#  1. Supabase Free TẠM DỪNG project sau khoảng 7 ngày không có hoạt động.
+#     Nghỉ học một tuần là mở app lên thấy hỏng — mà không có lỗi nào để đọc.
+#     Một request đọc mỗi ngày là đủ để đếm là "có hoạt động".
+#
+#  2. `dictionary_cache` phình VÔ HẠN (mỗi từ ai đó tra là một dòng jsonb,
+#     không bao giờ tự mất). Trần Postgres của gói free là ~500 MB.
+#
+# VÌ SAO GITHUB ACTIONS: cron trên Vercel Hobby quá thưa (cỡ 1 lần/ngày và
+# không đảm bảo giờ), còn Actions thì miễn phí cho repo và chạy dày tùy ý.
+#
+# CẦN CÀI ĐẶT — Settings → Secrets and variables → Actions:
+#   SUPABASE_URL              https://<project-ref>.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY Settings → API → service_role (KHÔNG phải anon)
+# Thiếu secret thì job dừng ngay với thông báo rõ, không chạy nửa vời.
+#
+# LƯU Ý: GitHub tự TẮT workflow theo lịch ở repo 60 ngày không có commit nào.
+# Repo này đang phát triển đều nên chưa phải vấn đề, nhưng nếu bỏ hoang lâu thì
+# cần vào bật lại bằng tay — đây là giới hạn của gói free, không phải lỗi.
+
+name: Giữ Supabase sống & dọn dẹp
+
+on:
+  schedule:
+    # 02:17 UTC = 09:17 giờ VN, mỗi ngày. Lệch khỏi đầu giờ tròn vì lúc đó hàng
+    # đợi cron của GitHub đông nhất và job hay bị đẩy trễ.
+    - cron: "17 2 * * *"
+  workflow_dispatch: # chạy tay khi cần kiểm chứng
+
+# Chạy chồng nhau không có ích gì; giữ đúng một lượt.
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Kiểm tra secret
+        run: |
+          set -euo pipefail
+          : "${SUPABASE_URL:?Thiếu secret SUPABASE_URL}"
+          : "${SUPABASE_SERVICE_ROLE_KEY:?Thiếu secret SUPABASE_SERVICE_ROLE_KEY}"
+
+      # Truy vấn rẻ nhất có thể và KHÔNG GHI GÌ: một dòng, một cột, có index.
+      # Bước này hỏng thì coi như project không với tới được → để job đỏ, vì đó
+      # đúng là thứ cần biết.
+      - name: Ping (chỉ đọc)
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
+            "$SUPABASE_URL/rest/v1/dictionary_cache?select=id&limit=1" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" || true)
+          echo "HTTP $code"
+          [ "$code" = "200" ] || { echo "::error::Supabase không phản hồi 200"; exit 1; }
+
+      # Dọn theo TUỔI, không theo số dòng: từ nào còn được tra thì `updated_at`
+      # tự mới lại và ở lại mãi — chỉ từ tra một lần rồi thôi mới bị xóa. Xóa
+      # nhầm cũng vô hại: lần tra sau chỉ tốn thêm một vòng gọi từ điển.
+      #
+      # Chưa chạy migration 0013 thì hàm chưa tồn tại → cảnh báo, KHÔNG để job
+      # đỏ: phần sống còn (ping) đã xong rồi, dọn dẹp trễ vài hôm không sao.
+      - name: Dọn cache từ điển nguội (> 90 ngày)
+        run: |
+          set -euo pipefail
+          body=$(curl -sS --max-time 60 -w '\n%{http_code}' \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/prune_dictionary_cache" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"p_days": 90}' || true)
+          code=$(echo "$body" | tail -n1)
+          if [ "$code" = "200" ]; then
+            echo "Đã xóa $(echo "$body" | head -n-1) dòng cache nguội"
+          else
+            echo "::warning::prune_dictionary_cache trả HTTP $code — đã chạy migration 0013 chưa?"
+          fi
+
+      # `prune_rate_limit_counters()` có từ migration 0010 nhưng chưa nơi nào
+      # gọi. Bảng đếm theo user × máy × route, dòng quá 2 ngày là rác chắc chắn.
+      - name: Dọn bộ đếm rate limit đã nguội
+        run: |
+          set -euo pipefail
+          body=$(curl -sS --max-time 60 -w '\n%{http_code}' \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/prune_rate_limit_counters" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" || true)
+          code=$(echo "$body" | tail -n1)
+          if [ "$code" = "200" ]; then
+            echo "Đã xóa $(echo "$body" | head -n-1) dòng bộ đếm"
+          else
+            echo "::warning::prune_rate_limit_counters trả HTTP $code"
+          fi

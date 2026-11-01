@@ -298,15 +298,19 @@ export function StudySession({ source }: { source: StudySource }) {
       if (!current) return;
       // Không await: lượt học không nên chờ mạng. Promise được giữ lại trong
       // history để hoàn tác có đủ ảnh chụp trạng thái cũ.
-      const receipt = recordProgress(current.id, status).catch((e: unknown) => {
-        console.warn("recordProgress:", (e as Error).message);
-        return null;
-      });
+      // `currentType` (không phải `sessionType`): ở chế độ "Tự động" mỗi thẻ
+      // một kiểu, nhật ký phải ghi kiểu người học thật sự vừa làm.
+      const receipt = recordProgress(current.id, status, currentType).catch(
+        (e: unknown) => {
+          console.warn("recordProgress:", (e as Error).message);
+          return null;
+        }
+      );
       setHistory((h) => [...h, { index, status, receipt }]);
       setCounts((c) => ({ ...c, [status]: c[status] + 1 }));
       next();
     },
-    [current, index, next]
+    [current, currentType, index, next]
   );
 
   /**

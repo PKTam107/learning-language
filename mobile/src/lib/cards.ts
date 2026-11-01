@@ -9,6 +9,7 @@ import type {
 import { fetchAllRows } from "@/lib/paginate";
 import { resolvePolicy } from "@/lib/policy";
 import { buildDueQueue, type DueQueue } from "@/lib/queue";
+import type { ReviewType } from "@/lib/quiz";
 import { rowFromState, scheduleReview, stateFromRow } from "@/lib/srs";
 import { trashCards } from "@/lib/trash";
 
@@ -390,12 +391,35 @@ export interface ReviewReceipt {
 }
 
 /**
+ * Ngữ cảnh của một lượt ôn — đọc từ `card_progress` TRƯỚC khi ghi đè.
+ *
+ * `was_due` chốt theo **thời điểm ôn**, không theo lúc mở phiên: một phiên dài
+ * vắt qua nửa đêm thì từng thẻ vẫn được ghi đúng tình trạng lúc người học thật
+ * sự trả lời nó.
+ */
+function reviewContext(
+  existing: Record<string, unknown> | null | undefined,
+  now: Date
+): { was_due: boolean; interval_before: number } {
+  const dueAt = existing?.next_due_at as string | null | undefined;
+  return {
+    // Chưa từng ôn → không phải "tới hạn" mà là học lần đầu.
+    was_due: !!dueAt && new Date(dueAt).getTime() <= now.getTime(),
+    interval_before: Number(existing?.interval_days ?? 0) || 0,
+  };
+}
+
+/**
  * Ghi nhận đánh giá + tính lịch ôn lại (lib/srs.ts — dùng chung công thức với web).
  * Trả về ảnh chụp trạng thái cũ để hoàn tác được nếu bấm nhầm.
+ *
+ * `reviewType` là kiểu ôn THẬT của thẻ đó — ở chế độ "Tự động" mỗi thẻ một kiểu
+ * khác nhau, nên phải do nơi gọi truyền xuống.
  */
 export async function recordProgress(
   cardId: string,
-  status: CardStatus
+  status: CardStatus,
+  reviewType?: ReviewType
 ): Promise<ReviewReceipt> {
   const userId = await requireUserId();
 
@@ -440,12 +464,29 @@ export async function recordProgress(
   if (error) throw error;
 
   // Ghi nhật ký ôn cho streak/thống kê. Lỗi thì chỉ mất khả năng hoàn tác dòng này.
+  const base = { user_id: userId, card_id: cardId, status };
+  const logRow = {
+    ...base,
+    review_type: reviewType ?? null,
+    ...reviewContext(existing, now),
+  };
+
   let eventId: string | null = null;
-  const { data: event, error: logErr } = await supabase
+  let { data: event, error: logErr } = await supabase
     .from("review_events")
-    .insert({ user_id: userId, card_id: cardId, status })
+    .insert(logRow)
     .select("id")
     .single();
+
+  // Migration 0013 chưa chạy → ghi lại bộ cột cũ. Mất phần ngữ cảnh nhưng
+  // streak và hoàn tác vẫn nguyên.
+  if (logErr && isUndefinedColumn(logErr)) {
+    ({ data: event, error: logErr } = await supabase
+      .from("review_events")
+      .insert(base)
+      .select("id")
+      .single());
+  }
   if (logErr) console.warn("review_events:", logErr.message);
   else eventId = (event?.id as string) ?? null;
 
