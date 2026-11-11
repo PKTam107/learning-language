@@ -1,5 +1,6 @@
 "use client";
 
+import { parseCardImage } from "@/lib/card-image";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/currentUser";
 import { fetchAllRows } from "@/lib/db/paginate";
@@ -72,6 +73,7 @@ export async function saveCard(
       part_of_speech: draft.partOfSpeech ?? null,
       meaning_vi: draft.meaningVi ?? null,
       note: draft.note ?? null,
+      image: parseCardImage(draft.image),
       definitions: draft.definitions,
       examples: draft.examples,
       cefr_level: draft.cefrLevel ?? null,
@@ -116,6 +118,7 @@ export async function updateCard(
       part_of_speech: draft.partOfSpeech ?? null,
       meaning_vi: draft.meaningVi ?? null,
       note: draft.note ?? null,
+      image: parseCardImage(draft.image),
       definitions: draft.definitions,
       examples: draft.examples,
       cefr_level: draft.cefrLevel ?? null,
@@ -135,6 +138,7 @@ export async function updateCard(
 export function cardToDraft(card: Card): DraftCard {
   return {
     term: card.term,
+    image: parseCardImage(card.image),
     phonetic: card.phonetic ?? undefined,
     phoneticUk: card.phonetic_uk ?? undefined,
     phoneticUs: card.phonetic_us ?? undefined,
@@ -197,6 +201,7 @@ export async function importCards(
       part_of_speech: d.partOfSpeech ?? null,
       meaning_vi: d.meaningVi ?? null,
       note: d.note ?? null,
+      image: parseCardImage(d.image),
       definitions: d.definitions ?? [],
       examples: d.examples ?? [],
       cefr_level: d.cefrLevel ?? null,

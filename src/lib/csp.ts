@@ -37,7 +37,7 @@ export function buildCsp(nonce: string): string {
     // hydrate. Rủi ro thấp hơn script rất nhiều (không chạy được mã).
     ["style-src", "'self' 'unsafe-inline'"],
 
-    ["img-src", "'self' data: blob:"],
+    ["img-src", "'self' data: blob: https://images.pexels.com https://upload.wikimedia.org https://thumb.wikimedia.org"],
 
     // next/font tải Inter về lúc build và phục vụ từ /_next/static → không cần
     // mở fonts.gstatic.com.

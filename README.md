@@ -152,3 +152,16 @@ Xem [docs/02-architecture.md §3](./docs/02-architecture.md).
 
 Xem [Roadmap](./docs/05-roadmap.md): mở khóa đa ngôn ngữ, dark mode cho bản mobile,
 học offline thật sự, import Anki.
+
+### Học từ bằng hình ảnh (web)
+
+- Chạy migration `supabase/migrations/0015_card_images.sql` trong Supabase SQL Editor.
+- Ảnh được tìm từ Wikimedia Commons, miễn phí và không cần API key.
+- Khi thêm hoặc sửa từ: chọn nghĩa, bấm **Tìm ảnh**, chọn một trong bốn ảnh gợi ý.
+  Có thể sửa từ khóa tiếng Anh để tìm đúng nghĩa (ví dụ `river bank`). Ảnh là tùy chọn.
+- Khi ôn ở chế độ lật thẻ: bật **Nhìn ảnh đoán từ** để giấu chữ ở mặt trước.
+  Thẻ không có ảnh vẫn hiện từ như thường. Mặt sau hiển thị ảnh, từ, nghĩa và ví dụ.
+- App lưu URL ảnh cùng nguồn/tác giả/giấy phép trong thẻ, không upload hay tạo ảnh bằng AI.
+  Ảnh cần Internet để tải; tìm kiếm được cache 24 giờ để giảm lượt gọi Wikimedia Commons.
+  Nếu nguồn ảnh gặp lỗi, vẫn có thể lưu và học thẻ không ảnh.
+- Tính năng chọn/ôn ảnh hiện dành cho web; ứng dụng mobile chưa có giao diện ảnh.

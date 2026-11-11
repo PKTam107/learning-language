@@ -130,6 +130,7 @@ interface HistoryEntry {
 }
 
 export function StudySession({ source }: { source: StudySource }) {
+  const [imageFirst, setImageFirst] = useState(false);
   const [all, setAll] = useState<CardWithProgress[]>([]);
   const [policy, setPolicy] = useState<QueuePolicy>(UNLIMITED);
   /** Từ mới bị giữ lại vì hết hạn mức hôm nay (chỉ để thông báo). */
@@ -671,7 +672,20 @@ export function StudySession({ source }: { source: StudySource }) {
 
       {current && currentType === "flashcard" && (
         <>
+          <label className="mb-3 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={imageFirst}
+              onChange={(e) => {
+                setImageFirst(e.target.checked);
+                setFlipped(false);
+              }}
+            />
+            Nhìn ảnh đoán từ (thẻ có ảnh)
+          </label>
           <FlashcardFlip
+            key={`${current.id}-${imageFirst}`}
+            imageFirst={imageFirst}
             card={current}
             flipped={flipped}
             onFlip={() => setFlipped((f) => !f)}
