@@ -57,6 +57,7 @@ function cardToExport(c: Card) {
     note: c.note ?? null,
     definitions: c.definitions ?? [],
     examples: c.examples ?? [],
+    image: c.image ?? null,
   };
 }
 

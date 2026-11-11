@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { ImagePicker } from "./ImagePicker";
 import type { DraftCard } from "@/types";
 import { Input, Textarea } from "@/components/ui/Input";
 import { AudioButton } from "./AudioButton";
@@ -66,6 +66,8 @@ export function DraftEditor({ draft, onChange }: DraftEditorProps) {
           placeholder="Nhập hoặc chọn nghĩa..."
         />
       </Field>
+
+      <ImagePicker term={draft.term} image={draft.image} onChange={(image) => set({ image })} />
 
       {draft.definitions.length > 0 && (
         <Field label="Các nghĩa (chọn nhanh)">

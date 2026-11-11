@@ -1,3 +1,5 @@
+import type { CardImage } from "@/lib/card-image";
+
 // Domain types dùng chung cho client & server.
 
 export type LanguageCode = string; // 'en' | 'vi' | ... (mở rộng đa ngôn ngữ)
@@ -20,6 +22,7 @@ export interface Example {
 
 /** Kết quả lookup chưa lưu — hiển thị trong DraftEditor để người dùng sửa trước khi lưu. */
 export interface DraftCard {
+  image?: CardImage | null;
   term: string;
   phonetic?: string;
   /** IPA giọng Anh (nếu tách được từ nguồn). */
@@ -86,6 +89,7 @@ export interface Deck {
 }
 
 export interface Card {
+  image?: CardImage | null;
   id: string;
   user_id: string;
   deck_id: string;

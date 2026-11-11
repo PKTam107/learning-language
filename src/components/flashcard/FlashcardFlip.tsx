@@ -11,6 +11,8 @@ import {
   snapToFace,
   DRAG_SLOP,
 } from "@/lib/flip";
+import { CardPhoto } from "./CardPhoto";
+import { parseCardImage } from "@/lib/card-image";
 import { AudioButton } from "./AudioButton";
 import { StickyNote } from "lucide-react";
 
@@ -18,6 +20,7 @@ interface FlashcardFlipProps {
   card: CardWithProgress;
   flipped: boolean;
   onFlip: () => void;
+  imageFirst?: boolean;
 }
 
 /**
@@ -65,7 +68,8 @@ interface Gesture {
  * thẻ luôn quay tiếp theo hướng người dùng vừa vuốt, không có cảm giác "chỉ xoay
  * một chiều". Mặt nào đang hiện chỉ phụ thuộc góc chẵn/lẻ vòng nửa (`isBack`).
  */
-export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
+export function FlashcardFlip({ card, flipped, onFlip, imageFirst = false }: FlashcardFlipProps) {
+  const showImage = imageFirst && !!parseCardImage(card.image);
   const rootRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const [deg, setDeg] = useState(() => (flipped ? 180 : 0));
@@ -171,7 +175,7 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
   return (
     <div
       ref={rootRef}
-      className={`flip-card h-72 w-full select-none sm:h-96 ${
+      className={`flip-card h-96 w-full select-none ${
         dragging ? "cursor-grabbing" : "cursor-grab"
       }`}
       onPointerDown={onPointerDown}
@@ -190,7 +194,8 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
         }}
       >
         {/* Mặt trước */}
-        <div className="flip-face flex h-full w-full flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <div aria-hidden={flipped} className="flip-face flex h-full w-full flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          {showImage ? <><CardPhoto image={card.image} quiz /><p className="text-sm text-slate-500">Từ tiếng Anh là gì?</p></> : <>
           <h2 className="text-center text-4xl font-bold sm:text-5xl">
             {card.term}
           </h2>
@@ -207,13 +212,14 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
             <AudioButton url={card.audio_us} text={card.term} label="US" />
             <AudioButton url={card.audio_uk} text={card.term} label="UK" />
           </div>
+          </>}
           <p className="absolute bottom-4 text-xs text-slate-400 dark:text-slate-500">
             Nhấn hoặc kéo ngang để lật (Space)
           </p>
         </div>
 
         {/* Mặt sau */}
-        <div className="flip-face flip-back flex h-full w-full flex-col gap-3 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <div aria-hidden={!flipped} className="flip-face flip-back flex h-full w-full flex-col gap-3 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-bold">{card.term}</span>
             {card.part_of_speech && (
@@ -222,6 +228,8 @@ export function FlashcardFlip({ card, flipped, onFlip }: FlashcardFlipProps) {
               </span>
             )}
           </div>
+          <CardPhoto image={card.image} />
+          {showImage && <div className="flex gap-2"><AudioButton url={card.audio_us} text={card.term} label="US" /><AudioButton url={card.audio_uk} text={card.term} label="UK" /></div>}
           {card.meaning_vi && (
             <p className="text-lg font-medium text-brand-dark dark:text-indigo-300">
               {card.meaning_vi}

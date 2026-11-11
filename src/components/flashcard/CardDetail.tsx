@@ -1,5 +1,6 @@
 "use client";
 
+import { CardPhoto } from "./CardPhoto";
 import type { Card } from "@/types";
 import { AudioButton } from "./AudioButton";
 import { CefrBadge, EnrichmentSections } from "./Enrichment";
@@ -39,6 +40,8 @@ export function CardDetail({ card }: { card: Card }) {
           )}
         </div>
       )}
+
+      <CardPhoto image={card.image} />
 
       {card.meaning_vi && (
         <p className="text-lg font-medium text-brand-dark dark:text-indigo-300">{card.meaning_vi}</p>
