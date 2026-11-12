@@ -17,8 +17,8 @@ export async function POST(request: Request) {
   try {
     const query = new URLSearchParams({
       action: "query", format: "json", formatversion: "2", generator: "search",
-      gsrsearch: `${parsed.data.query} filetype:bitmap`, gsrnamespace: "6", gsrlimit: "12",
-      prop: "imageinfo", iiprop: "url|mime|extmetadata", iiurlwidth: "640",
+      gsrsearch: `${parsed.data.query} filetype:bitmap|drawing`, gsrnamespace: "6", gsrlimit: "12",
+      prop: "imageinfo", iiprop: "url|mime|thumbmime|extmetadata", iiurlwidth: "640",
       iiextmetadatafilter: "Artist|LicenseShortName|LicenseUrl", iiextmetadatalanguage: "en",
     });
     const response = await fetch(`https://commons.wikimedia.org/w/api.php?${query}`, {

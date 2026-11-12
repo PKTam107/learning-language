@@ -157,6 +157,7 @@ học offline thật sự, import Anki.
 
 - Chạy migration `supabase/migrations/0015_card_images.sql` trong Supabase SQL Editor.
 - Ảnh được tìm từ Wikimedia Commons, miễn phí và không cần API key.
+  Tìm cả ảnh bitmap và sơ đồ SVG; sơ đồ được hiển thị bằng ảnh thu nhỏ bitmap do Commons tạo.
 - Khi thêm hoặc sửa từ: chọn nghĩa, bấm **Tìm ảnh**, chọn một trong bốn ảnh gợi ý.
   Có thể sửa từ khóa tiếng Anh để tìm đúng nghĩa (ví dụ `river bank`). Ảnh là tùy chọn.
 - Khi ôn ở chế độ lật thẻ: bật **Nhìn ảnh đoán từ** để giấu chữ ở mặt trước.

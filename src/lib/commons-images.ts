@@ -6,7 +6,7 @@ const ResponseSchema = z.object({
   query: z.object({ pages: z.array(z.object({
     pageid: z.number(), title: z.string(), index: z.number().optional(),
     imageinfo: z.array(z.object({
-      thumburl: z.string().optional(), descriptionurl: z.string(), mime: z.string(),
+      thumburl: z.string().optional(), thumbmime: z.string().optional(), descriptionurl: z.string(), mime: z.string(),
       extmetadata: Metadata,
     })).optional(),
   })) }).optional(),
@@ -23,7 +23,11 @@ export function commonsImages(value: unknown): CardImage[] {
   if (data.error) throw new Error("Wikimedia API error");
   return (data.query?.pages ?? []).sort((a, b) => (a.index ?? 0) - (b.index ?? 0)).flatMap((page) => {
     const info = page.imageinfo?.[0];
-    if (!info?.thumburl || !["image/jpeg", "image/png", "image/webp"].includes(info.mime)) return [];
+    if (!info?.thumburl) return [];
+    const bitmapTypes = ["image/jpeg", "image/png", "image/webp"];
+    // Commons renders SVG diagrams as bitmap thumbnails for display in cards.
+    if (![...bitmapTypes, "image/svg+xml"].includes(info.mime)) return [];
+    if (!bitmapTypes.includes(info.thumbmime ?? info.mime)) return [];
     const meta = info.extmetadata;
     const license = plainText(meta.LicenseShortName?.value ?? "");
     // Only show files with explicit, supported reuse terms and author attribution.
