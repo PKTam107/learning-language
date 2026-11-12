@@ -30,7 +30,7 @@ describe("vocabulary images", () => {
     expect(parseCardImage({ ...photo, pageUrl: "javascript:alert(1)" })).toBeNull();
   });
 
-  it("requires authentication before calling Pexels", async () => {
+  it("requires authentication before searching images", async () => {
     vi.mocked(getRequestUser).mockResolvedValue(null);
     expect((await POST(request())).status).toBe(401);
     expect(fetch).not.toHaveBeenCalled();
@@ -49,6 +49,20 @@ describe("vocabulary images", () => {
     expect(fetch).toHaveBeenCalledWith(expect.stringContaining("gsrsearch=river+bank"), expect.objectContaining({ next: { revalidate: 86400 } }));
     const options = vi.mocked(fetch).mock.calls[0][1];
     expect(options?.headers).not.toHaveProperty("Authorization");
+    const search = new URL(String(vi.mocked(fetch).mock.calls[0][0])).searchParams;
+    expect(search.get("gsrsearch")).toBe("river bank filetype:bitmap|drawing");
+    expect(search.get("iiprop")).toContain("thumbmime");
+  });
+
+  it("includes SVG anatomy diagrams using Commons bitmap thumbnails", async () => {
+    const diagram = { ...commonsPhoto, alt: "Spinal cord.svg", url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Spinal_cord.svg/640px-Spinal_cord.svg.png" };
+    const svgInfo = { ...info, mime: "image/svg+xml", thumbmime: "image/png", thumburl: diagram.url };
+    const data = { query: { pages: [{ pageid: 42, title: "File:Spinal cord.svg", imageinfo: [svgInfo] }] } };
+    vi.mocked(fetch).mockResolvedValue(Response.json(data));
+    expect(await (await POST(request("spinal cord"))).json()).toEqual({ images: [diagram] });
+    for (const patch of [{ thumbmime: undefined }, { thumbmime: "image/svg+xml" }, { thumburl: undefined }, { mime: "application/pdf" }]) {
+      expect(commonsImages({ query: { pages: [{ pageid: 42, title: "File:Spinal cord.svg", imageinfo: [{ ...svgInfo, ...patch }] }] } })).toEqual([]);
+    }
   });
 
   it("filters non-images and missing or unsupported licenses", () => {
