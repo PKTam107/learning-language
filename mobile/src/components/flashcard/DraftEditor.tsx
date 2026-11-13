@@ -1,3 +1,4 @@
+import { ImagePicker } from "./ImagePicker";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { DraftCard } from "@/types";
 import { Input } from "@/components/ui/Input";
@@ -53,6 +54,8 @@ export function DraftEditor({ draft, onChange }: Props) {
           />
         </Field>
       </View>
+
+      <ImagePicker key={draft.term} term={draft.term} image={draft.image} onChange={(image) => set({ image })} />
 
       <Field label="Từ loại">
         <Input

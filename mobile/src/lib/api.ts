@@ -1,3 +1,4 @@
+import { CardImageSchema, type CardImage } from "@/lib/card-image";
 import { supabase } from "@/lib/supabase";
 import { describeDevice, deviceHeaders, getDeviceId } from "@/lib/device";
 import type { DraftCard } from "@/types";
@@ -100,4 +101,12 @@ export async function enrichWords(
     throw new Error(info?.message ?? "Làm giàu thất bại");
   }
   return (await res.json()) as Record<string, WordEnrichment>;
+}
+
+/** Tìm ảnh minh họa qua backend chung với web. */
+export async function searchImages(query: string): Promise<CardImage[]> {
+  const res = await apiFetch("/api/images", { query });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? data.message ?? "Không tìm được ảnh.");
+  return CardImageSchema.array().parse(data.images);
 }

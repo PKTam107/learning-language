@@ -51,6 +51,7 @@ function cardToExport(c: Card) {
     audio_uk: c.audio_uk ?? null,
     part_of_speech: c.part_of_speech ?? null,
     note: c.note ?? null,
+    image: c.image ?? null,
     definitions: c.definitions ?? [],
     examples: c.examples ?? [],
   };

@@ -1,3 +1,4 @@
+import { CardPhoto } from "./CardPhoto";
 import { StyleSheet, Text, View } from "react-native";
 import type { Card } from "@/types";
 import { AudioButton } from "./AudioButton";
@@ -49,6 +50,7 @@ export function CardDetail({ card }: { card: Card }) {
         </View>
       )}
 
+      <CardPhoto image={card.image} />
       {!!card.meaning_vi && <Text style={styles.meaning}>{card.meaning_vi}</Text>}
 
       {!!card.note && (
