@@ -1,3 +1,4 @@
+import { CardPhoto } from "./CardPhoto";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Dimensions,
@@ -206,6 +207,7 @@ export function FlashcardFlip({ card, flipped, onFlip }: Props) {
                   <Text style={styles.posBadge}>{card.part_of_speech}</Text>
                 )}
               </View>
+              <CardPhoto image={card.image} />
               {!!card.meaning_vi && (
                 <Text style={styles.meaning}>{card.meaning_vi}</Text>
               )}

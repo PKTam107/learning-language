@@ -1,3 +1,4 @@
+import { parseCardImage } from "@/lib/card-image";
 import { supabase } from "@/lib/supabase";
 import type {
   Card,
@@ -68,6 +69,7 @@ export async function saveCard(
       part_of_speech: draft.partOfSpeech ?? null,
       meaning_vi: draft.meaningVi ?? null,
       note: draft.note ?? null,
+      image: parseCardImage(draft.image),
       definitions: draft.definitions,
       examples: draft.examples,
       cefr_level: draft.cefrLevel ?? null,
@@ -143,6 +145,7 @@ export async function importCards(
       part_of_speech: d.partOfSpeech ?? null,
       meaning_vi: d.meaningVi ?? null,
       note: d.note ?? null,
+      image: parseCardImage(d.image),
       definitions: d.definitions ?? [],
       examples: d.examples ?? [],
       cefr_level: d.cefrLevel ?? null,

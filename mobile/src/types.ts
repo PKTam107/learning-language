@@ -1,3 +1,5 @@
+import type { CardImage } from "@/lib/card-image";
+
 // Domain types — đồng bộ với web app (../../src/types/index.ts).
 
 export type LanguageCode = string; // 'en' | 'vi' | ...
@@ -28,6 +30,7 @@ export interface DraftCard {
   partOfSpeech?: string;
   meaningVi?: string;
   note?: string;
+  image?: CardImage | null;
   definitions: Definition[];
   examples: Example[];
   sourceLanguage: LanguageCode;
@@ -85,6 +88,7 @@ export interface Card {
   part_of_speech: string | null;
   meaning_vi: string | null;
   note: string | null;
+  image?: CardImage | null;
   definitions: Definition[];
   examples: Example[];
   cefr_level: string | null;
