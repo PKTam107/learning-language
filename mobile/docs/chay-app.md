@@ -185,4 +185,5 @@ npm run dev                        # web ở http://localhost:3000
 | App trắng / không tải bundle | Chạy lại `adb reverse tcp:8081 tcp:8081`, rồi `r` để reload. |
 | Tra từ báo `network request failed` (log web không thấy request) | Web bind IPv6-only → WSL2 không forward sang Windows. Đảm bảo script là `next dev -H 0.0.0.0`, restart `npm run dev`, kiểm tra `ss -4tln \| grep 3000` phải có dòng. Và `mobile/.env` = `http://10.0.2.2:3000`. |
 | Tra từ báo lỗi mạng (lý do khác) | Chưa chạy `npm run dev` ở repo gốc. |
+| Ảnh Wikimedia hiện trên web nhưng mobile báo không tải được ảnh | Android có thể nhận HTTP 403 vì User-Agent mặc định `okhttp`. Dùng `expo-image` và `cardImageSource` để gửi User-Agent LinguaCards cho cả ảnh thẻ và kết quả tìm ảnh. Chạy `npm install` trong `mobile`; APK cần build lại vì thêm native module `expo-image`. |
 | `Not logged in` khi build | Chạy `npx eas-cli@latest login` trước các lệnh eas khác. |

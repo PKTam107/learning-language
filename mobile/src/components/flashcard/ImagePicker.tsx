@@ -1,5 +1,7 @@
+import { Image } from "expo-image";
+import { cardImageSource } from "@/lib/image-source";
 import { useEffect, useRef, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { CardImage } from "@/lib/card-image";
 import { searchImages } from "@/lib/api";
 import { useThemeColors } from "@/contexts/ThemeContext";
@@ -36,7 +38,7 @@ export function ImagePicker({ term, image, onChange }: { term: string; image?: C
     <View style={styles.grid}>{images.map((photo, index) => {
       const selected = image?.id === photo.id && image?.source === photo.source;
       return <Pressable key={`${photo.source}-${photo.id}`} accessibilityRole="button" accessibilityLabel={`Chọn ảnh ${index + 1}`} accessibilityState={{ selected }} onPress={() => onChange(photo)} style={[styles.option, { borderColor: selected ? colors.brand : colors.border }]}>
-        <Image source={{ uri: photo.url }} style={styles.thumbnail} resizeMode="cover" />
+        <Image source={cardImageSource(photo)} style={styles.thumbnail} contentFit="cover" />
         <Text numberOfLines={2} style={{ color: colors.textMuted, fontSize: 11 }}>{photo.photographer}</Text>
       </Pressable>;
     })}</View>
