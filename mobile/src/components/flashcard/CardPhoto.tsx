@@ -1,5 +1,7 @@
+import { Image } from "expo-image";
+import { cardImageSource } from "@/lib/image-source";
 import { useState } from "react";
-import { Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { parseCardImage } from "@/lib/card-image";
 import { useThemeColors } from "@/contexts/ThemeContext";
 
@@ -12,7 +14,7 @@ export function CardPhoto({ image }: { image: unknown }) {
   return (
     <View style={styles.wrap}>
       {failedUrl === photo.url ? <Text style={{ color: colors.textMuted }}>Không tải được ảnh. Bạn vẫn có thể học bằng nội dung thẻ.</Text> : (
-        <Image source={{ uri: photo.url }} accessibilityLabel={photo.alt || "Ảnh minh họa"} resizeMode="contain" style={styles.photo} onError={() => setFailedUrl(photo.url)} />
+        <Image source={cardImageSource(photo)} accessibilityLabel={photo.alt || "Ảnh minh họa"} contentFit="contain" style={styles.photo} onError={() => setFailedUrl(photo.url)} />
       )}
       <Pressable accessibilityRole="link" onPress={() => open(photo.pageUrl)}>
         <Text style={[styles.credit, { color: colors.textMuted }]}>Ảnh: {photo.photographer} / {photo.source === "commons" ? "Wikimedia Commons" : "Pexels"}</Text>
