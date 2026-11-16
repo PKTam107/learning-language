@@ -22,6 +22,9 @@ export function useReadingLibrary(store: ReadingStore, lesson: ReadingLesson | n
     const entry = { lesson, answers, updatedAt: new Date().toISOString() };
     persist([entry, ...current.current.filter((item) => item.lesson.passage !== lesson.passage)].slice(0, 20));
   }, [ready, lesson, answers, persist]);
-  const retry = () => { if (ready) persist(current.current); };
+  const retry = () => {
+    if (ready) persist(current.current);
+    else void store.load().then((loaded) => { current.current = loaded; setItems(loaded); setError(""); setReady(true); }).catch(() => setError("Chưa tải được bài đã lưu. Hãy thử lại."));
+  };
   return { items, ready, error, retry };
 }
