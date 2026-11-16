@@ -85,6 +85,11 @@ Các đường dẫn `/settings`, `/progress`, `/reading`, `/decks/:id`, `/study
 `/study/weak` và nhận chia sẻ vẫn dùng được. Màn chính dùng `/decks` cho tab Bộ từ.
 
 Thay đổi menu nằm trong APK: cần cài bản build mới, không tự cập nhật theo web.
+Bản menu này là **0.2.0**, có thể xem phiên bản trong **Cài đặt → Tài khoản**.
+
+Kiểm tra route (`tests/mobile-navigation.test.ts`, chạy bằng `npm test` ở thư mục gốc)
+dùng Expo Router thực tế trong `mobile/node_modules`; cần `npm install` trong mobile.
+Nếu chỉ cài dependencies web, nhóm kiểm tra route mobile sẽ được bỏ qua.
 
 ## Lệnh hữu ích
 
