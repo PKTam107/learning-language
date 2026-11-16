@@ -27,4 +27,21 @@ describe("saved reading lessons", () => {
     expect(store.save).toHaveBeenLastCalledWith(expect.arrayContaining([expect.objectContaining({ answers: [0] })]));
     act(() => renderer.unmount());
   });
+  it("deletes an active lesson without autosaving it again, and clears the remaining library", async () => {
+    const other = { ...entry, lesson: { ...entry.lesson, title: "Other", passage: "Another passage." } };
+    const store = { load: vi.fn().mockResolvedValue([entry, other]), save: vi.fn().mockResolvedValue(undefined) };
+    let library!: ReturnType<typeof useReadingLibrary>;
+    function Harness({ answers }: { answers: (number | null)[] }) { library = useReadingLibrary(store, entry.lesson, answers); return null; }
+    let renderer!: ReturnType<typeof create>;
+    await act(async () => { renderer = create(createElement(Harness, { answers: [null] })); });
+    await act(async () => { library.remove(entry.lesson.passage); });
+    expect(library.items.map((item) => item.lesson.title)).toEqual(["Other"]);
+    await act(async () => { renderer.update(createElement(Harness, { answers: [0] })); });
+    expect(library.items.map((item) => item.lesson.title)).toEqual(["Other"]);
+    await act(async () => { library.clear(); });
+    expect(library.items).toEqual([]);
+    expect(store.save).toHaveBeenLastCalledWith([]);
+    act(() => renderer.unmount());
+  });
+
 });
