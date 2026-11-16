@@ -139,6 +139,28 @@ thẻ được tra sẵn, chỉ bấm Lưu. Chạy được với **bản web đ
 - Luyện lại ngay là luyện bổ sung: không ghi thêm lượt ôn, không tăng mức thuộc
   và không dời lịch ôn. Phiên ôn ban đầu vẫn được lưu như thường.
 
+## Mục tiêu linh hoạt và đọc hiểu (web + mobile)
+
+- Trong **Cài đặt**, chọn mục tiêu 5–50 từ ôn/ngày và 1–7 ngày học/tuần.
+  Trang chủ hiển thị tiến độ; mỗi thẻ chỉ đếm một lần/ngày, tuần bắt đầu Thứ Hai.
+  Kho nhỏ hơn mục tiêu thì dùng số thẻ có thể học; thẻ tạm treo không tính.
+  Mục tiêu không giới hạn hàng đợi SRS. Ngày có ôn thẻ được tính vào mục tiêu tuần;
+  bài đọc và luyện bổ sung ngay sau phiên không ghi thêm lượt ôn.
+- Thử thách dùng số từ khác nhau, bỏ phần thưởng cho tự đánh giá “Đã thuộc”.
+  Khi hàng đợi còn hơn hai lần mục tiêu ngày, tạm bỏ nhiệm vụ thêm từ mới.
+- Từ trang chủ hoặc **Đọc hiểu**, chọn chủ đề và bộ thẻ để tạo đoạn 80–120 từ,
+  kèm hai câu hỏi và giải thích. Chạm từ được đánh dấu để xem nghĩa, nghe và xem ảnh đã lưu.
+  Cần ít nhất ba từ EN→VI có nghĩa. Mỗi bài dùng 3–5 từ, ưu tiên đã học trong tối đa
+  200 thẻ mới nhất của phạm vi đã chọn; nội dung bài chỉ giữ trong màn hình hiện tại.
+- Bài đọc dùng model/key Gemini hoặc OpenAI hiện có. Đặt `READING_AI_PROVIDER`
+  nếu muốn chọn provider riêng; mặc định theo `AI_PROVIDER` hoặc tự dò key như dịch.
+  MyMemory/LibreTranslate không tạo truyện. Nếu thiếu key, quota hoặc nội dung AI
+  không hợp lệ, app dùng các câu ví dụ đã lưu và ghi rõ đây là bài luyện câu ví dụ,
+  không có câu hỏi đọc hiểu. Không có ví dụ thì báo để thử lại hoặc bổ sung thẻ.
+  Chỉ gọi AI khi bấm tạo, tối đa 3 lần/phút và 20 lần/ngày/tài khoản.
+- Không cần migration mới: mục tiêu lưu trong `profiles.settings` hiện có;
+  tiến độ đọc từ nhật ký ôn. API đọc thẻ bằng danh tính người gọi (RLS), không ghi SRS.
+
 ## Lệnh hữu ích
 
 | Lệnh | Tác dụng |

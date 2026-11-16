@@ -244,7 +244,7 @@ export async function fetchChallengeMetrics(
   //   thẻ tới hạn  = card_progress có next_due_at đã qua
   //   từ mới còn   = tổng thẻ − số thẻ đã có tiến độ
   const nowIso = new Date().toISOString();
-  const [events, newRes, totalRes, withProgressRes, dueRes, policy] =
+  const [events, newRes, totalRes, withProgressRes, dueRes, policy, suspendedRes] =
     await Promise.all([
       fetchAllRows<{ card_id: string | null; status: string }>((from, to) =>
         supabase
@@ -259,12 +259,13 @@ export async function fetchChallengeMetrics(
         .select("id", { count: "exact", head: true })
         .gte("created_at", dayStart),
       supabase.from("cards").select("id", { count: "exact", head: true }),
-      supabase.from("card_progress").select("id", { count: "exact", head: true }),
+      supabase.from("card_progress").select("id", { count: "exact", head: true }).is("suspended_at", null),
       supabase
         .from("card_progress")
         .select("id", { count: "exact", head: true })
-        .lte("next_due_at", nowIso),
+        .lte("next_due_at", nowIso).is("suspended_at", null),
       resolvePolicy(newPerDay),
+      supabase.from("card_progress").select("id", { count: "exact", head: true }).not("suspended_at", "is", null),
     ]);
 
   const distinct = new Set<string>();
@@ -275,7 +276,7 @@ export async function fetchChallengeMetrics(
     if (e.status === "easy" && id) mastered.add(id);
   }
 
-  const totalCards = totalRes.count ?? 0;
+  const totalCards = Math.max(0, (totalRes.count ?? 0) - (suspendedRes.count ?? 0));
   const newAvailable = Math.max(0, totalCards - (withProgressRes.count ?? 0));
   const dueToday = dueTodayCount(
     { dueReviews: dueRes.count ?? 0, newAvailable },

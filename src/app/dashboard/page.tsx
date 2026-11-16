@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { LearningGoal } from "@/components/LearningGoal";
 import { Navbar } from "@/components/Navbar";
 import { QuickCreator } from "@/components/QuickCreator";
 import { StudyOverview } from "@/components/StudyOverview";
@@ -20,6 +22,11 @@ export default function DashboardPage() {
             lưới bộ thẻ, nên trên điện thoại phải cuộn qua hết mới tới được chỗ
             bắt đầu học. */}
         <StudyOverview />
+        <LearningGoal />
+        <Link href="/reading" className="mb-5 block rounded-xl border border-brand/30 bg-brand-light p-4 dark:bg-indigo-500/10">
+          <span className="font-semibold">Đọc bằng kho từ của bạn →</span>
+          <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">Đổi nhịp với bài đọc ngắn, chạm từ để xem nghĩa và nghe.</span>
+        </Link>
         <DecksManager showStats />
         {/* — chốt cho mọi thẻ con: grid item không co được dưới
             min-content, nên một truncate ở sâu bên trong là đủ làm tràn trang. */}

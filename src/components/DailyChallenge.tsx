@@ -22,12 +22,12 @@ export function DailyChallenge() {
     if (!ready) return;
     let alive = true;
     fetchChallengeMetrics(settings.newPerDay).then((m) => {
-      if (alive) setChallenge(buildDailyChallenge(m));
+      if (alive) setChallenge(buildDailyChallenge(m, new Date(), { dailyGoal: settings.dailyGoal, weeklyDays: settings.weeklyDays }));
     });
     return () => {
       alive = false;
     };
-  }, [ready, settings.newPerDay]);
+  }, [ready, settings.newPerDay, settings.dailyGoal, settings.weeklyDays]);
 
   return (
     /* min-w-0 là bắt buộc khi thẻ này nằm trong grid: grid item mặc định

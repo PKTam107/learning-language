@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
+  BookOpen,
   Layers,
   BrainCircuit,
   TrendingUp,
@@ -30,6 +31,7 @@ export const NAV_TABS: Tab[] = [
   { href: "/dashboard", label: "Trang chủ", desc: "Việc cần ôn hôm nay", Icon: Home },
   { href: "/decks", label: "Bộ thẻ", desc: "Quản lý bộ từ vựng", Icon: Layers },
   { href: "/weak", label: "Hay quên", desc: "Từ hay đánh giá “Chưa thuộc”", Icon: BrainCircuit },
+  { href: "/reading", label: "Đọc hiểu", desc: "Đọc với từ trong kho của bạn", Icon: BookOpen },
   { href: "/progress", label: "Tiến độ", desc: "Huy hiệu, heatmap, lịch ôn", Icon: TrendingUp },
   { href: "/settings", label: "Cài đặt", desc: "Giao diện, phát âm, nhắc học", Icon: Settings },
 ];

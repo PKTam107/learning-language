@@ -3,7 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { DEFAULT_NEW_PER_DAY, NEW_PER_DAY_OPTIONS } from "@/lib/queue";
 
-export interface AppSettings {
+import { DEFAULT_GOALS, sanitizeGoals, type LearningGoals } from "@/lib/goals";
+
+export interface AppSettings extends LearningGoals {
   /** Tự phát âm khi lật thẻ trong lúc học. */
   autoSpeak: boolean;
   /** Bật nhắc học hằng ngày (local notification). */
@@ -17,6 +19,7 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
+  ...DEFAULT_GOALS,
   autoSpeak: true,
   reminderEnabled: false,
   reminderHour: 20,
@@ -37,7 +40,7 @@ const int = (v: unknown, fallback: number, min: number, max: number): number => 
 export function sanitizeSettings(raw: unknown): Partial<AppSettings> {
   if (!raw || typeof raw !== "object") return {};
   const r = raw as Record<string, unknown>;
-  const out: Partial<AppSettings> = {};
+  const out: Partial<AppSettings> = { ...sanitizeGoals(r) };
   if (typeof r.autoSpeak === "boolean") out.autoSpeak = r.autoSpeak;
   if (typeof r.reminderEnabled === "boolean")
     out.reminderEnabled = r.reminderEnabled;
@@ -111,11 +114,24 @@ export async function saveSettings(s: AppSettings): Promise<void> {
  * `profiles.settings` của tài khoản (nguồn sự thật, ghi đè lại).
  * `ready` = true sau bước đầu, vì bước sau có thể không bao giờ về (offline).
  */
+const settingsSubscribers = new Set<(settings: AppSettings) => void>();
+
 export function useSettings() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [ready, setReady] = useState(false);
   /** Bản mới nhất, để `update` gộp patch mà không phụ thuộc thứ tự setState. */
   const latest = useRef<AppSettings>(DEFAULT_SETTINGS);
+  const edited = useRef(false);
+
+  useEffect(() => {
+    const sync = (next: AppSettings) => {
+      edited.current = true;
+      latest.current = next;
+      setSettings(next);
+    };
+    settingsSubscribers.add(sync);
+    return () => { settingsSubscribers.delete(sync); };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -126,7 +142,7 @@ export function useSettings() {
       setReady(true);
 
       const remote = await fetchRemoteSettings();
-      if (!alive || !remote) return;
+      if (!alive || !remote || edited.current) return;
       const merged = { ...local, ...sanitizeSettings(remote) };
       latest.current = merged;
       setSettings(merged);
@@ -138,9 +154,11 @@ export function useSettings() {
   }, []);
 
   const update = useCallback((patch: Partial<AppSettings>) => {
+    edited.current = true;
     const next = { ...latest.current, ...patch };
     latest.current = next;
     setSettings(next);
+    settingsSubscribers.forEach((sync) => sync(next));
     void saveSettings(next);
     void saveRemoteSettings(next);
   }, []);

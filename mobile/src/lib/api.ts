@@ -1,3 +1,4 @@
+import { ReadingResponseSchema, type ReadingRequest } from "@/lib/reading";
 import { ImageSearchPageSchema, type ImageCursor, type ImageSearchPage } from "@/lib/image-search";
 import { supabase } from "@/lib/supabase";
 import { describeDevice, deviceHeaders, getDeviceId } from "@/lib/device";
@@ -109,4 +110,11 @@ export async function searchImages(query: string, cursor: ImageCursor | null = n
   const data = await res.json();
   if (!res.ok) throw new Error(data.error ?? data.message ?? "Không tìm được ảnh.");
   return ImageSearchPageSchema.parse(data);
+}
+
+export async function createReadingLesson(input: ReadingRequest) {
+  const response = await apiFetch("/api/reading", input);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || data.error || "Chưa tải được bài đọc.");
+  return ReadingResponseSchema.parse(data);
 }
