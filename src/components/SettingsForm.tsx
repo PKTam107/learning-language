@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlarmClock, ChevronRight, Trash2 } from "lucide-react";
 import { useSettings } from "@/lib/settings";
+import { DAILY_GOAL_OPTIONS } from "@/lib/goals";
 import { NEW_PER_DAY_OPTIONS } from "@/lib/queue";
 import { fetchTrashCount } from "@/lib/db/trash";
 import {
@@ -72,6 +73,19 @@ export function SettingsForm() {
           Học tập
         </h2>
         <div className="space-y-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+          <div className="space-y-3">
+            <label className="flex items-center justify-between gap-3 text-sm">Mục tiêu ôn từ/ngày
+              <select aria-label="Mục tiêu ôn từ mỗi ngày" value={settings.dailyGoal} onChange={(e) => update({ dailyGoal: Number(e.target.value) })} className="rounded-lg border p-2 dark:border-slate-700 dark:bg-slate-900">
+                {DAILY_GOAL_OPTIONS.map((n) => <option key={n} value={n}>{n} từ</option>)}
+              </select>
+            </label>
+            <label className="flex items-center justify-between gap-3 text-sm">Ngày học mỗi tuần
+              <select aria-label="Số ngày học mỗi tuần" value={settings.weeklyDays} onChange={(e) => update({ weeklyDays: Number(e.target.value) })} className="rounded-lg border p-2 dark:border-slate-700 dark:bg-slate-900">
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => <option key={n} value={n}>{n} ngày</option>)}
+              </select>
+            </label>
+            <p className="text-xs text-slate-500">Mục tiêu tạo động lực, không giới hạn số thẻ bạn được học. Mỗi từ chỉ đếm một lần/ngày; tuần tính từ Thứ Hai.</p>
+          </div>
           <Toggle
             label="Tự phát âm khi lật thẻ"
             desc="Đọc từ tiếng Anh mỗi khi bạn lật xem đáp án / lộ đáp án."

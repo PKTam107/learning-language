@@ -80,6 +80,7 @@ export default function AppLayout() {
       />
       <Stack.Screen name="decks/[id]" options={{ title: "Bộ thẻ" }} />
       <Stack.Screen name="study/[deckId]" options={{ title: "Học" }} />
+      <Stack.Screen name="reading" options={{ title: "Đọc hiểu" }} />
       <Stack.Screen name="progress" options={{ title: "Tiến độ" }} />
       <Stack.Screen name="settings" options={{ title: "Cài đặt" }} />
       <Stack.Screen name="share" options={{ title: "Thêm từ được chia sẻ" }} />

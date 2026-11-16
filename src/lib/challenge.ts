@@ -5,7 +5,8 @@
  * Tiến độ đọc từ nhật ký ôn + thẻ tạo trong ngày (xem lib/db/insights.ts).
  */
 
-import { dayKey, fromDayKey } from "@/lib/streak";
+import { dayKey } from "@/lib/streak";
+import { DEFAULT_GOALS, type LearningGoals } from "@/lib/goals";
 
 export interface ChallengeMetrics {
   /** Số lượt ôn hôm nay (mọi kiểu ôn). */
@@ -58,24 +59,6 @@ export interface DailyChallenge {
   percent: number;
 }
 
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
-
-/** Số ngày kể từ 1970-01-01 — hạt giống để đổi nhiệm vụ mỗi ngày. */
-function dayIndex(day: string): number {
-  return Math.floor(fromDayKey(day).getTime() / 86_400_000);
-}
-
-/**
- * Mục tiêu số lượt ôn: ưu tiên số thẻ tới hạn, kẹp trong [5, 20] và không vượt
- * số thẻ đang có (kho thẻ nhỏ thì mục tiêu nhỏ).
- */
-function reviewTarget(m: ChallengeMetrics): number {
-  const base = m.dueToday > 0 ? m.dueToday : 10;
-  return Math.max(1, Math.min(clamp(base, 5, 20), m.totalCards));
-}
-
 function quest(q: Omit<Quest, "done">): Quest {
   return { ...q, done: q.current >= q.target };
 }
@@ -86,7 +69,8 @@ function quest(q: Omit<Quest, "done">): Quest {
  */
 export function buildDailyChallenge(
   m: ChallengeMetrics,
-  today: Date = new Date()
+  today: Date = new Date(),
+  goals: LearningGoals = DEFAULT_GOALS
 ): DailyChallenge {
   const day = dayKey(today);
   const quests: Quest[] = [];
@@ -96,7 +80,7 @@ export function buildDailyChallenge(
       quest({
         id: "first-card",
         icon: "✨",
-        title: "Thêm từ đầu tiên",
+        title: "Thêm từ để bắt đầu",
         hint: "Tra một từ tiếng Anh và lưu vào bộ thẻ",
         target: 1,
         current: m.newCardsToday,
@@ -105,15 +89,15 @@ export function buildDailyChallenge(
       })
     );
   } else {
-    const reviews = reviewTarget(m);
+    const reviews = Math.max(1, Math.min(goals.dailyGoal, m.totalCards));
 
-    // 1. Giữ chuỗi — nhiệm vụ nhẹ nhất, luôn có.
+    // 1. Một bước khởi động nhẹ trong ngày người dùng chọn học.
     quests.push(
       quest({
         id: "keep-streak",
         icon: "🔥",
-        title: "Giữ chuỗi ngày học",
-        hint: "Ôn ít nhất 1 lượt trong hôm nay",
+        title: "Khởi động nhẹ",
+        hint: "Ôn ít nhất 1 từ vào ngày bạn chọn học",
         target: 1,
         current: m.reviewsToday,
         unit: "lượt",
@@ -121,83 +105,33 @@ export function buildDailyChallenge(
       })
     );
 
-    // 2. Ôn đủ số lượt của ngày.
+    // 2. Mục tiêu từ khác nhau ổn định, không giảm khi hàng đợi rút ngắn.
     quests.push(
       quest({
         id: "review",
         icon: "🔁",
-        title: `Ôn ${reviews} lượt`,
+        title: `Ôn ${reviews} từ khác nhau`,
         hint:
           m.dueToday > 0
             ? `Hôm nay có ${m.dueToday} thẻ tới hạn`
             : "Ôn lại các từ đã học để nhớ lâu",
         target: reviews,
-        current: m.reviewsToday,
-        unit: "lượt",
+        current: m.distinctToday,
+        unit: "từ",
         action: "study",
       })
     );
 
-    // 3. Học từ mới — 5 từ mỗi 3 ngày, còn lại 3 từ.
-    const newTarget = dayIndex(day) % 3 === 0 ? 5 : 3;
-    quests.push(
-      quest({
-        id: "new-words",
-        icon: "🌱",
-        title: `Thêm ${newTarget} từ mới`,
-        hint: "Tra từ mới bằng nút “+” và lưu vào bộ thẻ",
-        target: newTarget,
-        current: m.newCardsToday,
-        unit: "từ",
-        action: "create",
-      })
-    );
-
-    // 4. Nhiệm vụ luân phiên theo ngày — đổi khẩu vị, vẫn dùng dữ liệu có sẵn.
-    const rotation = dayIndex(day) % 3;
-    if (rotation === 0) {
-      const target = Math.max(1, Math.min(clamp(Math.round(reviews / 4), 2, 5), m.totalCards));
-      quests.push(
-        quest({
-          id: "mastered",
-          icon: "🏅",
-          title: `Chốt ${target} từ "Đã thuộc"`,
-          hint: 'Đánh giá "Đã thuộc" cho những từ bạn nhớ chắc',
-          target,
-          current: m.masteredToday,
-          unit: "từ",
-          action: "study",
-        })
-      );
-    } else if (rotation === 1) {
-      const target = Math.max(1, Math.min(clamp(Math.round(reviews / 2), 5, 15), m.totalCards));
-      quests.push(
-        quest({
-          id: "variety",
-          icon: "🎲",
-          title: `Ôn ${target} từ khác nhau`,
-          hint: "Đi rộng thay vì lặp lại vài từ",
-          target,
-          current: m.distinctToday,
-          unit: "từ",
-          action: "study",
-        })
-      );
-    } else {
-      const target = Math.max(1, Math.min(m.dueToday > 0 ? m.dueToday : 8, 30));
-      quests.push(
-        quest({
-          id: "clear-due",
-          icon: "🧹",
-          title: `Dọn ${target} thẻ tới hạn`,
-          hint: "Ôn hết hàng đợi hôm nay để lịch không dồn lại",
-          target,
-          current: m.distinctToday,
-          unit: "thẻ",
-          action: "study",
-        })
-      );
+    // Khi tồn nhiều thẻ đến hạn, ưu tiên củng cố thay vì thêm việc mới.
+    if (m.dueToday <= goals.dailyGoal * 2) {
+      const newTarget = Math.max(1, Math.min(3, Math.floor(goals.dailyGoal / 5)));
+      quests.push(quest({
+        id: "new-words", icon: "🌱", title: `Thêm ${newTarget} từ mới`,
+        hint: "Lưu từ bạn gặp trong lúc đọc hoặc nghe",
+        target: newTarget, current: m.newCardsToday, unit: "từ", action: "create",
+      }));
     }
+
   }
 
   const doneCount = quests.filter((q) => q.done).length;

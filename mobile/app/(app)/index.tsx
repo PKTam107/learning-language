@@ -25,6 +25,7 @@ import { useSettings } from "@/lib/settings";
 import { DeckCard } from "@/components/deck/DeckCard";
 import { DeckForm } from "@/components/deck/DeckForm";
 import { StatusBar } from "@/components/status/StatusBar";
+import { LearningGoal } from "@/components/LearningGoal";
 import { StreakCard } from "@/components/StreakCard";
 import { DailyChallenge } from "@/components/DailyChallenge";
 import { WeakWords } from "@/components/WeakWords";
@@ -76,14 +77,14 @@ export default function DecksScreen() {
       setAccount(deckData.account);
       setStats(statData);
       setWeak(weakData);
-      setChallenge(buildDailyChallenge(challengeMetrics));
+      setChallenge(buildDailyChallenge(challengeMetrics, new Date(), { dailyGoal: settings.dailyGoal, weeklyDays: settings.weeklyDays }));
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [settings.newPerDay]);
+  }, [settings.newPerDay, settings.dailyGoal, settings.weeklyDays]);
 
   // Tải lại mỗi khi màn được focus (vd quay lại từ deck detail). Chờ cài đặt
   // (hạn mức từ mới) nạp xong để không phải đếm hàng đợi hai lần.
@@ -193,6 +194,8 @@ export default function DecksScreen() {
                 onPress={() => router.push({ pathname: "/study/[deckId]", params: { deckId: "today", quick: "1" } })}
               />
             )}
+            <LearningGoal />
+            {decks.length > 0 && <Button title="Đọc bằng kho từ của bạn →" variant="secondary" onPress={() => router.push("/reading")} />}
             {decks.length > 0 && <StreakCard stats={stats} />}
             <Text style={styles.heading}>Bộ từ vựng của bạn</Text>
             {agg.total > 0 && (

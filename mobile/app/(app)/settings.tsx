@@ -11,6 +11,7 @@ import {
 import { Stack } from "expo-router";
 import { AlarmClock, ChevronRight } from "lucide-react-native";
 import { useSettings } from "@/lib/settings";
+import { DAILY_GOAL_OPTIONS } from "@/lib/goals";
 import { NEW_PER_DAY_OPTIONS } from "@/lib/queue";
 import {
   cancelDailyReminder,
@@ -142,6 +143,15 @@ export default function SettingsScreen() {
         Hạn mức từ mới tính chung cho cả tài khoản trong ngày — học bộ thẻ nào
         trước thì bộ đó dùng hạn mức trước.
       </Text>
+
+      <Text style={styles.section}>Mục tiêu linh hoạt</Text>
+      <View style={styles.card}>
+        <Text style={styles.rowLabel}>Mục tiêu ôn từ/ngày</Text>
+        <View style={styles.chipRow}>{DAILY_GOAL_OPTIONS.map((n) => <Pressable key={n} accessibilityRole="button" accessibilityState={{ selected: settings.dailyGoal === n }} onPress={() => update({ dailyGoal: n })} style={[styles.chip, settings.dailyGoal === n && styles.chipActive]}><Text style={[styles.chipText, settings.dailyGoal === n && styles.chipTextActive]}>{n} từ</Text></Pressable>)}</View>
+        <Text style={styles.rowLabel}>Ngày học mỗi tuần</Text>
+        <View style={styles.chipRow}>{[1, 2, 3, 4, 5, 6, 7].map((n) => <Pressable key={n} accessibilityRole="button" accessibilityState={{ selected: settings.weeklyDays === n }} onPress={() => update({ weeklyDays: n })} style={[styles.chip, settings.weeklyDays === n && styles.chipActive]}><Text style={[styles.chipText, settings.weeklyDays === n && styles.chipTextActive]}>{n} ngày</Text></Pressable>)}</View>
+        <Text style={styles.rowDesc}>Mục tiêu không giới hạn số thẻ được học. Mỗi từ chỉ đếm một lần/ngày, tuần tính từ Thứ Hai.</Text>
+      </View>
 
       {/* --- Nhắc học --- */}
       <Text style={styles.section}>Nhắc học hằng ngày</Text>
