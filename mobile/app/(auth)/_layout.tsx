@@ -6,7 +6,7 @@ export default function AuthLayout() {
 
   // Đã đăng nhập thì không cho vào lại màn auth.
   if (!initializing && session) {
-    return <Redirect href="/(app)" />;
+    return <Redirect href="/(app)/(tabs)" />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;

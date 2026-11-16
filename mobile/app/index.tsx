@@ -18,7 +18,7 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={session ? "/(app)" : "/(auth)/login"} />;
+  return <Redirect href={session ? "/(app)/(tabs)" : "/(auth)/login"} />;
 }
 
 const makeStyles = (colors: ThemeColors) =>

@@ -52,8 +52,18 @@ app/                  # expo-router (mỗi file = 1 route)
     _layout.tsx       # đã login thì redirect vào (app)
     login.tsx         # đăng nhập / đăng ký bằng email + Google OAuth
   (app)/              # nhóm route đã đăng nhập (có gác session)
-    _layout.tsx       # chưa login thì redirect ra login
-    index.tsx         # trang chủ (placeholder — Bộ thẻ sẽ thêm sau)
+    _layout.tsx       # Stack: tabs + các màn học/chi tiết riêng
+    (tabs)/
+      _layout.tsx     # menu dưới có biểu tượng và tên, hỗ trợ sáng/tối
+      index.tsx       # Trang chủ: việc cần ôn, mục tiêu, chuỗi và thử thách
+      learn.tsx       # Học tập: học nhanh, ôn hôm nay, đọc hiểu, từ hay quên
+      decks.tsx       # Bộ từ: quản lý bộ thẻ, thêm/sửa/xóa, sao lưu
+      progress.tsx    # Tiến độ: lịch ôn, heatmap, huy hiệu
+      settings.tsx    # Cài đặt, tài khoản và đăng xuất
+    reading.tsx       # bài đọc (ẩn menu dưới để tập trung)
+    study/[deckId].tsx # phiên ôn (today / weak / UUID bộ thẻ)
+    decks/[id].tsx    # chi tiết bộ thẻ
+    share.tsx         # nhận từ được chia sẻ ngoài app
 src/
   lib/supabase.ts     # Supabase client (AsyncStorage + url polyfill)
   lib/theme.ts        # bảng màu sáng+tối / spacing, đồng bộ với web
@@ -62,6 +72,24 @@ src/
   components/ui/       # Button, Input
   types.ts            # domain types (đồng bộ web src/types)
 ```
+
+## Điều hướng trong app
+
+Thanh menu dưới có năm tab cố định: **Trang chủ · Học tập · Bộ từ · Tiến độ · Cài đặt**.
+Muốn đọc bài, vào **Học tập → Đọc hiểu**. Mục này luôn hiện kể cả khi kho từ còn trống;
+trang đọc hướng dẫn thêm đủ từ khi cần. **Trang chủ** vẫn có lối vào đọc nhanh.
+
+**Bộ từ** tập trung quản lý nội dung; **Cài đặt → Tài khoản** có nút đăng xuất.
+Mở bài đọc, phiên ôn hoặc chi tiết bộ thẻ sẽ ẩn menu dưới, có nút quay lại màn trước.
+Các đường dẫn `/settings`, `/progress`, `/reading`, `/decks/:id`, `/study/today`,
+`/study/weak` và nhận chia sẻ vẫn dùng được. Màn chính dùng `/decks` cho tab Bộ từ.
+
+Thay đổi menu nằm trong APK: cần cài bản build mới, không tự cập nhật theo web.
+Bản menu này là **0.2.0**, có thể xem phiên bản trong **Cài đặt → Tài khoản**.
+
+Kiểm tra route (`tests/mobile-navigation.test.ts`, chạy bằng `npm test` ở thư mục gốc)
+dùng Expo Router thực tế trong `mobile/node_modules`; cần `npm install` trong mobile.
+Nếu chỉ cài dependencies web, nhóm kiểm tra route mobile sẽ được bỏ qua.
 
 ## Lệnh hữu ích
 

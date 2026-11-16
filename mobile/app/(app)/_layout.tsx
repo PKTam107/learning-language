@@ -1,17 +1,18 @@
 import { useEffect } from "react";
 import { Redirect, Stack, useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { Settings as SettingsIcon, TrendingUp } from "lucide-react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useShareIntentContext } from "expo-share-intent";
 import { useAuth } from "@/contexts/AuthContext";
 import { configureNotificationHandler } from "@/lib/notifications";
 import { type ThemeColors } from "@/lib/theme";
 import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
+export const unstable_settings = { initialRouteName: "(tabs)" };
+
 export default function AppLayout() {
   const colors = useThemeColors();
   const styles = useStyles(makeStyles);
-  const { session, initializing, signOut } = useAuth();
+  const { session, initializing } = useAuth();
   const router = useRouter();
   const { hasShareIntent } = useShareIntentContext();
 
@@ -51,38 +52,10 @@ export default function AppLayout() {
         contentStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Stack.Screen
-        name="index"
-        options={{
-          title: "LinguaCards 🎴",
-          headerRight: () => (
-            <View style={styles.headerRight}>
-              <Pressable
-                onPress={() => router.push("/progress")}
-                hitSlop={8}
-                accessibilityLabel="Tiến độ"
-              >
-                <TrendingUp size={20} color={colors.textMuted} />
-              </Pressable>
-              <Pressable
-                onPress={() => router.push("/settings")}
-                hitSlop={8}
-                accessibilityLabel="Cài đặt"
-              >
-                <SettingsIcon size={20} color={colors.textMuted} />
-              </Pressable>
-              <Pressable onPress={signOut} hitSlop={8}>
-                <Text style={styles.signOut}>Đăng xuất</Text>
-              </Pressable>
-            </View>
-          ),
-        }}
-      />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="decks/[id]" options={{ title: "Bộ thẻ" }} />
       <Stack.Screen name="study/[deckId]" options={{ title: "Học" }} />
       <Stack.Screen name="reading" options={{ title: "Đọc hiểu" }} />
-      <Stack.Screen name="progress" options={{ title: "Tiến độ" }} />
-      <Stack.Screen name="settings" options={{ title: "Cài đặt" }} />
       <Stack.Screen name="share" options={{ title: "Thêm từ được chia sẻ" }} />
     </Stack>
   );
@@ -96,6 +69,4 @@ const makeStyles = (colors: ThemeColors) =>
       justifyContent: "center",
       backgroundColor: colors.bg,
     },
-    signOut: { color: colors.textMuted, fontSize: 15 },
-    headerRight: { flexDirection: "row", alignItems: "center", gap: 16 },
   });

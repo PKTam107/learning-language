@@ -1,3 +1,4 @@
+import Constants from "expo-constants";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -8,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { Stack } from "expo-router";
+import { Tabs } from "expo-router";
 import { AlarmClock, ChevronRight } from "lucide-react-native";
 import { useSettings } from "@/lib/settings";
 import { DAILY_GOAL_OPTIONS } from "@/lib/goals";
@@ -22,6 +23,8 @@ import {
   scheduleDailyReminder,
 } from "@/lib/notifications";
 import { TimePickerSheet } from "@/components/ui/TimePickerSheet";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/Button";
 import { ThemePicker } from "@/components/ThemePicker";
 import { DeviceList } from "@/components/DeviceList";
 import { radius, spacing, type ThemeColors } from "@/lib/theme";
@@ -29,6 +32,8 @@ import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 
 export default function SettingsScreen() {
   const colors = useThemeColors();
+  const { user, signOut } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
   const styles = useStyles(makeStyles);
   const { settings, ready, update } = useSettings();
   const [busy, setBusy] = useState(false);
@@ -41,6 +46,14 @@ export default function SettingsScreen() {
     const id = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(id);
   }, [settings.reminderEnabled]);
+
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try { await signOut(); }
+    catch (error) { Alert.alert("Chưa đăng xuất được", error instanceof Error ? error.message : "Hãy thử lại."); }
+    finally { setSigningOut(false); }
+  }
 
   async function toggleReminder(on: boolean) {
     if (busy) return;
@@ -85,7 +98,15 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Cài đặt" }} />
+      <Tabs.Screen options={{ title: "Cài đặt" }} />
+
+      <Text style={styles.section}>Tài khoản</Text>
+      <View style={styles.card}>
+        <Text style={styles.rowLabel}>Tài khoản đang học</Text>
+        <Text style={styles.rowDesc}>{user?.email || "Đã đăng nhập"}</Text>
+        <Text style={styles.rowDesc}>Phiên bản {Constants.expoConfig?.version || "—"}</Text>
+        <Button title="Đăng xuất" variant="secondary" loading={signingOut} onPress={() => void handleSignOut()} />
+      </View>
 
       {/* --- Giao diện --- */}
       <Text style={styles.section}>Giao diện</Text>

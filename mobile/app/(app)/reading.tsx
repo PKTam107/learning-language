@@ -44,7 +44,7 @@ export default function ReadingScreen() {
       <Button title={reading.busy ? "Đang chuẩn bị bài đọc…" : lesson ? "Tạo bài khác" : "Bắt đầu đọc"} disabled={reading.busy} onPress={() => void reading.generate({ topic, ...(deckId ? { deckId } : {}) })} />
       <Text style={styles.muted}>Cần ít nhất 3 từ có nghĩa tiếng Việt. Đọc hiểu không thay đổi lịch ôn thẻ.</Text>
     </View>
-    {!!reading.error && <View style={styles.card}><Text accessibilityRole="alert" style={styles.text}>{reading.error}</Text><Button title="Về kho từ" variant="secondary" onPress={() => router.push("/")} /></View>}
+    {!!reading.error && <View style={styles.card}><Text accessibilityRole="alert" style={styles.text}>{reading.error}</Text><Button title="Về kho từ" variant="secondary" onPress={() => router.navigate("/decks")} /></View>}
     {lesson && <>
       <View style={styles.card}>
         <Text style={styles.title}>{lesson.title}</Text>

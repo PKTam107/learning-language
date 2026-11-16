@@ -13,27 +13,16 @@ import { useFocusEffect, useRouter } from "expo-router";
 import type { Deck, DeckStats } from "@/types";
 import { fetchDecksWithStats, deleteDeck } from "@/lib/decks";
 import { exportAccountBackup } from "@/lib/export";
-import { fetchStudyStats, EMPTY_STATS, type StudyStats } from "@/lib/stats";
-import { fetchWeakWords, type WeakWord } from "@/lib/weak";
-import { fetchChallengeMetrics } from "@/lib/insights";
-import {
-  buildDailyChallenge,
-  type DailyChallenge as Challenge,
-} from "@/lib/challenge";
 import { emptyStats } from "@/lib/queue";
 import { useSettings } from "@/lib/settings";
 import { DeckCard } from "@/components/deck/DeckCard";
 import { DeckForm } from "@/components/deck/DeckForm";
 import { StatusBar } from "@/components/status/StatusBar";
-import { LearningGoal } from "@/components/LearningGoal";
-import { StreakCard } from "@/components/StreakCard";
-import { DailyChallenge } from "@/components/DailyChallenge";
-import { WeakWords } from "@/components/WeakWords";
 import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
 import { Button } from "@/components/ui/Button";
 import { radius, spacing, type ThemeColors } from "@/lib/theme";
 import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
-import { GraduationCap, PartyPopper, Save, TrendingUp } from "lucide-react-native";
+import { Save } from "lucide-react-native";
 
 export default function DecksScreen() {
   const colors = useThemeColors();
@@ -46,9 +35,6 @@ export default function DecksScreen() {
   const [editing, setEditing] = useState<Deck | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
-  const [stats, setStats] = useState<StudyStats>(EMPTY_STATS);
-  const [weak, setWeak] = useState<WeakWord[]>([]);
-  const [challenge, setChallenge] = useState<Challenge | null>(null);
   /** Thống kê toàn tài khoản — tính một lần cho cả kho, xem fetchDecksWithStats. */
   const [account, setAccount] = useState<DeckStats | null>(null);
   const { settings, ready: settingsReady } = useSettings();
@@ -67,24 +53,16 @@ export default function DecksScreen() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const [deckData, statData, weakData, challengeMetrics] = await Promise.all([
-        fetchDecksWithStats(settings.newPerDay),
-        fetchStudyStats(),
-        fetchWeakWords(8),
-        fetchChallengeMetrics(settings.newPerDay),
-      ]);
+      const deckData = await fetchDecksWithStats(settings.newPerDay);
       setDecks(deckData.decks);
       setAccount(deckData.account);
-      setStats(statData);
-      setWeak(weakData);
-      setChallenge(buildDailyChallenge(challengeMetrics, new Date(), { dailyGoal: settings.dailyGoal, weeklyDays: settings.weeklyDays }));
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [settings.newPerDay, settings.dailyGoal, settings.weeklyDays]);
+  }, [settings.newPerDay]);
 
   // Tải lại mỗi khi màn được focus (vd quay lại từ deck detail). Chờ cài đặt
   // (hạn mức từ mới) nạp xong để không phải đếm hàng đợi hai lần.
@@ -150,53 +128,7 @@ export default function DecksScreen() {
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            {/* Thứ tự có chủ ý: việc cần làm hôm nay lên trên hết, rồi mới tới
-                các khối tham khảo (thử thách, hay quên, thống kê). Trước đây
-                phải cuộn qua hết mấy khối đó mới tới chỗ bắt đầu học. */}
-            {agg.due > 0 ? (
-              <Pressable
-                onPress={() => router.push("/study/today")}
-                style={({ pressed }) => [
-                  styles.todayCard,
-                  pressed && styles.todayPressed,
-                ]}
-              >
-                <View style={styles.todayIcon}>
-                  <GraduationCap size={24} color="#fff" />
-                </View>
-                <View style={styles.todayBody}>
-                  <Text style={styles.todayTitle}>
-                    {agg.due} từ cần ôn hôm nay
-                  </Text>
-                  <Text style={styles.todaySub}>
-                    {agg.newToday > 0
-                      ? `${agg.dueReviews} từ ôn lại · ${agg.newToday} từ mới · gộp mọi bộ thẻ.`
-                      : "Gộp tất cả bộ thẻ vào một phiên."}
-                  </Text>
-                </View>
-                <Text style={styles.todayCta}>Ôn ngay →</Text>
-              </Pressable>
-            ) : (
-              stats.todayCount > 0 && (
-                <View style={styles.doneCard}>
-                  <PartyPopper size={18} color={colors.success} />
-                  <Text style={styles.doneText}>
-                    {agg.newHeldBack > 0
-                      ? `Xong hạn mức hôm nay (${settings.newPerDay} từ mới/ngày). Còn ${agg.newHeldBack} từ đang chờ tới lượt.`
-                      : "Xong hết thẻ đến hạn hôm nay. Nghỉ ngơi thôi!"}
-                  </Text>
-                </View>
-              )
-            )}
-            {agg.due > 0 && (
-              <Button
-                title={`Học nhanh ${Math.min(5, agg.due)} từ`}
-                onPress={() => router.push({ pathname: "/study/[deckId]", params: { deckId: "today", quick: "1" } })}
-              />
-            )}
-            <LearningGoal />
-            {decks.length > 0 && <Button title="Đọc bằng kho từ của bạn →" variant="secondary" onPress={() => router.push("/reading")} />}
-            {decks.length > 0 && <StreakCard stats={stats} />}
+            <Text style={styles.intro}>Quản lý bộ từ vựng, thêm từ và chọn bộ muốn học.</Text>
             <Text style={styles.heading}>Bộ từ vựng của bạn</Text>
             {agg.total > 0 && (
               <View style={styles.statsCard}>
@@ -211,18 +143,8 @@ export default function DecksScreen() {
                 </View>
               </View>
             )}
-            <DailyChallenge challenge={challenge} />
-            <WeakWords words={weak} />
             <EnrichBackfillButton banner onDone={load} />
             {decks.length > 0 && (
-              <>
-                <Button
-                  title="Xem tiến độ học"
-                  icon={<TrendingUp size={18} color={colors.text} />}
-                  variant="secondary"
-                  onPress={() => router.push("/progress")}
-                  style={styles.progressBtn}
-                />
                 <Button
                   title="Sao lưu tài khoản (JSON)"
                   icon={<Save size={18} color={colors.text} />}
@@ -231,7 +153,6 @@ export default function DecksScreen() {
                   loading={backupBusy}
                   style={styles.backupBtn}
                 />
-              </>
             )}
             {!!error && <Text style={styles.error}>{error}</Text>}
           </View>
@@ -322,44 +243,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     list: { padding: spacing.lg, paddingBottom: 96, flexGrow: 1 },
     header: { marginBottom: spacing.md },
-    // Khối hành động chính của ngày, đặt trên cùng trang chủ.
-    todayCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.md,
-      padding: spacing.lg,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.brand,
-      backgroundColor: colors.brandLight,
-      marginBottom: spacing.md,
-    },
-    todayPressed: { opacity: 0.75 },
-    todayIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.md,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.brand,
-    },
-    todayBody: { flex: 1, minWidth: 0 },
-    todayTitle: { fontSize: 16, fontWeight: "700", color: colors.text },
-    todaySub: { fontSize: 13, color: colors.textMuted, marginTop: 1 },
-    todayCta: { fontSize: 14, fontWeight: "700", color: colors.brandDark },
-    doneCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-      padding: spacing.lg,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.success,
-      backgroundColor: colors.tints.green.bg,
-      marginBottom: spacing.md,
-    },
-    doneText: { flex: 1, fontSize: 13, fontWeight: "600", color: colors.text },
-    progressBtn: { marginTop: spacing.md },
+    intro: { fontSize: 13, color: colors.textMuted, marginBottom: spacing.sm },
     backupBtn: { marginTop: spacing.sm },
     heading: { fontSize: 20, fontWeight: "700", color: colors.text },
     error: { marginTop: spacing.sm, color: colors.danger, fontSize: 14 },
