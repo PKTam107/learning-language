@@ -187,6 +187,12 @@ export default function DecksScreen() {
                 </View>
               )
             )}
+            {agg.due > 0 && (
+              <Button
+                title={`Học nhanh ${Math.min(5, agg.due)} từ`}
+                onPress={() => router.push({ pathname: "/study/[deckId]", params: { deckId: "today", quick: "1" } })}
+              />
+            )}
             {decks.length > 0 && <StreakCard stats={stats} />}
             <Text style={styles.heading}>Bộ từ vựng của bạn</Text>
             {agg.total > 0 && (
