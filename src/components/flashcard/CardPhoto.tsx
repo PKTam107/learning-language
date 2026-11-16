@@ -10,7 +10,7 @@ export function CardPhoto({ image, quiz = false }: { image: unknown; quiz?: bool
   return (
     <figure className="w-full max-w-sm text-center">
       {failedUrl === photo.url ? (
-        <p className="rounded-lg bg-slate-100 p-4 text-sm text-slate-500 dark:bg-slate-800">Không tải được ảnh. Lật thẻ để xem từ.</p>
+        <p className="rounded-lg bg-slate-100 p-4 text-sm text-slate-500 dark:bg-slate-800">Không tải được ảnh. Bạn vẫn có thể học bằng nội dung thẻ.</p>
       ) : (
         // External images are restricted to approved image hosts by schema and CSP.
         // eslint-disable-next-line @next/next/no-img-element

@@ -7,6 +7,7 @@ import { buildCloze, buildMcq, checkCloze, checkTyped, type ReviewType } from "@
 import { speak } from "@/lib/speak";
 import { Button } from "@/components/ui/Button";
 import { AudioButton } from "./AudioButton";
+import { CardPhoto } from "./CardPhoto";
 
 interface Props {
   card: CardWithProgress;
@@ -269,6 +270,13 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
               {cloze.translation}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Chỉ hiện ảnh khi đáp án đã lộ để ảnh/chú thích không gợi đáp án trước. */}
+      {(answered || unbuildable) && (
+        <div className="mt-4 flex justify-center">
+          <CardPhoto image={card.image} />
         </div>
       )}
 

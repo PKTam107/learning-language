@@ -17,6 +17,8 @@ const strip = (src: string) =>
     .trim();
 
 const pairs: [string, string][] = [
+  ["src/lib/image-search.ts", "mobile/src/lib/image-search.ts"],
+  ["src/hooks/useImageSearch.ts", "mobile/src/hooks/useImageSearch.ts"],
   ["src/lib/study-session.ts", "mobile/src/lib/study-session.ts"],
   ["src/lib/card-image.ts", "mobile/src/lib/card-image.ts"],
   ["src/lib/srs.ts", "mobile/src/lib/srs.ts"],
