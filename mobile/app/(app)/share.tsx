@@ -37,7 +37,7 @@ export default function SharePage() {
     >
       <ShareTarget
         shared={shared}
-        onDone={() => router.replace("/")}
+        onDone={() => router.replace("/(app)/(tabs)")}
       />
     </ScrollView>
   );

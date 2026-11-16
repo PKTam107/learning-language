@@ -22,7 +22,7 @@ export function LearningGoal() {
     return () => { alive = false; };
   }, [ready, settings.dailyGoal, settings.weeklyDays]));
   return <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 16, gap: 8 }}>
-    <View style={{ flexDirection: "row", justifyContent: "space-between" }}><Text style={{ color: colors.text, fontWeight: "700" }}>Mục tiêu của bạn</Text><Pressable accessibilityRole="button" onPress={() => router.push("/settings")}><Text style={{ color: colors.brand }}>Điều chỉnh</Text></Pressable></View>
+    <View style={{ flexDirection: "row", justifyContent: "space-between" }}><Text style={{ color: colors.text, fontWeight: "700" }}>Mục tiêu của bạn</Text><Pressable accessibilityRole="button" onPress={() => router.navigate("/settings")}><Text style={{ color: colors.brand }}>Điều chỉnh</Text></Pressable></View>
     {error ? <Text style={{ color: colors.textMuted }}>Chưa tải được tiến độ. Bạn vẫn có thể bắt đầu học.</Text> : !progress ? <Text style={{ color: colors.textMuted }}>Đang tải tiến độ…</Text> : <>
       <Text style={{ color: colors.text }}>Hôm nay: {progress.todayWords}/{progress.dailyTarget} từ{progress.dailyDone ? " · Hoàn thành! 🎉" : progress.dailyTarget ? ` · Còn ${Math.max(0, progress.dailyTarget - progress.todayWords)} từ nữa` : " · Thêm từ để bắt đầu"}</Text>
       <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.border }}><View style={{ height: 6, borderRadius: 3, backgroundColor: colors.brand, width: `${Math.min(100, progress.todayWords / (progress.dailyTarget || 1) * 100)}%` }} /></View>
