@@ -9,6 +9,7 @@ import type { Deck } from "@/types";
 import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 import type { ThemeColors } from "@/lib/theme";
 import { Modal } from "@/components/ui/Modal";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/Button";
 import { AudioButton } from "@/components/flashcard/AudioButton";
 import { CardPhoto } from "@/components/flashcard/CardPhoto";
@@ -21,6 +22,7 @@ export default function ReadingScreen() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [deckError, setDeckError] = useState(false);
   const [deckId, setDeckId] = useState("");
+  const [activeSelect, setActiveSelect] = useState<"topic" | "deck" | null>(null);
   const [topic, setTopic] = useState<ReadingRequest["topic"]>("daily");
   const reading = useReadingLesson(createReadingLesson);
   useEffect(() => {
@@ -29,19 +31,32 @@ export default function ReadingScreen() {
     return () => { alive = false; };
   }, []);
   const { lesson } = reading;
-  return <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+  return <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
     <Stack.Screen options={{ title: "Đọc hiểu" }} />
     <Text style={styles.title}>Đọc bằng kho từ của bạn</Text>
     <Text style={styles.muted}>Một đoạn 80–120 từ, dùng 3–5 từ trong kho. Chạm từ được đánh dấu để xem nghĩa và nghe.</Text>
     <View style={styles.card}>
-      <Text style={styles.heading}>Chủ đề</Text>
-      <View style={styles.chips}>{READING_TOPICS.map((t) => <Pressable accessibilityRole="button" accessibilityState={{ selected: topic === t.value }} disabled={reading.busy} key={t.value} onPress={() => setTopic(t.value)} style={[styles.chip, topic === t.value && styles.active]}><Text style={styles.text}>{t.label}</Text></Pressable>)}</View>
-      <Text style={styles.heading}>Kho từ</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator keyboardShouldPersistTaps="handled" contentContainerStyle={styles.chips}>
-        {[{ id: "", name: "Tất cả bộ thẻ tiếng Anh" }, ...decks].map((d) => <Pressable accessibilityRole="button" accessibilityState={{ selected: deckId === d.id }} disabled={reading.busy} key={d.id} onPress={() => setDeckId(d.id)} style={[styles.chip, deckId === d.id && styles.active]}><Text style={styles.text}>{d.name}</Text></Pressable>)}
-      </ScrollView>
+      <Dropdown
+        label="Chủ đề"
+        value={topic}
+        options={READING_TOPICS}
+        onChange={(value) => setTopic(value as ReadingRequest["topic"])}
+        open={activeSelect === "topic"}
+        onOpenChange={(open) => setActiveSelect(open ? "topic" : null)}
+        disabled={reading.busy}
+      />
+      <Dropdown
+        label="Kho từ"
+        value={deckId}
+        options={[{ value: "", label: "Tất cả bộ thẻ tiếng Anh" }, ...decks.map((deck) => ({ value: deck.id, label: deck.name }))]}
+        onChange={setDeckId}
+        open={activeSelect === "deck"}
+        onOpenChange={(open) => setActiveSelect(open ? "deck" : null)}
+        disabled={reading.busy}
+        searchable
+      />
       {deckError && <Text style={styles.muted}>Chưa tải được danh sách bộ thẻ; bạn vẫn có thể đọc từ tất cả.</Text>}
-      <Button title={reading.busy ? "Đang chuẩn bị bài đọc…" : lesson ? "Tạo bài khác" : "Bắt đầu đọc"} disabled={reading.busy} onPress={() => void reading.generate({ topic, ...(deckId ? { deckId } : {}) })} />
+      <Button title={reading.busy ? "Đang chuẩn bị bài đọc…" : lesson ? "Tạo bài khác" : "Bắt đầu đọc"} disabled={reading.busy} onPress={() => { setActiveSelect(null); void reading.generate({ topic, ...(deckId ? { deckId } : {}) }); }} />
       <Text style={styles.muted}>Cần ít nhất 3 từ có nghĩa tiếng Việt. Đọc hiểu không thay đổi lịch ôn thẻ.</Text>
     </View>
     {!!reading.error && <View style={styles.card}><Text accessibilityRole="alert" style={styles.text}>{reading.error}</Text><Button title="Về kho từ" variant="secondary" onPress={() => router.navigate("/decks")} /></View>}
