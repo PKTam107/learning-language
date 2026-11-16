@@ -129,6 +129,16 @@ Còn một lối vào nhanh hơn: bôi đen một từ ở Chrome/app khác → 
 thẻ được tra sẵn, chỉ bấm Lưu. Chạy được với **bản web đã cài ra màn hình chính** và với
 **app Android** (cần APK build từ 2026-09 trở đi).
 
+## Phiên học ngắn và luyện lại (web + mobile)
+
+- **Học nhanh 5 từ** trên trang chủ: vào học ngay, lấy tối đa 5 thẻ từ hàng đợi
+  đến hạn, giữ hạn mức từ mới/ngày và tự chọn kiểu ôn theo mức thuộc.
+- Các phiên mới mặc định chọn **Tự động**; vẫn đổi được kiểu ôn và số thẻ/phiên.
+- Cuối phiên hiện những từ chưa nhớ và nút **Luyện lại N từ**. Luyện tiếp nhiều
+  vòng nếu cần; mỗi vòng chỉ giữ những từ vẫn chưa nhớ, bỏ qua lượt đã hoàn tác.
+- Luyện lại ngay là luyện bổ sung: không ghi thêm lượt ôn, không tăng mức thuộc
+  và không dời lịch ôn. Phiên ôn ban đầu vẫn được lưu như thường.
+
 ## Lệnh hữu ích
 
 | Lệnh | Tác dụng |

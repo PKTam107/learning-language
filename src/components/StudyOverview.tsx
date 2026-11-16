@@ -110,11 +110,16 @@ export function StudyOverview() {
                 </p>
               </div>
             </div>
-            <Link href="/study/today" className="shrink-0">
-              <Button size="lg" className="w-full sm:w-auto">
-                Ôn ngay
-              </Button>
-            </Link>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Link href="/study/today?quick=1">
+                <Button size="lg">Học nhanh {Math.min(5, due.total)} từ</Button>
+              </Link>
+              <Link href="/study/today">
+                <Button size="lg" variant="secondary">
+                  Ôn ngay
+                </Button>
+              </Link>
+            </div>
           </div>
         ) : (
           stats.todayCount > 0 && (

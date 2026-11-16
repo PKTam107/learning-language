@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, PartyPopper, Undo2 } from "lucide-react";
 import type { CardStatus, CardWithProgress } from "@/types";
@@ -33,6 +33,7 @@ import { CountUp } from "@/components/ui/CountUp";
 import { Spinner } from "@/components/ui/Spinner";
 import { FlashcardFlip } from "./FlashcardFlip";
 import { QuizCard } from "./QuizCard";
+import { retryCards } from "@/lib/study-session";
 
 type Mode = "all" | "weak" | "due";
 type Phase = "setup" | "studying" | "done";
@@ -115,7 +116,7 @@ function shuffleArr<T>(a: T[]): T[] {
   return arr;
 }
 
-const LIMIT_OPTIONS = [0, 10, 20, 30, 50]; // 0 = tất cả
+const LIMIT_OPTIONS = [0, 5, 10, 20, 30, 50]; // 0 = tất cả
 
 /** Một lượt đánh giá đã ghi, giữ lại để hoàn tác được. */
 interface HistoryEntry {
@@ -129,7 +130,13 @@ interface HistoryEntry {
   receipt: Promise<ReviewReceipt | null>;
 }
 
-export function StudySession({ source }: { source: StudySource }) {
+export function StudySession({
+  source,
+  quickStart = false,
+}: {
+  source: StudySource;
+  quickStart?: boolean;
+}) {
   const [imageFirst, setImageFirst] = useState(false);
   const [all, setAll] = useState<CardWithProgress[]>([]);
   const [policy, setPolicy] = useState<QueuePolicy>(UNLIMITED);
@@ -146,7 +153,7 @@ export function StudySession({ source }: { source: StudySource }) {
    * kiểu cho từng thẻ (xem `pickReviewType`), nên kiểu THẬT của thẻ đang học
    * được tính riêng ở `currentType`.
    */
-  const [sessionType, setSessionType] = useState<SessionReviewType>("flashcard");
+  const [sessionType, setSessionType] = useState<SessionReviewType>("auto");
   const [limit, setLimit] = useState(0);
   const [shuffle, setShuffle] = useState(false);
 
@@ -165,6 +172,20 @@ export function StudySession({ source }: { source: StudySource }) {
   const [undoing, setUndoing] = useState(false);
   /** Tăng sau mỗi lần hoàn tác để QuizCard mount lại → trả lời lại được. */
   const [attempt, setAttempt] = useState(0);
+  const [practicing, setPracticing] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+  const quickStarted = useRef(false);
+  const missed = useMemo(() => retryCards(queue, history), [queue, history]);
+
+  // Một chạm vào phiên ngắn; giữ thứ tự ưu tiên của hàng đợi đến hạn.
+  useEffect(() => {
+    if (!quickStart || loading || all.length === 0 || quickStarted.current) return;
+    quickStarted.current = true;
+    setQueue(all.slice(0, 5));
+    setSessionType("auto");
+    setLimit(5);
+    setPhase("studying");
+  }, [quickStart, loading, all]);
 
   // Tách ra giá trị nguyên thủy: `source` là object literal do page truyền vào
   // nên mỗi lần render là một object mới — phụ thuộc trực tiếp vào nó sẽ làm
@@ -256,6 +277,8 @@ export function StudySession({ source }: { source: StudySource }) {
     const eligible = sessionType === "cloze" ? pool.filter(hasCloze) : pool;
     let list = shuffle ? shuffleArr(eligible) : orderCards(eligible);
     if (limit > 0) list = list.slice(0, limit);
+    setPracticing(false);
+    setAttempt((a) => a + 1);
     setQueue(list);
     setIndex(0);
     setFlipped(false);
@@ -264,11 +287,37 @@ export function StudySession({ source }: { source: StudySource }) {
     setPhase("studying");
   }
 
-  function backToSetup() {
+  async function backToSetup() {
+    if (transitioning || undoing) return;
+    setTransitioning(true);
+    // Đợi lượt cuối ghi xong trước khi nạp lại hàng đợi.
+    await Promise.all(history.map((h) => h.receipt));
+    setPracticing(false);
     setPhase("setup");
     setHistory([]);
     setLoading(true);
-    load().finally(() => setLoading(false)); // refresh trạng thái vừa cập nhật
+    try {
+      await load();
+    } finally {
+      setLoading(false);
+      setTransitioning(false);
+    }
+  }
+
+  async function practiceMissed() {
+    if (missed.length === 0 || transitioning || undoing) return;
+    setTransitioning(true);
+    await Promise.all(history.map((h) => h.receipt));
+    setQueue(missed);
+    setSessionType("auto");
+    setPracticing(true);
+    setIndex(0);
+    setFlipped(false);
+    setCounts({ hard: 0, good: 0, easy: 0 });
+    setHistory([]);
+    setAttempt((a) => a + 1);
+    setPhase("studying");
+    setTransitioning(false);
   }
 
   const current = queue[index];
@@ -284,6 +333,7 @@ export function StudySession({ source }: { source: StudySource }) {
   }, [sessionType, current, all]);
 
   const next = useCallback(() => {
+    if (transitioning) return;
     setFlipped(false);
     setIndex((i) => {
       if (i + 1 >= queue.length) {
@@ -292,26 +342,27 @@ export function StudySession({ source }: { source: StudySource }) {
       }
       return i + 1;
     });
-  }, [queue.length]);
+  }, [queue.length, transitioning]);
 
   const assess = useCallback(
     (status: Assessed) => {
-      if (!current) return;
+      if (!current || transitioning) return;
       // Không await: lượt học không nên chờ mạng. Promise được giữ lại trong
       // history để hoàn tác có đủ ảnh chụp trạng thái cũ.
       // `currentType` (không phải `sessionType`): ở chế độ "Tự động" mỗi thẻ
       // một kiểu, nhật ký phải ghi kiểu người học thật sự vừa làm.
-      const receipt = recordProgress(current.id, status, currentType).catch(
-        (e: unknown) => {
-          console.warn("recordProgress:", (e as Error).message);
-          return null;
-        }
-      );
+      // Luyện ngay sau khi xem đáp án không làm tăng mức thuộc hay dời lịch ôn.
+      const receipt = practicing
+        ? Promise.resolve(null)
+        : recordProgress(current.id, status, currentType).catch((e: unknown) => {
+            console.warn("recordProgress:", (e as Error).message);
+            return null;
+          });
       setHistory((h) => [...h, { index, status, receipt }]);
       setCounts((c) => ({ ...c, [status]: c[status] + 1 }));
       next();
     },
-    [current, currentType, index, next]
+    [current, currentType, index, next, practicing, transitioning]
   );
 
   /**
@@ -321,7 +372,7 @@ export function StudySession({ source }: { source: StudySource }) {
    */
   const undo = useCallback(async () => {
     const last = history[history.length - 1];
-    if (!last || undoing) return;
+    if (!last || undoing || transitioning) return;
     setUndoing(true);
     try {
       const receipt = await last.receipt;
@@ -340,7 +391,7 @@ export function StudySession({ source }: { source: StudySource }) {
     } finally {
       setUndoing(false);
     }
-  }, [history, undoing]);
+  }, [history, undoing, transitioning]);
 
   // Kết quả câu ôn (trắc nghiệm/gõ/nghe): đúng → "good", sai → "hard".
   const handleQuizAnswer = useCallback(
@@ -399,7 +450,7 @@ export function StudySession({ source }: { source: StudySource }) {
     [index, queue.length]
   );
 
-  if (loading) {
+  if (loading || transitioning) {
     return (
       <div className="flex justify-center py-20 text-slate-400 dark:text-slate-500">
         <Spinner className="h-6 w-6" />
@@ -592,7 +643,9 @@ export function StudySession({ source }: { source: StudySource }) {
           <PartyPopper className="h-9 w-9" />
         </span>
 
-        <h2 className="mt-5 text-2xl font-bold">Hoàn thành phiên học!</h2>
+        <h2 className="mt-5 text-2xl font-bold">
+          {practicing ? "Xong lượt luyện thêm!" : "Hoàn thành phiên học!"}
+        </h2>
         <p className="mt-1 text-slate-500 dark:text-slate-400">
           Bạn đã ôn{" "}
           <CountUp
@@ -608,8 +661,34 @@ export function StudySession({ source }: { source: StudySource }) {
           <SummaryRow status="easy" value={counts.easy} />
         </div>
 
+        {reviewed > 0 && (
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+            {counts.hard === 0
+              ? "Bạn nhớ được tất cả từ đã trả lời trong lượt này. Tuyệt lắm!"
+              : `Bạn nhớ được ${counts.good + counts.easy}/${reviewed} từ đã trả lời. Luyện thêm một lượt để nhớ chắc hơn nhé.`}
+          </p>
+        )}
+        {missed.length > 0 && (
+          <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-left dark:border-amber-500/30 dark:bg-amber-500/10">
+            <p className="mb-2 text-sm font-semibold">Những từ cần luyện thêm</p>
+            <ul className="max-h-48 space-y-2 overflow-y-auto text-sm">
+              {missed.map((card) => (
+                <li key={card.id}>
+                  <span className="font-semibold">{card.term}</span>
+                  {card.meaning_vi && <span className="text-slate-500 dark:text-slate-400"> — {card.meaning_vi}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Button onClick={backToSetup}>Học tiếp</Button>
+          {missed.length > 0 && (
+            <Button onClick={() => void practiceMissed()} disabled={transitioning || undoing}>
+              Luyện lại {missed.length} từ
+            </Button>
+          )}
+          <Button onClick={() => void backToSetup()} variant={missed.length > 0 ? "secondary" : "primary"} disabled={transitioning || undoing}>Học tiếp</Button>
           <Link href={back.href}>
             <Button variant="secondary">{back.label}</Button>
           </Link>
@@ -619,7 +698,7 @@ export function StudySession({ source }: { source: StudySource }) {
         {history.length > 0 && (
           <button
             onClick={() => void undo()}
-            disabled={undoing}
+            disabled={undoing || transitioning}
             className="mx-auto mt-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-brand disabled:opacity-40 dark:text-slate-400 dark:hover:text-indigo-400"
           >
             <Undo2 className="h-4 w-4" />
@@ -633,6 +712,11 @@ export function StudySession({ source }: { source: StudySource }) {
   // ---------- Pha 2: Đang học ----------
   return (
     <div className="mx-auto max-w-xl">
+      {practicing && (
+        <p className="mb-3 rounded-xl bg-brand-light px-4 py-3 text-sm text-brand-dark dark:bg-indigo-500/15 dark:text-indigo-300">
+          Luyện lại từ vừa quên — cứ thong thả, nhớ thêm một từ là tiến bộ rồi.
+        </p>
+      )}
       <div className="mb-4">
         <div className="mb-1 flex items-center justify-between gap-3 text-sm text-slate-500 dark:text-slate-400">
           <span>
@@ -657,7 +741,7 @@ export function StudySession({ source }: { source: StudySource }) {
                 Hoàn tác
               </button>
             )}
-            <button onClick={backToSetup} className="hover:text-brand dark:hover:text-indigo-400">
+            <button onClick={() => void backToSetup()} disabled={transitioning || undoing} className="hover:text-brand disabled:opacity-40 dark:hover:text-indigo-400">
               Thoát
             </button>
           </span>

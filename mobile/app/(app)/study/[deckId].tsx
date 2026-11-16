@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -42,6 +42,7 @@ import { Confetti } from "@/components/ui/Confetti";
 import { radius, spacing, type ThemeColors } from "@/lib/theme";
 import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
 import { PartyPopper } from "lucide-react-native";
+import { retryCards } from "@/lib/study-session";
 
 type Mode = "all" | "weak" | "due";
 type Phase = "setup" | "studying" | "done";
@@ -87,7 +88,7 @@ function shuffleArr<T>(a: T[]): T[] {
   return arr;
 }
 
-const LIMIT_OPTIONS = [0, 10, 20, 30, 50];
+const LIMIT_OPTIONS = [0, 5, 10, 20, 30, 50];
 
 /** Một lượt đánh giá đã ghi, giữ lại để hoàn tác được. */
 interface HistoryEntry {
@@ -133,7 +134,8 @@ const SOURCE_META: Record<
 export default function StudyScreen() {
   const colors = useThemeColors();
   const styles = useStyles(makeStyles);
-  const { deckId } = useLocalSearchParams<{ deckId: string }>();
+  const { deckId, quick } = useLocalSearchParams<{ deckId: string; quick?: string }>();
+  const quickStart = deckId === "today" && quick === "1";
   const router = useRouter();
 
   const [all, setAll] = useState<CardWithProgress[]>([]);
@@ -150,7 +152,7 @@ export default function StudyScreen() {
    * kiểu cho từng thẻ (xem `pickReviewType`) — kiểu THẬT của thẻ đang học tính
    * riêng ở `currentType`.
    */
-  const [sessionType, setSessionType] = useState<SessionReviewType>("flashcard");
+  const [sessionType, setSessionType] = useState<SessionReviewType>("auto");
   const [limit, setLimit] = useState(0);
   const [shuffle, setShuffle] = useState(false);
 
@@ -166,6 +168,20 @@ export default function StudyScreen() {
   const [undoing, setUndoing] = useState(false);
   /** Tăng sau mỗi lần hoàn tác để QuizCard mount lại → trả lời lại được. */
   const [attempt, setAttempt] = useState(0);
+  const [practicing, setPracticing] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+  const quickStarted = useRef(false);
+  const missed = useMemo(() => retryCards(queue, history), [queue, history]);
+
+  // Một chạm vào phiên ngắn; giữ thứ tự ưu tiên của hàng đợi đến hạn.
+  useEffect(() => {
+    if (!quickStart || loading || all.length === 0 || quickStarted.current) return;
+    quickStarted.current = true;
+    setQueue(all.slice(0, 5));
+    setSessionType("auto");
+    setLimit(5);
+    setPhase("studying");
+  }, [quickStart, loading, all]);
 
   const { settings, ready } = useSettings();
 
@@ -246,6 +262,8 @@ export default function StudyScreen() {
     const eligible = sessionType === "cloze" ? pool.filter(hasCloze) : pool;
     let list = shuffle ? shuffleArr(eligible) : orderCards(eligible);
     if (limit > 0) list = list.slice(0, limit);
+    setPracticing(false);
+    setAttempt((a) => a + 1);
     setQueue(list);
     setIndex(0);
     setFlipped(false);
@@ -254,11 +272,37 @@ export default function StudyScreen() {
     setPhase("studying");
   }
 
-  function backToSetup() {
+  async function backToSetup() {
+    if (transitioning || undoing) return;
+    setTransitioning(true);
+    // Đợi lượt cuối ghi xong trước khi nạp lại hàng đợi.
+    await Promise.all(history.map((h) => h.receipt));
+    setPracticing(false);
     setPhase("setup");
     setHistory([]);
     setLoading(true);
-    load().finally(() => setLoading(false));
+    try {
+      await load();
+    } finally {
+      setLoading(false);
+      setTransitioning(false);
+    }
+  }
+
+  async function practiceMissed() {
+    if (missed.length === 0 || transitioning || undoing) return;
+    setTransitioning(true);
+    await Promise.all(history.map((h) => h.receipt));
+    setQueue(missed);
+    setSessionType("auto");
+    setPracticing(true);
+    setIndex(0);
+    setFlipped(false);
+    setCounts({ hard: 0, good: 0, easy: 0 });
+    setHistory([]);
+    setAttempt((a) => a + 1);
+    setPhase("studying");
+    setTransitioning(false);
   }
 
   const current = queue[index];
@@ -286,6 +330,7 @@ export default function StudyScreen() {
   }, [flipped, phase, settings.autoSpeak]);
 
   const next = useCallback(() => {
+    if (transitioning) return;
     setFlipped(false);
     setIndex((i) => {
       if (i + 1 >= queue.length) {
@@ -294,26 +339,27 @@ export default function StudyScreen() {
       }
       return i + 1;
     });
-  }, [queue.length]);
+  }, [queue.length, transitioning]);
 
   const assess = useCallback(
     (status: Assessed) => {
-      if (!current) return;
+      if (!current || transitioning) return;
       // Không await: lượt học không nên chờ mạng. Promise được giữ trong
       // history để hoàn tác có đủ ảnh chụp trạng thái cũ.
       // `currentType` (không phải `sessionType`): ở chế độ "Tự động" mỗi thẻ
       // một kiểu, nhật ký phải ghi kiểu người học thật sự vừa làm.
-      const receipt = recordProgress(current.id, status, currentType).catch(
-        (e: unknown) => {
-          console.warn("recordProgress:", (e as Error).message);
-          return null;
-        }
-      );
+      // Luyện ngay sau khi xem đáp án không làm tăng mức thuộc hay dời lịch ôn.
+      const receipt = practicing
+        ? Promise.resolve(null)
+        : recordProgress(current.id, status, currentType).catch((e: unknown) => {
+            console.warn("recordProgress:", (e as Error).message);
+            return null;
+          });
       setHistory((h) => [...h, { index, status, receipt }]);
       setCounts((c) => ({ ...c, [status]: c[status] + 1 }));
       next();
     },
-    [current, currentType, index, next]
+    [current, currentType, index, next, practicing, transitioning]
   );
 
   /**
@@ -322,7 +368,7 @@ export default function StudyScreen() {
    */
   const undo = useCallback(async () => {
     const last = history[history.length - 1];
-    if (!last || undoing) return;
+    if (!last || undoing || transitioning) return;
     setUndoing(true);
     try {
       const receipt = await last.receipt;
@@ -341,7 +387,7 @@ export default function StudyScreen() {
     } finally {
       setUndoing(false);
     }
-  }, [history, undoing]);
+  }, [history, undoing, transitioning]);
 
   // Kết quả câu ôn (trắc nghiệm/gõ/nghe): đúng → "good", sai → "hard".
   const handleQuizAnswer = useCallback(
@@ -349,7 +395,7 @@ export default function StudyScreen() {
     [assess]
   );
 
-  if (loading) {
+  if (loading || transitioning) {
     return (
       <Screen title="Học">
         <View style={styles.center}>
@@ -529,9 +575,9 @@ export default function StudyScreen() {
       <Screen title="Hoàn thành">
         {/* Chỉ ăn mừng khi thật sự có ôn — thoát ngay thì không bắn pháo. */}
         {reviewed > 0 && <Confetti />}
-        <View style={styles.center}>
+        <ScrollView contentContainerStyle={styles.doneContent}>
           <PartyPopper size={48} color={colors.brand} />
-          <Text style={styles.doneTitle}>Hoàn thành phiên học!</Text>
+          <Text style={styles.doneTitle}>{practicing ? "Xong lượt luyện thêm!" : "Hoàn thành phiên học!"}</Text>
           <Text style={styles.doneSub}>Bạn đã ôn {reviewed} từ.</Text>
 
           <View style={styles.summary}>
@@ -540,10 +586,33 @@ export default function StudyScreen() {
             <SummaryRow status="easy" value={counts.easy} />
           </View>
 
+          {reviewed > 0 && (
+            <Text style={styles.doneSub}>
+              {counts.hard === 0
+                ? "Bạn nhớ được tất cả từ đã trả lời trong lượt này. Tuyệt lắm!"
+                : `Bạn nhớ được ${counts.good + counts.easy}/${reviewed} từ đã trả lời. Luyện thêm một lượt để nhớ chắc hơn nhé.`}
+            </Text>
+          )}
+          {missed.length > 0 && (
+            <View style={styles.summary}>
+              <Text style={styles.optLabel}>Những từ cần luyện thêm</Text>
+              {missed.map((card) => (
+                <Text key={card.id} style={styles.summaryLabel}>
+                  {card.term}{card.meaning_vi ? ` — ${card.meaning_vi}` : ""}
+                </Text>
+              ))}
+              <Button
+                title={`Luyện lại ${missed.length} từ`}
+                onPress={() => void practiceMissed()}
+                disabled={transitioning || undoing}
+              />
+            </View>
+          )}
+
           <View style={styles.doneActions}>
-            <Button title="Học tiếp" onPress={backToSetup} style={styles.grow} />
+            <Button title="Học tiếp" onPress={() => void backToSetup()} disabled={transitioning || undoing} style={styles.grow} />
             <Button
-              title="Về bộ thẻ"
+              title={kind === "deck" ? "Về bộ thẻ" : "Quay lại"}
               variant="secondary"
               onPress={() => router.back()}
               style={styles.grow}
@@ -552,13 +621,13 @@ export default function StudyScreen() {
 
           {/* Bấm nhầm ở thẻ cuối thì vẫn sửa được sau khi phiên đã kết thúc. */}
           {history.length > 0 && (
-            <Pressable onPress={() => void undo()} disabled={undoing}>
+            <Pressable onPress={() => void undo()} disabled={undoing || transitioning}>
               <Text style={[styles.undoText, undoing && styles.undoDisabled]}>
                 ↩ Hoàn tác thẻ cuối
               </Text>
             </Pressable>
           )}
-        </View>
+        </ScrollView>
       </Screen>
     );
   }
@@ -571,6 +640,11 @@ export default function StudyScreen() {
   return (
     <Screen title="Học">
       <View style={styles.body}>
+        {practicing && (
+          <Text style={styles.setupHint}>
+            Luyện lại từ vừa quên — cứ thong thả, nhớ thêm một từ là tiến bộ rồi.
+          </Text>
+        )}
         <View style={styles.progressRow}>
           <Text style={styles.progressLabel}>
             Đang học: {index + 1}/{queue.length} từ
@@ -823,6 +897,13 @@ const makeStyles = (colors: ThemeColors) =>
     },
 
     // done
+    doneContent: {
+      flexGrow: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.md,
+      padding: spacing.xl,
+    },
     doneEmoji: { fontSize: 48 },
     doneTitle: { fontSize: 22, fontWeight: "700", color: colors.text },
     doneSub: { fontSize: 15, color: colors.textMuted },
