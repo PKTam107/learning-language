@@ -8,6 +8,7 @@ export function useReadingLibrary(store: ReadingStore, lesson: ReadingLesson | n
   const [error, setError] = useState("");
   const current = useRef<SavedReading[]>([]);
   const writes = useRef(Promise.resolve());
+  const removed = useRef(new WeakSet<ReadingLesson>());
   useEffect(() => {
     let alive = true;
     store.load().then((loaded) => { if (alive) { current.current = loaded; setItems(loaded); setReady(true); } }).catch(() => { if (alive) setError("Chưa tải được bài đã lưu. Hãy mở lại màn hình để thử lại."); });
@@ -18,7 +19,7 @@ export function useReadingLibrary(store: ReadingStore, lesson: ReadingLesson | n
     writes.current = writes.current.then(() => store.save(next)).then(() => setError("")).catch(() => setError("Chưa lưu được bài đọc trên thiết bị. Kiểm tra dung lượng và thử lưu lại."));
   }, [store]);
   useEffect(() => {
-    if (!ready || !lesson) return;
+    if (!ready || !lesson || removed.current.has(lesson)) return;
     const entry = { lesson, answers, updatedAt: new Date().toISOString() };
     persist([entry, ...current.current.filter((item) => item.lesson.passage !== lesson.passage)].slice(0, 20));
   }, [ready, lesson, answers, persist]);
@@ -26,5 +27,15 @@ export function useReadingLibrary(store: ReadingStore, lesson: ReadingLesson | n
     if (ready) persist(current.current);
     else void store.load().then((loaded) => { current.current = loaded; setItems(loaded); setError(""); setReady(true); }).catch(() => setError("Chưa tải được bài đã lưu. Hãy thử lại."));
   };
-  return { items, ready, error, retry };
+  function remove(passage: string) {
+    if (!ready) return;
+    if (lesson?.passage === passage) removed.current.add(lesson);
+    persist(current.current.filter((item) => item.lesson.passage !== passage));
+  }
+  function clear() {
+    if (!ready) return;
+    if (lesson) removed.current.add(lesson);
+    persist([]);
+  }
+  return { items, ready, error, retry, remove, clear };
 }

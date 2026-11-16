@@ -153,7 +153,10 @@ thẻ được tra sẵn, chỉ bấm Lưu. Chạy được với **bản web đ
   Cần ít nhất ba từ EN→VI có nghĩa. Mỗi bài dùng 3–5 từ, ưu tiên đã học trong tối đa
   200 thẻ mới nhất của phạm vi đã chọn; bài đọc và câu trả lời tự lưu tối đa 20 bài trên thiết bị, tách theo tài khoản.
   Chọn trong **Bài đọc đã lưu** để học tiếp; chưa đồng bộ bài lưu giữa thiết bị.
-  Xóa dữ liệu trình duyệt/app sẽ xóa thư viện cục bộ.
+  Xóa dữ liệu trình duyệt/app sẽ xóa thư viện cục bộ. Bài không tự hết hạn;
+  khi vượt 20 bài, bài lâu không được học tiếp nhất bị loại. Có nút **Xóa** từng bài
+  và **Xóa tất cả**, đều yêu cầu xác nhận. Xóa bài đang đọc không đóng bài,
+  nhưng tiếp tục trả lời sẽ không tự lưu lại bài vừa xóa trong phiên đó.
 - Bài đọc có **Nghe cả bài**, **Dừng**, tốc độ chậm/bình thường, ẩn đoạn văn để
   luyện nghe và **Nghe từng câu**. Dùng giọng TTS của trình duyệt/hệ điều hành,
   không gọi AI để tạo audio. Giọng đọc phụ thuộc thiết bị; mobile dừng khi rời màn.
