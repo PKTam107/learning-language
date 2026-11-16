@@ -17,6 +17,7 @@ import {
 } from "@/lib/quiz";
 import { playPronunciation } from "@/lib/audio";
 import { AudioButton } from "@/components/flashcard/AudioButton";
+import { CardPhoto } from "@/components/flashcard/CardPhoto";
 import { Button } from "@/components/ui/Button";
 import { radius, spacing, type ThemeColors } from "@/lib/theme";
 import { useStyles, useThemeColors } from "@/contexts/ThemeContext";
@@ -239,6 +240,9 @@ export function QuizCard({ card, pool, type, autoSpeak, onAnswered }: Props) {
           )}
         </View>
       )}
+
+      {/* Chỉ hiện ảnh khi đáp án đã lộ để ảnh/chú thích không gợi đáp án trước. */}
+      {(answered || unbuildable) && <CardPhoto image={card.image} />}
 
       {/* ----- Hành động ----- */}
       <View style={styles.actions}>

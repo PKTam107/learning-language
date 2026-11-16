@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseCardImage, type CardImage } from "./card-image";
+import { ImageCursorSchema, type ImageSearchPage } from "./image-search";
 
 const Metadata = z.record(z.object({ value: z.string() }).passthrough());
 const ResponseSchema = z.object({
@@ -11,6 +12,7 @@ const ResponseSchema = z.object({
     })).optional(),
   })) }).optional(),
   error: z.unknown().optional(),
+  continue: ImageCursorSchema.optional(),
 });
 
 // Metadata contains HTML. Render text only, never inject provider markup.
@@ -43,5 +45,10 @@ export function commonsImages(value: unknown): CardImage[] {
       license, licenseUrl,
     });
     return image ? [image] : [];
-  }).slice(0, 4);
+  });
+}
+
+export function commonsImagePage(value: unknown): ImageSearchPage {
+  const data = ResponseSchema.parse(value);
+  return { images: commonsImages(data), nextCursor: data.continue ?? null };
 }

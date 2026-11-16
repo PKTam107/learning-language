@@ -3,9 +3,10 @@ import { z } from "zod";
 import { getRequestUser } from "@/lib/supabase/getUser";
 import { enforceRateLimit, standardRules } from "@/lib/rate-limit";
 import { requestDeviceId } from "@/lib/user-agent";
-import { commonsImages } from "@/lib/commons-images";
+import { commonsImagePage } from "@/lib/commons-images";
+import { ImageCursorSchema } from "@/lib/image-search";
 
-const Body = z.object({ query: z.string().trim().min(1).max(100) });
+const Body = z.object({ query: z.string().trim().min(1).max(100), cursor: ImageCursorSchema.nullable().optional() });
 
 export async function POST(request: Request) {
   const user = await getRequestUser(request);
@@ -21,14 +22,17 @@ export async function POST(request: Request) {
       prop: "imageinfo", iiprop: "url|mime|thumbmime|extmetadata", iiurlwidth: "640",
       iiextmetadatafilter: "Artist|LicenseShortName|LicenseUrl", iiextmetadatalanguage: "en",
     });
+    if (parsed.data.cursor) {
+      query.set("gsroffset", String(parsed.data.cursor.gsroffset));
+      query.set("continue", parsed.data.cursor.continue);
+    }
     const response = await fetch(`https://commons.wikimedia.org/w/api.php?${query}`, {
       headers: { "User-Agent": "LinguaCards/0.1 (vocabulary flashcards; Wikimedia Commons image search)" },
       next: { revalidate: 86400 }, signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) return NextResponse.json({ error: response.status === 429 ? "Nguồn ảnh đã hết lượt tìm tạm thời. Hãy thử lại sau." : "Chưa kết nối được nguồn ảnh. Hãy thử lại sau." }, { status: 503 });
     const data = await response.json();
-    const images = commonsImages(data);
-    return NextResponse.json({ images });
+    return NextResponse.json(commonsImagePage(data));
   } catch {
     return NextResponse.json({ error: "Không tải được ảnh. Bạn có thể thử lại hoặc lưu thẻ không có ảnh." }, { status: 502 });
   }
