@@ -1,6 +1,10 @@
 "use client";
+import { useReadingLibrary } from "@/hooks/useReadingLibrary";
+import { createReadingStore } from "@/lib/reading-store";
+import { ReadingAudio } from "@/components/ReadingAudio";
 
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { fetchDecks } from "@/lib/db/decks";
@@ -25,6 +29,8 @@ export function ReadingPractice() {
   const [deckId, setDeckId] = useState("");
   const [topic, setTopic] = useState<ReadingRequest["topic"]>("daily");
   const reading = useReadingLesson(fetchLesson);
+  const store = useMemo(() => createReadingStore(), []);
+  const library = useReadingLibrary(store, reading.lesson, reading.answers);
   useEffect(() => {
     let alive = true;
     fetchDecks().then((data) => { if (alive) setDecks(data.filter((d) => d.source_language === "en" && d.target_language === "vi")); }).catch(() => { if (alive) setDeckError(true); });
@@ -40,12 +46,15 @@ export function ReadingPractice() {
       <Button disabled={reading.busy} onClick={() => void reading.generate({ topic, ...(deckId ? { deckId } : {}) })}>{reading.busy ? "Đang chuẩn bị bài đọc…" : lesson ? "Tạo bài khác" : "Bắt đầu đọc"}</Button>
       <p className="text-xs text-slate-500">Cần ít nhất 3 từ có nghĩa tiếng Việt. Đọc hiểu là luyện bổ sung, không thay đổi lịch ôn thẻ.</p>
     </section>
+    <section className="space-y-2 rounded-xl border p-4 dark:border-slate-800"><h2 className="font-semibold">Bài đọc đã lưu ({library.items.length}/20)</h2><p className="text-xs text-slate-500">Tự lưu trên thiết bị này theo tài khoản, gồm câu trả lời. Chọn bài để học tiếp; chưa đồng bộ sang thiết bị khác.</p>{library.error && <p role="status">{library.error} <button onClick={library.retry} className="underline">Thử lại</button></p>}{!library.ready && !library.error && <p>Đang tải…</p>}{library.ready && !library.items.length && <p className="text-sm text-slate-500">Bài mới sẽ tự xuất hiện ở đây sau khi tạo.</p>}<div className="max-h-52 space-y-2 overflow-y-auto">{library.items.map((item) => <button key={item.lesson.passage} disabled={reading.busy} onClick={() => reading.restore(item)} className="block w-full rounded-lg border p-3 text-left text-sm">{item.lesson.title} · {item.answers.filter((a) => a !== null).length}/{item.lesson.questions.length} câu đã làm</button>)}</div></section>
     {reading.error && <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">{reading.error} <Link href="/decks" className="underline">Xem bộ thẻ</Link></p>}
     {lesson && <>
       <article className="rounded-xl border border-slate-200 p-5 dark:border-slate-800">
         <h2 className="mb-3 text-xl font-semibold">{lesson.title}</h2>
         {lesson.source === "examples" && <p className="mb-3 text-sm text-slate-500">Chưa tạo được đoạn đọc mới. Đây là các câu ví dụ đã lưu trong kho, không phải một câu chuyện liền mạch.</p>}
+        <ReadingAudio key={lesson.passage} text={lesson.passage}>
         <p className="whitespace-pre-line text-lg leading-9">{readingSegments(lesson.passage, lesson.words).map((segment, index) => segment.word ? <button key={index} type="button" onClick={() => reading.setSelectedWord(segment.word!)} className="rounded bg-indigo-100 px-0.5 font-semibold text-indigo-800 underline decoration-dotted dark:bg-indigo-500/20 dark:text-indigo-200">{segment.text}</button> : <span key={index}>{segment.text}</span>)}</p>
+        </ReadingAudio>
       </article>
       <div className="flex flex-wrap gap-2">{lesson.words.map((word) => <button key={word.id} type="button" onClick={() => reading.setSelectedWord(word)} className="rounded-full border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">{word.term}</button>)}</div>
       <Modal open={!!reading.selectedWord} onClose={() => reading.setSelectedWord(null)} title={reading.selectedWord?.term}>

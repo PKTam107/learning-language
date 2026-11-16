@@ -151,7 +151,12 @@ thẻ được tra sẵn, chỉ bấm Lưu. Chạy được với **bản web đ
 - Từ trang chủ hoặc **Đọc hiểu**, chọn chủ đề và bộ thẻ để tạo đoạn 80–120 từ,
   kèm hai câu hỏi và giải thích. Chạm từ được đánh dấu để xem nghĩa, nghe và xem ảnh đã lưu.
   Cần ít nhất ba từ EN→VI có nghĩa. Mỗi bài dùng 3–5 từ, ưu tiên đã học trong tối đa
-  200 thẻ mới nhất của phạm vi đã chọn; nội dung bài chỉ giữ trong màn hình hiện tại.
+  200 thẻ mới nhất của phạm vi đã chọn; bài đọc và câu trả lời tự lưu tối đa 20 bài trên thiết bị, tách theo tài khoản.
+  Chọn trong **Bài đọc đã lưu** để học tiếp; chưa đồng bộ bài lưu giữa thiết bị.
+  Xóa dữ liệu trình duyệt/app sẽ xóa thư viện cục bộ.
+- Bài đọc có **Nghe cả bài**, **Dừng**, tốc độ chậm/bình thường, ẩn đoạn văn để
+  luyện nghe và **Nghe từng câu**. Dùng giọng TTS của trình duyệt/hệ điều hành,
+  không gọi AI để tạo audio. Giọng đọc phụ thuộc thiết bị; mobile dừng khi rời màn.
 - Bài đọc dùng model/key Gemini hoặc OpenAI hiện có. Đặt `READING_AI_PROVIDER`
   nếu muốn chọn provider riêng; mặc định theo `AI_PROVIDER` hoặc tự dò key như dịch.
   MyMemory/LibreTranslate không tạo truyện. Nếu thiếu key, quota hoặc nội dung AI

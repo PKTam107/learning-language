@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { useReadingLibrary } from "@/hooks/useReadingLibrary";
+import { createReadingStore } from "@/lib/reading-store";
+import { ReadingAudio } from "@/components/ReadingAudio";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { fetchDecks } from "@/lib/decks";
@@ -25,6 +28,8 @@ export default function ReadingScreen() {
   const [activeSelect, setActiveSelect] = useState<"topic" | "deck" | null>(null);
   const [topic, setTopic] = useState<ReadingRequest["topic"]>("daily");
   const reading = useReadingLesson(createReadingLesson);
+  const store = useMemo(() => createReadingStore(), []);
+  const library = useReadingLibrary(store, reading.lesson, reading.answers);
   useEffect(() => {
     let alive = true;
     fetchDecks().then((data) => { if (alive) setDecks(data.filter((d) => d.source_language === "en" && d.target_language === "vi")); }).catch(() => { if (alive) setDeckError(true); });
@@ -59,12 +64,15 @@ export default function ReadingScreen() {
       <Button title={reading.busy ? "Đang chuẩn bị bài đọc…" : lesson ? "Tạo bài khác" : "Bắt đầu đọc"} disabled={reading.busy} onPress={() => { setActiveSelect(null); void reading.generate({ topic, ...(deckId ? { deckId } : {}) }); }} />
       <Text style={styles.muted}>Cần ít nhất 3 từ có nghĩa tiếng Việt. Đọc hiểu không thay đổi lịch ôn thẻ.</Text>
     </View>
+    <View style={styles.card}><Text style={styles.heading}>Bài đọc đã lưu ({library.items.length}/20)</Text><Text style={styles.muted}>Tự lưu trên thiết bị này theo tài khoản, gồm câu trả lời. Chọn bài để học tiếp; chưa đồng bộ thiết bị khác.</Text>{!!library.error && <><Text style={styles.muted}>{library.error}</Text><Button title="Thử lại" variant="secondary" onPress={library.retry} /></>}{!library.ready && !library.error && <Text style={styles.muted}>Đang tải…</Text>}{library.ready && !library.items.length && <Text style={styles.muted}>Bài mới sẽ tự lưu sau khi tạo.</Text>}<ScrollView nestedScrollEnabled style={{ maxHeight: 200 }}>{library.items.map((item) => <Button key={item.lesson.passage} title={`${item.lesson.title} · ${item.answers.filter((a) => a !== null).length}/${item.lesson.questions.length} câu đã làm`} disabled={reading.busy} variant="secondary" onPress={() => reading.restore(item)} />)}</ScrollView></View>
     {!!reading.error && <View style={styles.card}><Text accessibilityRole="alert" style={styles.text}>{reading.error}</Text><Button title="Về kho từ" variant="secondary" onPress={() => router.navigate("/decks")} /></View>}
     {lesson && <>
       <View style={styles.card}>
         <Text style={styles.title}>{lesson.title}</Text>
         {lesson.source === "examples" && <Text style={styles.muted}>Chưa tạo được đoạn đọc mới. Đây là các câu ví dụ đã lưu trong kho, không phải một câu chuyện liền mạch.</Text>}
+        <ReadingAudio key={lesson.passage} text={lesson.passage}>
         <Text style={styles.passage}>{readingSegments(lesson.passage, lesson.words).map((segment, index) => segment.word ? <Text key={index} accessibilityRole="button" onPress={() => reading.setSelectedWord(segment.word!)} style={{ color: colors.brand, fontWeight: "700", textDecorationLine: "underline" }}>{segment.text}</Text> : segment.text)}</Text>
+        </ReadingAudio>
       </View>
       <View style={styles.chips}>{lesson.words.map((w) => <Pressable key={w.id} accessibilityRole="button" onPress={() => reading.setSelectedWord(w)} style={styles.chip}><Text style={styles.text}>{w.term}</Text></Pressable>)}</View>
       <Modal open={!!reading.selectedWord} onClose={() => reading.setSelectedWord(null)} title={reading.selectedWord?.term} bodyDrag={false}>

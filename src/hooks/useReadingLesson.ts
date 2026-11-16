@@ -28,11 +28,15 @@ export function useReadingLesson(fetchLesson: (input: ReadingRequest) => Promise
       if (request === version.current) { pending.current = false; setBusy(false); }
     }
   }
+  function restore(saved: { lesson: ReadingLesson; answers: (number | null)[] }) {
+    if (pending.current) return;
+    setLesson(saved.lesson); setAnswers([...saved.answers]); setSelectedWord(null); setError("");
+  }
   function answer(question: number, option: number) {
     if (!lesson || !lesson.questions[question]?.options[option]) return;
     setAnswers((previous) => previous.map((value, index) => index === question && value === null ? option : value));
   }
   const finished = !!lesson?.questions.length && answers.length === lesson.questions.length && answers.every((a) => a !== null);
   const score = lesson?.questions.reduce((n, q, i) => n + (answers[i] === q.answerIndex ? 1 : 0), 0) ?? 0;
-  return { lesson, busy, error, selectedWord, setSelectedWord, answers, answer, generate, finished, score };
+  return { lesson, busy, error, selectedWord, setSelectedWord, answers, answer, generate, finished, score, restore };
 }
