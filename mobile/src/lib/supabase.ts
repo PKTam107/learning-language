@@ -1,6 +1,6 @@
 import "react-native-url-polyfill/auto";
 import { AppState } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { authStorage } from "./auth-storage";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -15,14 +15,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 /**
  * Supabase client cho React Native.
- * - Lưu session vào AsyncStorage để giữ đăng nhập giữa các lần mở app.
+ * - Mã hóa session; khóa nằm trong Keychain/Keystore qua expo-secure-store.
  * - detectSessionInUrl=false vì mobile không dùng URL callback như web.
  * - flowType="pkce": bắt buộc cho OAuth trên native — server trả về `code`,
  *   app đổi code lấy session bằng exchangeCodeForSession (xem AuthContext).
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: authStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
@@ -35,7 +35,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
  * timer nền đáng tin, nên bật/tắt theo AppState để access token luôn được làm
  * mới bằng refresh token — giữ đăng nhập liên tục thay vì hết hạn giữa chừng.
  */
-AppState.addEventListener("change", (state) => {
-  if (state === "active") supabase.auth.startAutoRefresh();
-  else supabase.auth.stopAutoRefresh();
-});
+function updateAutoRefresh(state: string | null) {
+  if (state === "active") void supabase.auth.startAutoRefresh();
+  else void supabase.auth.stopAutoRefresh();
+}
+updateAutoRefresh(AppState.currentState);
+AppState.addEventListener("change", updateAutoRefresh);

@@ -105,13 +105,15 @@ tiếp bị Supabase từ chối (reuse interval mặc định 10 giây).
   XSS là mất token. Bù bằng ba lớp: không có sink XSS nào (§2), CSP theo nonce
   chặn script lạ chạy ngay từ đầu (§3.1), và `Secure` + HSTS để token không rò
   qua đường truyền http (§3).
-- **`maxAge` của cookie phiên là 400 ngày** (mặc định thư viện) trong khi ý đồ ở
-  [docs/09](./09-auth-session.md) là phiên 1 tuần. Không phải lỗ hổng — token
-  bên trong hết hạn là cookie vô dụng — nhưng cái vỏ nằm lại trên máy dùng chung
-  rất lâu. Muốn khớp thì thêm `maxAge` vào `cookie-options.ts`.
-- **Mobile lưu session trong `AsyncStorage`** dạng thường (chuẩn của Supabase
-  RN). Máy bị root/jailbreak hoặc bị lấy backup thì đọc được. Muốn chặt hơn thì
-  đổi sang `expo-secure-store`.
+- **Thời hạn cookie không phải thời hạn phiên**: `maxAge` dài không chứng minh
+  refresh token sống một tuần hay đã hết hạn. Inactivity/time-box phải cấu hình
+  tại Supabase, xem [docs/09](./09-auth-session.md); không giảm cookie lifetime
+  để thay thế việc kiểm soát phiên phía server.
+- **Mobile mã hóa session trong `AsyncStorage`** bằng AES-256-GCM; khóa nằm
+  trong Keychain/Keystore qua `expo-secure-store`, không lưu cùng ciphertext.
+  Adapter tự xóa bản rõ khi chuyển đổi và không fallback plaintext khi lỗi.
+  Cần rebuild native; xem [docs/09](./09-auth-session.md). Thiết bị bị chiếm quyền
+  lúc app đang chạy vẫn có thể làm lộ session trong bộ nhớ.
 - **`dictionary_cache` cho mọi người đã đăng nhập đọc** — dùng chung để đỡ gọi
   API. Không gắn user, nhưng ai đó có thể dò xem những từ nào từng được tra
   (không biết ai tra). Chấp nhận được; muốn kín thì bỏ quyền select của

@@ -11,7 +11,7 @@ web app — cùng database, cùng RLS, cùng tài khoản.
 
 - **Expo SDK 52 + expo-router v4** — file-based routing trong `app/`
 - **React Native 0.76** + TypeScript
-- **@supabase/supabase-js** + AsyncStorage — auth & data, session lưu trên máy
+- **@supabase/supabase-js** + AES-256-GCM + SecureStore — auth & data, session mã hóa trên máy
 - Backend dùng lại nguyên web app (Postgres + RLS + API route `/api/lookup`, `/api/translate`)
 
 ## Bắt đầu
@@ -65,7 +65,7 @@ app/                  # expo-router (mỗi file = 1 route)
     decks/[id].tsx    # chi tiết bộ thẻ
     share.tsx         # nhận từ được chia sẻ ngoài app
 src/
-  lib/supabase.ts     # Supabase client (AsyncStorage + url polyfill)
+  lib/supabase.ts     # Supabase client (encrypted auth storage + url polyfill)
   lib/theme.ts        # bảng màu sáng+tối / spacing, đồng bộ với web
   contexts/ThemeContext.tsx  # provider giao diện + useStyles/useThemeColors
   contexts/AuthContext.tsx
@@ -126,3 +126,15 @@ về app qua deep link `linguacards://auth/callback` → đổi `code` lấy ses
 
 **Lưu ý:** OAuth cần native module mới → phải **build lại APK** (`eas build`), không
 chạy được bằng bản Expo Go cũ. Deep link chỉ hoạt động trên dev build / bản standalone.
+
+### Lưu session an toàn
+
+Session và PKCE verifier chỉ lưu dưới dạng AES-256-GCM ciphertext trong
+AsyncStorage; khóa được lưu riêng bằng `expo-secure-store` trong Keychain/Keystore.
+Session cũ được chuyển đổi tự động và xóa bản rõ. Không có fallback về plaintext
+khi SecureStore lỗi. Expo web giữ khóa trong bộ nhớ, reload phải đăng nhập lại.
+
+Sau `npm ci`, cần **build lại native app** (development/EAS build) để tích hợp
+`expo-secure-store` và cấu hình loại khóa khỏi Android backup; chỉ OTA JavaScript
+không đủ cho binary cũ. Không cần bật quyền sinh trắc học để refresh token.
+Chi tiết và kiểm thử thiết bị: [Auth session](../docs/09-auth-session.md).

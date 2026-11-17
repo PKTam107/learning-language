@@ -38,6 +38,8 @@ export async function updateSession(
   /** Gắn CSP lên response trả về — kể cả response chuyển hướng. */
   const withCsp = <T extends NextResponse>(response: T): T => {
     response.headers.set(cspHeader, security.csp);
+    response.headers.set("Cache-Control", "private, no-store");
+    response.headers.set("Referrer-Policy", "no-referrer");
     return response;
   };
 
@@ -45,6 +47,12 @@ export async function updateSession(
     request: { headers: requestHeadersWith(request, security) },
   });
 
+  // Callback phải đổi code trước; không refresh phiên cũ khi đang đăng nhập lại.
+  if (request.nextUrl.pathname === "/auth/callback") {
+    return withCsp(supabaseResponse);
+  }
+
+  const pendingCookies = new Map<string, CookieToSet>();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -55,13 +63,14 @@ export async function updateSession(
           return request.cookies.getAll();
         },
         setAll(cookiesToSet: CookieToSet[]) {
+          cookiesToSet.forEach((cookie) => pendingCookies.set(cookie.name, cookie));
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
             request: { headers: requestHeadersWith(request, security) },
           });
-          cookiesToSet.forEach(({ name, value, options }) =>
+          pendingCookies.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
         },
@@ -85,6 +94,7 @@ export async function updateSession(
   const redirectTo = (pathname: string) => {
     const url = request.nextUrl.clone();
     url.pathname = pathname;
+    url.search = "";
     const response = NextResponse.redirect(url);
     supabaseResponse.cookies
       .getAll()
@@ -106,8 +116,8 @@ export async function updateSession(
    * chuyển hướng thay vì JSON.
    */
   const isPublic =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/auth") ||
+    pathname === "/login" ||
+    pathname.startsWith("/auth/") ||
     pathname.startsWith("/api") ||
     pathname === "/sw.js" ||
     pathname === "/manifest.webmanifest" ||
@@ -119,7 +129,7 @@ export async function updateSession(
   }
 
   // Đã đăng nhập mà vào /login → đẩy về dashboard
-  if (user && pathname.startsWith("/login")) {
+  if (user && pathname === "/login") {
     return redirectTo("/dashboard");
   }
 

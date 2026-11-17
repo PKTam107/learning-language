@@ -27,6 +27,8 @@ export async function getRequestContext(
 ): Promise<RequestContext | null> {
   const token = bearerToken(request);
 
+  if (request.headers.has("authorization") && !token) return null;
+
   if (token) {
     // Anon key + JWT của user: RLS và auth.uid() hoạt động như trên web.
     const supabase = createAnonClient(

@@ -26,6 +26,7 @@ export default function LoginScreen() {
   const { signInWithPassword, signUpWithPassword, signInWithGoogle } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
+  const [confirmation, setConfirmation] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -39,7 +40,7 @@ export default function LoginScreen() {
     try {
       await signInWithGoogle();
     } catch (err) {
-      setError((err as Error).message);
+      setError("Không thể hoàn tất đăng nhập. Kiểm tra thông tin hoặc thử lại sau.");
     } finally {
       setGoogleLoading(false);
     }
@@ -49,23 +50,28 @@ export default function LoginScreen() {
     setError(null);
     setInfo(null);
 
-    if (!email.trim() || password.length < 6) {
-      setError("Nhập email và mật khẩu (tối thiểu 6 ký tự).");
+    if (!email.trim() || !password) {
+      setError("Nhập email và mật khẩu.");
       return;
     }
 
+    if (mode === "signup" && (password.length < 12 || password !== confirmation)) {
+      setError("Mật khẩu cần ít nhất 12 ký tự và nhập lại trùng khớp.");
+      return;
+    }
     setLoading(true);
     try {
       if (mode === "signup") {
         await signUpWithPassword(email.trim(), password);
-        setInfo("Kiểm tra email để xác nhận tài khoản (nếu được bật).");
+        setInfo("Nếu đủ điều kiện đăng ký, bạn sẽ nhận được email xác nhận.");
+        setPassword(""); setConfirmation("");
       } else {
         await signInWithPassword(email.trim(), password);
         // Đăng nhập thành công → AuthProvider cập nhật session,
         // (auth)/_layout tự redirect sang (app).
       }
     } catch (err) {
-      setError((err as Error).message);
+      setError("Không thể hoàn tất đăng nhập. Kiểm tra thông tin hoặc thử lại sau.");
     } finally {
       setLoading(false);
     }
@@ -117,10 +123,16 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              autoComplete="password"
-              textContentType="password"
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              textContentType={mode === "signup" ? "newPassword" : "password"}
             />
+            {mode === "signup" && <Input
+              placeholder="Nhập lại mật khẩu (ít nhất 12 ký tự)" value={confirmation}
+              onChangeText={setConfirmation} secureTextEntry autoComplete="new-password"
+              textContentType="newPassword"
+            />}
             <Button
+              disabled={googleLoading}
               title={mode === "signin" ? "Đăng nhập" : "Đăng ký"}
               onPress={handleSubmit}
               loading={loading}
@@ -133,6 +145,8 @@ export default function LoginScreen() {
           <Text
             style={styles.switch}
             onPress={() => {
+              if (loading || googleLoading) return;
+              setPassword(""); setConfirmation("");
               setMode(mode === "signin" ? "signup" : "signin");
               setError(null);
               setInfo(null);
