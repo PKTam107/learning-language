@@ -38,15 +38,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setInitializing(false);
       if (data.session) void pingDevice();
+    }).catch(() => {
+      if (mounted) setInitializing(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!mounted) return;
       setSession(nextSession);
+      setInitializing(false);
       // Ghi nhận thiết bị sau mỗi lần đăng nhập / gia hạn phiên; pingDevice tự
       // giới hạn nhịp nên gọi thoải mái.
-      if (nextSession) void pingDevice();
+      if (nextSession) setTimeout(() => { if (mounted) void pingDevice(); }, 0);
     });
 
     return () => {

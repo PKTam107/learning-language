@@ -1,26 +1,23 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-/** Đổi authorization code (Google OAuth / email confirm) lấy session, rồi về dashboard. */
+// Chỉ cho phép các đích auth được ứng dụng sử dụng; không chuyển tiếp URL tùy ý.
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-
-  // `next` đến từ URL nên phải coi là dữ liệu của kẻ lạ: chỉ nhận đường dẫn
-  // nội bộ bắt đầu bằng MỘT dấu "/". Chặn "//evil.com" và "/\evil.com" —
-  // trình duyệt đọc chúng thành host khác, thành ra open redirect: link đăng
-  // nhập trông như của mình nhưng đá người dùng sang trang giả mạo.
-  const requested = searchParams.get("next");
-  const next =
-    requested && /^\/(?![/\\])/.test(requested) ? requested : "/dashboard";
-
-  if (code) {
-    const supabase = createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+  const next = searchParams.get("next") === "/auth/reset-password"
+    ? "/auth/reset-password" : "/dashboard";
+  let target = "/login?error=auth";
+  if (code && !searchParams.has("error")) {
+    try {
+      const { error } = await createClient().auth.exchangeCodeForSession(code);
+      if (!error) target = next;
+    } catch {
+      // Không đưa code, token hoặc chi tiết nhà cung cấp vào URL lỗi.
     }
   }
-
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  const response = NextResponse.redirect(new URL(target, origin));
+  response.headers.set("Cache-Control", "private, no-store");
+  response.headers.set("Referrer-Policy", "no-referrer");
+  return response;
 }

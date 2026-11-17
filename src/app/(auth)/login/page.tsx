@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -9,55 +9,78 @@ import { Spinner } from "@/components/ui/Spinner";
 import { LogIn } from "lucide-react";
 
 export default function LoginPage() {
+  const busy = useRef(false);
+  const [confirmation, setConfirmation] = useState("");
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "recover">("signin");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "");
-
   async function signInWithGoogle() {
+    if (busy.current) return;
+    busy.current = true;
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${siteUrl}/auth/callback` },
-    });
-    if (error) {
-      setError(error.message);
+    setInfo(null);
+    try {
+      const { error } = await createClient().auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+    } catch {
+      setError("Không thể đăng nhập Google. Vui lòng thử lại.");
+    } finally {
+      busy.current = false;
       setLoading(false);
     }
   }
 
   async function handleEmailAuth(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
+    if (busy.current) return;
     setError(null);
     setInfo(null);
-    const supabase = createClient();
-
-    if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: `${siteUrl}/auth/callback` },
-      });
-      if (error) setError(error.message);
-      else setInfo("Kiểm tra email để xác nhận tài khoản (nếu được bật).");
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) setError(error.message);
-      else window.location.href = "/dashboard";
+    if (mode === "signup" && (password.length < 12 || password !== confirmation)) {
+      setError("Mật khẩu cần ít nhất 12 ký tự và nhập lại trùng khớp.");
+      return;
     }
-    setLoading(false);
+    busy.current = true;
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const callback = `${window.location.origin}/auth/callback`;
+      if (mode === "recover") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: `${callback}?next=/auth/reset-password`,
+        });
+        if (error) throw error;
+        setInfo("Nếu email có tài khoản, bạn sẽ nhận được liên kết đặt lại mật khẩu. Mở liên kết trên trình duyệt này.");
+      } else if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(), password,
+          options: { emailRedirectTo: callback },
+        });
+        if (error) throw error;
+        if (data.session) window.location.replace("/dashboard");
+        else setInfo("Nếu đủ điều kiện đăng ký, bạn sẽ nhận được email xác nhận. Mở liên kết trên trình duyệt này.");
+        setPassword("");
+        setConfirmation("");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) throw error;
+        window.location.replace("/dashboard");
+      }
+    } catch {
+      setError(mode === "signin"
+        ? "Không thể đăng nhập. Kiểm tra email, mật khẩu và trạng thái xác nhận email, hoặc thử lại sau."
+        : "Không thể hoàn tất yêu cầu. Vui lòng thử lại sau.");
+    } finally {
+      busy.current = false;
+      setLoading(false);
+    }
   }
 
   return (
@@ -86,23 +109,34 @@ export default function LoginPage() {
 
         <form onSubmit={handleEmailAuth} className="space-y-3">
           <Input
+            autoComplete="email"
+            aria-label="Email"
+            disabled={loading}
             type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <Input
+          {mode !== "recover" && <Input
+            aria-label="Mật khẩu"
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            disabled={loading}
             type="password"
             placeholder="Mật khẩu"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            minLength={6}
-          />
+            minLength={mode === "signup" ? 12 : 1}
+          />}
+          {mode === "signup" && <Input
+            type="password" autoComplete="new-password" aria-label="Nhập lại mật khẩu"
+            placeholder="Nhập lại mật khẩu (ít nhất 12 ký tự)" value={confirmation}
+            onChange={(e) => setConfirmation(e.target.value)} required minLength={12} disabled={loading}
+          />}
           <Button type="submit" disabled={loading} className="w-full">
             {loading && <Spinner />}
-            {mode === "signin" ? "Đăng nhập" : "Đăng ký"}
+            {mode === "signin" ? "Đăng nhập" : mode === "signup" ? "Đăng ký" : "Gửi liên kết đặt lại mật khẩu"}
           </Button>
         </form>
 
@@ -118,13 +152,22 @@ export default function LoginPage() {
         )}
 
         <button
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          disabled={loading}
+          onClick={() => {
+            setMode(mode === "signin" ? "signup" : "signin");
+            setPassword(""); setConfirmation(""); setError(null); setInfo(null);
+          }}
           className="mt-4 w-full text-center text-sm text-brand dark:text-indigo-400 hover:underline"
         >
           {mode === "signin"
             ? "Chưa có tài khoản? Đăng ký"
             : "Đã có tài khoản? Đăng nhập"}
         </button>
+        {mode === "signin" && <button disabled={loading}
+          onClick={() => { setMode("recover"); setPassword(""); setError(null); setInfo(null); }}
+          className="mt-3 w-full text-center text-sm text-brand hover:underline">
+          Quên mật khẩu?
+        </button>}
       </div>
     </main>
   );

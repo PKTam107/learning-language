@@ -41,6 +41,13 @@
           ],
           "disableIOS": true
         }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": false
+        }
       ]
     ],
     "extra": {
