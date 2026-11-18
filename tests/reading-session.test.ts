@@ -35,6 +35,38 @@ describe("reading practice session", () => {
     expect(reading.lesson?.title).toBe("Next"); expect(reading.error).toBe("");
     expect(reading.answers).toEqual([null, null]); expect(reading.selectedWord).toBeNull();
   });
+  it("generates again with a different topic after a successful lesson", async () => {
+    const next = { ...sample, title: "Travel", passage: "A new journey." };
+    fetchLesson.mockResolvedValueOnce(sample).mockResolvedValueOnce(next);
+    await act(async () => { await reading.generate({ topic: "daily" }); });
+    act(() => { reading.answer(0, 0); reading.setSelectedWord(sample.words[0]); });
+    await act(async () => { await reading.generate({ topic: "travel" }); });
+    expect(fetchLesson.mock.calls).toEqual([[{ topic: "daily" }], [{ topic: "travel" }]]);
+    expect(reading.lesson).toEqual(next);
+    expect(reading.answers).toEqual([null, null]);
+    expect(reading.selectedWord).toBeNull();
+    expect(reading.busy).toBe(false);
+  });
+  it("unlocks generation after a stalled request and ignores its late result", async () => {
+    vi.useFakeTimers();
+    try {
+      let resolve!: (lesson: ReadingLesson) => void;
+      fetchLesson.mockReturnValueOnce(new Promise((done) => { resolve = done; }));
+      act(() => { void reading.generate({ topic: "daily" }); });
+      await act(async () => { await vi.advanceTimersByTimeAsync(45_000); });
+      expect(reading.busy).toBe(false);
+      expect(reading.error).toContain("quá lâu");
+      const next = { ...sample, title: "Travel" };
+      fetchLesson.mockResolvedValueOnce(next);
+      await act(async () => { await reading.generate({ topic: "travel" }); });
+      await act(async () => { resolve(sample); });
+      expect(reading.lesson).toEqual(next);
+      expect(reading.busy).toBe(false);
+      expect(reading.error).toBe("");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("prevents double generation clicks while a request is pending", async () => {
     let resolve!: (lesson: ReadingLesson) => void;
     fetchLesson.mockReturnValue(new Promise((done) => { resolve = done; }));
