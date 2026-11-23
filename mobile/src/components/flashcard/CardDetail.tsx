@@ -1,5 +1,5 @@
 import { CardPhoto } from "./CardPhoto";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { Card } from "@/types";
 import { AudioButton } from "./AudioButton";
 import { CefrBadge, EnrichmentSections } from "./Enrichment";
@@ -9,13 +9,14 @@ import { useStyles } from "@/contexts/ThemeContext";
 
 /** Xem chi tiết 1 card đã lưu (read-only): phiên âm, audio US/UK, mọi nghĩa & ví dụ. */
 export function CardDetail({ card }: { card: Card }) {
+  const { height } = useWindowDimensions();
   const styles = useStyles(makeStyles);
   const noContent =
     !card.meaning_vi && !card.definitions?.length && !card.examples?.length;
 
   return (
     <SheetScrollView
-      style={styles.scroll}
+      style={{ maxHeight: height * 0.5 }}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
@@ -103,7 +104,6 @@ export function CardDetail({ card }: { card: Card }) {
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    scroll: { maxHeight: 460 },
     content: { gap: spacing.md, paddingBottom: spacing.sm },
     header: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
     term: { fontSize: 26, fontWeight: "700", color: colors.text },

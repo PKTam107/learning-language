@@ -89,6 +89,72 @@ export async function saveCard(
   return data as Card;
 }
 
+/** Cập nhật 1 card đã lưu từ DraftCard (dùng khi sửa thẻ). */
+export async function updateCard(
+  id: string,
+  deckId: string,
+  draft: DraftCard
+): Promise<void> {
+  const userId = await requireUserId();
+
+  const term = draft.term.trim();
+  if (!term) throw new Error("Từ không được để trống");
+  await assertNoDuplicate(deckId, term, id);
+
+  const { error } = await supabase
+    .from("cards")
+    .update({
+      term,
+      phonetic: draft.phonetic ?? null,
+      phonetic_uk: draft.phoneticUk ?? null,
+      phonetic_us: draft.phoneticUs ?? null,
+      audio_us: draft.audioUs ?? null,
+      audio_uk: draft.audioUk ?? null,
+      part_of_speech: draft.partOfSpeech ?? null,
+      meaning_vi: draft.meaningVi ?? null,
+      note: draft.note ?? null,
+      image: parseCardImage(draft.image),
+      definitions: draft.definitions,
+      examples: draft.examples,
+      cefr_level: draft.cefrLevel ?? null,
+      word_family: draft.wordFamily ?? [],
+      collocations: draft.collocations ?? [],
+    })
+    .eq("id", id)
+    .eq("user_id", userId)
+    .eq("deck_id", deckId)
+    .select("id")
+    .single(); // xác nhận thẻ tồn tại và thuộc đúng bộ thẻ
+  if (error) {
+    if (isUniqueViolation(error))
+      throw new Error(`Từ “${term}” đã có trong bộ thẻ này.`);
+    throw error;
+  }
+}
+
+/** Chuyển Card (snake_case DB) → DraftCard (camelCase) để tái dùng DraftEditor. */
+export function cardToDraft(card: Card): DraftCard {
+  return {
+    term: card.term,
+    image: parseCardImage(card.image),
+    phonetic: card.phonetic ?? undefined,
+    phoneticUk: card.phonetic_uk ?? undefined,
+    phoneticUs: card.phonetic_us ?? undefined,
+    audioUs: card.audio_us ?? undefined,
+    audioUk: card.audio_uk ?? undefined,
+    partOfSpeech: card.part_of_speech ?? undefined,
+    meaningVi: card.meaning_vi ?? undefined,
+    note: card.note ?? undefined,
+    definitions: card.definitions ?? [],
+    examples: card.examples ?? [],
+    cefrLevel: card.cefr_level ?? undefined,
+    wordFamily: card.word_family ?? [],
+    collocations: card.collocations ?? [],
+    sourceLanguage: card.source_language,
+    targetLanguage: card.target_language,
+  };
+}
+
 /** Lấy thông tin 1 deck theo id (null nếu không có / không thuộc user). */
 export async function fetchDeck(deckId: string): Promise<Deck | null> {
   const { data, error } = await supabase
