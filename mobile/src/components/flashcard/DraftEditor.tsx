@@ -102,20 +102,16 @@ export function DraftEditor({ draft, onChange, editableTerm = false }: Props) {
         </Field>
       )}
 
-      {draft.examples.length > 0 && (
-        <Field label="Ví dụ">
-          <View style={styles.defs}>
-            {draft.examples.map((ex, i) => (
-              <View key={i} style={styles.example}>
-                <Text style={styles.exampleText}>“{ex.text}”</Text>
-                {!!ex.textVi && (
-                  <Text style={styles.exampleVi}>→ {ex.textVi}</Text>
-                )}
-              </View>
-            ))}
-          </View>
-        </Field>
-      )}
+      <Field label="Ví dụ">
+        <View style={styles.defs}>
+          {draft.examples.map((ex, i) => <View key={i} style={styles.defs}>
+            <Input accessibilityLabel={`Câu ví dụ tiếng Anh ${i + 1}`} value={ex.text} onChangeText={(text) => set({ examples: draft.examples.map((item, index) => index === i ? { ...item, text } : item) })} placeholder="Câu ví dụ tiếng Anh" multiline />
+            <Input accessibilityLabel={`Nghĩa câu ví dụ ${i + 1}`} value={ex.textVi ?? ""} onChangeText={(textVi) => set({ examples: draft.examples.map((item, index) => index === i ? { ...item, textVi } : item) })} placeholder="Nghĩa tiếng Việt (tùy chọn)" multiline />
+            <Pressable accessibilityRole="button" onPress={() => set({ examples: draft.examples.filter((_, index) => index !== i) })}><Text style={styles.label}>Bỏ câu {i + 1}</Text></Pressable>
+          </View>)}
+          <Pressable accessibilityRole="button" onPress={() => set({ examples: [...draft.examples, { text: "", textVi: "" }] })}><Text style={styles.label}>Thêm câu ví dụ</Text></Pressable>
+        </View>
+      </Field>
 
       {(!!draft.wordFamily?.length || !!draft.collocations?.length) && (
         <View style={styles.enrich}>

@@ -94,20 +94,18 @@ export function DraftEditor({ draft, onChange }: DraftEditorProps) {
         </Field>
       )}
 
-      {draft.examples.length > 0 && (
-        <Field label="Ví dụ">
-          <div className="space-y-2">
-            {draft.examples.map((ex, i) => (
-              <div key={i} className="rounded-lg bg-slate-50 dark:bg-slate-800 p-2 text-sm">
-                <p className="italic">“{ex.text}”</p>
-                {ex.textVi && (
-                  <p className="mt-0.5 text-slate-500 dark:text-slate-400">→ {ex.textVi}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </Field>
-      )}
+      <Field label="Ví dụ">
+        <div className="space-y-3">
+          {draft.examples.map((ex, i) => (
+            <div key={i} className="space-y-2 rounded-lg bg-slate-50 p-2 dark:bg-slate-800">
+              <Textarea aria-label={`Câu ví dụ tiếng Anh ${i + 1}`} value={ex.text} onChange={(e) => set({ examples: draft.examples.map((item, index) => index === i ? { ...item, text: e.target.value } : item) })} placeholder="Câu ví dụ tiếng Anh" />
+              <Textarea aria-label={`Nghĩa câu ví dụ ${i + 1}`} value={ex.textVi ?? ""} onChange={(e) => set({ examples: draft.examples.map((item, index) => index === i ? { ...item, textVi: e.target.value } : item) })} placeholder="Nghĩa tiếng Việt (tùy chọn)" />
+              <button type="button" onClick={() => set({ examples: draft.examples.filter((_, index) => index !== i) })} className="text-sm text-red-600 dark:text-red-400">Bỏ câu {i + 1}</button>
+            </div>
+          ))}
+          <button type="button" onClick={() => set({ examples: [...draft.examples, { text: "", textVi: "" }] })} className="text-sm text-brand underline">Thêm câu ví dụ</button>
+        </div>
+      </Field>
 
       {(draft.wordFamily?.length || draft.collocations?.length) && (
         <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-3">

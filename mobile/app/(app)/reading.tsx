@@ -38,7 +38,8 @@ export default function ReadingScreen() {
   const { lesson } = reading;
   return <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
     <Stack.Screen options={{ title: "Đọc hiểu" }} />
-    <Text style={styles.title}>Đọc bằng kho từ của bạn</Text>
+    <Button title="Luyện nghe chép chính tả từ câu ví dụ" variant="secondary" onPress={() => router.push("/dictation")} />
+      <Text style={styles.title}>Đọc bằng kho từ của bạn</Text>
     <Text style={styles.muted}>Một đoạn 80–120 từ, dùng 3–5 từ trong kho. Chạm từ được đánh dấu để xem nghĩa và nghe.</Text>
     <View style={styles.card}>
       <Dropdown
