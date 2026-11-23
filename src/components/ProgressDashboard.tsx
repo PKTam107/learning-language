@@ -5,6 +5,7 @@ import { CalendarCheck, Flame, Repeat, Trophy } from "lucide-react";
 import { fetchProgressData, type ProgressData } from "@/lib/db/insights";
 import { useSettings } from "@/lib/settings";
 import { evaluateAchievements, summarize } from "@/lib/achievements";
+import { ReviewEffectiveness } from "@/components/ReviewEffectiveness";
 import { Achievements } from "@/components/Achievements";
 import { Heatmap } from "@/components/Heatmap";
 import { ReviewCalendar, dueInNextDays } from "@/components/ReviewCalendar";
@@ -81,6 +82,8 @@ export function ProgressDashboard() {
           hint={`${metrics.masteredCards}/${metrics.totalCards} từ đã thuộc`}
         />
       </div>
+
+      <ReviewEffectiveness />
 
       <Heatmap
         data={activity.heatmap}

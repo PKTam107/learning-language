@@ -17,6 +17,8 @@ const strip = (src: string) =>
     .trim();
 
 const pairs: [string, string][] = [
+  ["src/lib/dictation.ts", "mobile/src/lib/dictation.ts"],
+  ["src/lib/learning-insights.ts", "mobile/src/lib/learning-insights.ts"],
   ["src/lib/reading-library.ts", "mobile/src/lib/reading-library.ts"],
   ["src/hooks/useReadingLibrary.ts", "mobile/src/hooks/useReadingLibrary.ts"],
   ["src/lib/goals.ts", "mobile/src/lib/goals.ts"],

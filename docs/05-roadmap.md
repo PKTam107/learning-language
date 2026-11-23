@@ -93,3 +93,13 @@ Client thứ 2, dùng chung backend với web (chi tiết: [06-mobile.md](./06-m
 - Web push (D1) — **hạ ưu tiên**: bản mobile đã nhắc được thật bằng local notification, phần hụt
   chỉ còn người dùng chỉ dùng web.
 - Ưu tiên chi tiết + phân tích chi phí: [13-de-xuat-tinh-nang.md](./13-de-xuat-tinh-nang.md).
+
+
+## Bổ sung 2026-11-23 — đã triển khai
+
+- [x] Nghe chép chính tả bằng câu ví dụ, TTS sẵn có, phản hồi thiếu/thừa/sai từ (web + mobile).
+- [x] G4 — Sức khỏe kho thẻ, lọc vấn đề và sửa trực tiếp; thêm/sửa/bỏ ví dụ (web + mobile).
+- [x] F1 — Báo cáo tỷ lệ nhớ khi đến hạn, lỗi theo kiểu ôn và từ hay quên trong 7 ngày (web + mobile).
+      Chưa tự động điều chỉnh hạn mức; cần đủ mẫu để đánh giá.
+
+Chi tiết điều kiện tính và đường vào: [07 — Current State](./07-current-state.md#bổ-sung-2026-11-23--luyện-nghe-chất-lượng-thẻ-và-hiệu-quả-ôn).

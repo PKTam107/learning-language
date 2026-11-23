@@ -16,6 +16,7 @@ import {
 } from "@/lib/insights";
 import { evaluateAchievements, summarize } from "@/lib/achievements";
 import { useSettings } from "@/lib/settings";
+import { ReviewEffectiveness } from "@/components/ReviewEffectiveness";
 import { Achievements } from "@/components/Achievements";
 import { Heatmap } from "@/components/Heatmap";
 import { ReviewCalendar, dueInNextDays } from "@/components/ReviewCalendar";
@@ -31,6 +32,7 @@ export default function ProgressScreen() {
   const styles = useStyles(makeStyles);
   const [data, setData] = useState<ProgressData>(EMPTY_PROGRESS);
   const [loading, setLoading] = useState(true);
+  const [reportRefresh, setReportRefresh] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { settings, ready } = useSettings();
@@ -75,6 +77,7 @@ export default function ProgressScreen() {
           refreshing={refreshing}
           onRefresh={() => {
             setRefreshing(true);
+            setReportRefresh((value) => value + 1);
             load();
           }}
           tintColor={colors.brand}
@@ -109,6 +112,8 @@ export default function ProgressScreen() {
           hint={`${metrics.masteredCards}/${metrics.totalCards} đã thuộc`}
         />
       </View>
+
+      <ReviewEffectiveness refreshKey={reportRefresh} />
 
       <Heatmap
         data={activity.heatmap}

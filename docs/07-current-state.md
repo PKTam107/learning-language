@@ -336,3 +336,26 @@ bỏ hoang lâu thì phải vào bật lại bằng tay. Đây là giới hạn 
 - [x] Rate limit `/api/lookup` (30 lượt/phút/user qua RPC Supabase).
 - [ ] Test cho lookup pipeline & db helpers.
 - [x] Mobile Google OAuth (đăng nhập) cho ngang web.
+
+
+## Bổ sung 2026-11-23 — luyện nghe, chất lượng thẻ và hiệu quả ôn
+
+Đã có trên web và mobile, không thêm API trả phí hoặc migration:
+
+- `/dictation`: luyện chép chính tả từ câu ví dụ tiếng Anh trong kho, lọc bộ thẻ,
+  giọng TTS sẵn có, so khớp từ thiếu/thừa/sai và luyện lại. Mobile vào từ Đọc hiểu.
+  Luyện bổ sung, không ghi `review_events` hoặc sửa `card_progress`.
+- `/health`: kiểm tra toàn kho có phân trang dữ liệu, lọc bộ/vấn đề; nhãn thiếu
+  nghĩa, thiếu ví dụ, trùng giữa các bộ cùng cặp ngôn ngữ và `lapses >= 6`.
+  Sửa ngay bằng DraftEditor, nay hỗ trợ thêm/sửa/bỏ câu ví dụ trên cả hai client.
+  Mobile vào từ Tiến độ. Thẻ trùng không tự bị xóa, tiến độ được giữ nguyên khi sửa.
+- Tiến độ có báo cáo 7 ngày gồm hôm nay: tỷ lệ nhớ trên lượt đến hạn có
+  `interval_before > 0`, loại NULL/ôn sớm/bước học; đếm theo kiểu ôn riêng,
+  liệt kê tối đa 5 thẻ còn tồn tại bị đánh giá hard nhiều nhất. Tỷ lệ là lượt,
+  không phải số từ khác nhau; mẫu <20 có nhắc chưa nên kết luận.
+  Thiếu cột migration 0013 thì đọc bộ cột cũ, báo không có ngữ cảnh; các lỗi khác
+  hiện lỗi kèm thử lại, không giả làm báo cáo trống.
+
+Logic thuần `dictation.ts`, `learning-insights.ts` có bản sao web/mobile được
+kiểm tra parity. Không lưu bản thu, không thêm chi phí dịch vụ. Kết quả chép
+chính tả không lưu sau khi rời phiên; audio phụ thuộc giọng đọc trên thiết bị.

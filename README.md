@@ -210,3 +210,27 @@ học offline thật sự, import Anki.
   Nếu nguồn ảnh gặp lỗi, vẫn có thể lưu và học thẻ không ảnh.
 - Web và mobile đều hỗ trợ chọn ảnh và xem ảnh khi học. Tùy chọn **Nhìn ảnh đoán từ**
   ở mặt trước thẻ hiện có trên web.
+
+### Nghe chép chính tả, sức khỏe thẻ và hiệu quả ôn (web + mobile)
+
+- **Chép chính tả**: web có mục trong menu; mobile mở từ màn **Đọc hiểu**.
+  Chọn bộ thẻ, nghe câu ví dụ đã lưu rồi gõ lại. Chỉ lấy câu tiếng Anh 3–60 từ,
+  tối đa 500 ký tự; bỏ câu trùng. Không cần tạo bài đọc hoặc gọi AI.
+  Chấm bỏ qua chữ hoa/dấu câu, giữ kiểm tra chính tả và dạng viết tắt;
+  chỉ ra từ thiếu, thừa, sai, cho nghe lại và thử lại từng câu.
+  Giọng TTS phụ thuộc thiết bị; lỗi phát âm có thông báo và nút nghe để thử lại.
+  Câu trả lời chỉ tồn tại trong phiên, không ghi lượt ôn hay đổi SRS.
+- **Sức khỏe thẻ**: web có mục trong menu; mobile mở từ **Tiến độ**.
+  Lọc theo bộ và vấn đề: thiếu nghĩa, thiếu ví dụ, trùng từ giữa các bộ cùng cặp
+  ngôn ngữ, hoặc có ít nhất 6 lần quên (`lapses`). Sửa trực tiếp bằng trình sửa
+  thẻ, thêm/sửa/bỏ câu ví dụ; không đổi lịch ôn và không tự xóa thẻ trùng.
+- **Hiệu quả ôn tập** trong **Tiến độ**: 7 ngày theo lịch thiết bị, gồm hôm nay.
+  Tỷ lệ nhớ = lượt Tạm nhớ/Đã thuộc chia tổng lượt đến hạn với khoảng ôn trước đó
+  >0 ngày. Loại bước học/học lại, ôn sớm và lượt thiếu ngữ cảnh khỏi tỷ lệ này.
+  Kèm thống kê Chưa thuộc theo kiểu ôn (gồm cả bước học) và 5 thẻ hiện còn trong
+  kho bị quên nhiều nhất. Hiện số mẫu và cảnh báo khi mẫu dưới 20 lượt.
+  Các kiểu ôn có độ khó/nhóm thẻ khác nhau nên không dùng bảng để xếp hạng phương pháp.
+- Không thêm dependency, dịch vụ trả phí hoặc migration. Phần ngữ cảnh báo cáo
+  cần migration `0013` đã có; nếu chưa chạy, vẫn đọc được nhật ký cũ nhưng không
+  suy đoán tỷ lệ nhớ từ dữ liệu thiếu. Cần Internet để tải kho thẻ/nhật ký.
+- Mobile cần build APK mới để có các màn hình này.

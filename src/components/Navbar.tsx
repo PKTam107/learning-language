@@ -30,7 +30,7 @@ export function Navbar() {
         </Link>
 
         {/* Điện thoại dùng panel trượt (MobileMenu) nên ẩn hàng link ở đây. */}
-        <nav className="hidden items-center gap-1 text-sm md:flex">
+        <nav className="hidden items-center gap-1 text-sm xl:flex">
           {NAV_TABS.map(({ href, label }) => {
             const active = isActiveTab(pathname, href);
             return (
@@ -58,13 +58,13 @@ export function Navbar() {
 
           {/* Desktop: đổi giao diện & đăng xuất ngay trên thanh. Trên điện
               thoại hai thứ này nằm trong panel để thanh trên chỉ còn 1 nút. */}
-          <ThemeToggle className="hidden md:inline-flex" />
+          <ThemeToggle className="hidden xl:inline-flex" />
           {user && (
             <button
               onClick={signOut}
               title="Đăng xuất"
               aria-label="Đăng xuất"
-              className="hidden rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600 md:inline-flex dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-red-400"
+              className="hidden rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600 xl:inline-flex dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-red-400"
             >
               <LogOut className="h-[18px] w-[18px]" />
             </button>
