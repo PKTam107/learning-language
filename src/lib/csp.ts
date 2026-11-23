@@ -46,7 +46,7 @@ export function buildCsp(nonce: string): string {
     // File phát âm: DictionaryAPI, và URL bất kỳ người dùng tự nhập khi import
     // thẻ. Giới hạn ở https chứ không khoá theo host, nếu không là gãy audio
     // của thẻ import.
-    ["media-src", "'self' https:"],
+    ["media-src", "'self' blob: https:"],
 
     // Client gọi thẳng Supabase (REST, Auth, và wss nếu sau này dùng Realtime).
     [

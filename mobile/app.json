@@ -48,6 +48,12 @@
           "configureAndroidBackup": true,
           "faceIDPermission": false
         }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Cho phép LinguaCards dùng micro để thu âm luyện nói khi bạn bấm Thu giọng mình."
+        }
       ]
     ],
     "extra": {

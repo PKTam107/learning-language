@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { ShadowingExercise } from "@/components/ShadowingExercise";
+import { Button } from "@/components/ui/Button";
 import { CardPhoto } from "./CardPhoto";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { Card } from "@/types";
@@ -9,6 +12,7 @@ import { useStyles } from "@/contexts/ThemeContext";
 
 /** Xem chi tiết 1 card đã lưu (read-only): phiên âm, audio US/UK, mọi nghĩa & ví dụ. */
 export function CardDetail({ card }: { card: Card }) {
+  const [speaking, setSpeaking] = useState<number | null>(null);
   const { height } = useWindowDimensions();
   const styles = useStyles(makeStyles);
   const noContent =
@@ -84,6 +88,8 @@ export function CardDetail({ card }: { card: Card }) {
           {card.examples.map((ex, i) => (
             <View key={i} style={styles.exItem}>
               <Text style={styles.exText}>“{ex.text}”</Text>
+              {card.source_language === "en" && !!ex.text.trim() && <Button title={speaking === i ? "Đóng luyện nói" : "Luyện nói câu này"} variant="secondary" onPress={() => setSpeaking(speaking === i ? null : i)} />}
+              {speaking === i && <ShadowingExercise key={`${card.id}-${i}`} sentence={ex.text} />}
               {!!ex.textVi && <Text style={styles.exVi}>→ {ex.textVi}</Text>}
             </View>
           ))}

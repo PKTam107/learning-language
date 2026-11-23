@@ -55,6 +55,8 @@ export default function AppLayout() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="decks/[id]" options={{ title: "Bộ thẻ" }} />
       <Stack.Screen name="study/[deckId]" options={{ title: "Học" }} />
+      <Stack.Screen name="mining" options={{ title: "Thêm từ từ đoạn văn" }} />
+      <Stack.Screen name="speaking" options={{ title: "Luyện nói theo câu mẫu" }} />
       <Stack.Screen name="health" options={{ title: "Sức khỏe kho thẻ" }} />
       <Stack.Screen name="dictation" options={{ title: "Nghe chép chính tả" }} />
       <Stack.Screen name="reading" options={{ title: "Đọc hiểu" }} />

@@ -71,7 +71,7 @@ liệt kê trước từng file được.
 | `script-src 'self' 'nonce-…' 'strict-dynamic'` | thêm `'unsafe-eval'` **chỉ trong dev** (Next dev dùng eval) |
 | `style-src 'self' 'unsafe-inline'` | Next và next/font chèn `<style>` lúc hydrate; CSS không chạy được mã nên rủi ro thấp |
 | `connect-src 'self' <supabase>` | client gọi thẳng Supabase REST + Auth |
-| `media-src 'self' https:` | file phát âm của DictionaryAPI **và** URL người dùng tự nhập khi import — khoá theo host là gãy audio thẻ import |
+| `media-src 'self' blob: https:` | file phát âm của DictionaryAPI **và** URL người dùng tự nhập khi import — khoá theo host là gãy audio thẻ import |
 | `font-src 'self'` | `next/font` tải Inter về lúc build, không cần fonts.gstatic.com |
 | `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'` | chống nhúng iframe, plugin, và `<base>` bị chèn để đổi gốc URL tương đối |
 
@@ -129,3 +129,19 @@ tiếp bị Supabase từ chối (reuse interval mặc định 10 giây).
 Mỗi lần thêm bảng mới: bật RLS, viết policy, **và** thu hồi quyền `anon` —
 Supabase cấp quyền mặc định cho bảng mới trong schema `public`, `0003` không tự
 phủ những bảng sinh sau nó.
+
+
+### Thu âm luyện nói (2026-11-23)
+
+`Permissions-Policy` cho `microphone=(self)`, camera/vị trí vẫn bị tắt.
+`media-src` thêm `blob:` để nghe bản thu trong bộ nhớ trình duyệt. Chỉ xin
+quyền micro khi người học bấm thu; giới hạn mỗi bản thu 60 giây. Web dừng
+micro và bỏ bản thu tạm khi rời màn/ẩn trang. Mobile dừng khi rời màn/ra nền;
+không hủy yêu cầu chỉ vì hộp xin quyền làm app tạm inactive.
+
+Bản thu không được upload lên server. Web chỉ tải file khi người học bấm
+Tải bản thu. Mobile chỉ sao chép vào thư mục bền vững khi bấm Lưu, tách theo
+id tài khoản; có danh sách để xuất/xóa. Bản thu tạm được xóa khi rời màn.
+Các bản đã lưu chỉ ở thiết bị, không đồng bộ; gỡ ứng dụng hoặc xóa dữ liệu
+sẽ mất chúng. Xuất bản thu mở bảng chia sẻ của hệ điều hành theo thao tác
+chủ động của người dùng.

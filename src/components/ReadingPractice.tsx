@@ -39,6 +39,7 @@ export function ReadingPractice() {
   const { lesson } = reading;
   return <div className="mx-auto max-w-2xl space-y-5">
     <div><h1 className="text-2xl font-bold">Đọc bằng kho từ của bạn</h1><p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Một đoạn đọc 80–120 từ, dùng 3–5 từ trong kho. Chạm vào từ được đánh dấu để xem nghĩa và nghe.</p></div>
+    <div className="flex flex-wrap gap-4"><Link href="/mining" className="text-sm text-brand underline">Thêm từ từ đoạn văn →</Link><Link href="/speaking" className="text-sm text-brand underline">Luyện nói theo câu mẫu →</Link></div>
     <Link href="/dictation" className="inline-block text-sm text-brand underline">Luyện nghe chép chính tả từ câu ví dụ →</Link>
     <section className="space-y-3 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
       <label className="block text-sm">Chủ đề<select disabled={reading.busy} value={topic} onChange={(e) => setTopic(e.target.value as ReadingRequest["topic"])} className="mt-1 w-full rounded-lg border bg-transparent p-2 dark:border-slate-700 dark:bg-slate-900">{READING_TOPICS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></label>

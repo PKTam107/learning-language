@@ -359,3 +359,25 @@ bỏ hoang lâu thì phải vào bật lại bằng tay. Đây là giới hạn 
 Logic thuần `dictation.ts`, `learning-insights.ts` có bản sao web/mobile được
 kiểm tra parity. Không lưu bản thu, không thêm chi phí dịch vụ. Kết quả chép
 chính tả không lưu sau khi rời phiên; audio phụ thuộc giọng đọc trên thiết bị.
+
+
+## Bổ sung 2026-11-23 — mục 4 và 6: mining và thu âm đối chiếu
+
+- Web có `/mining`, `/speaking` trong menu; mobile có màn tương ứng, vào từ
+  Đọc hiểu. Cả hai client chuyển chia sẻ đoạn văn sang WordMining, một từ/cụm
+  ngắn vẫn dùng QuickCreator.
+- Mining chạy local, 20.000 ký tự/200 từ khác nhau, CEFR dữ liệu cục bộ, khớp
+  từ theo cách viết, lọc từ đã có theo cặp EN→VI. Tra tối đa 5 từ mỗi lô,
+  tuần tự qua API lookup hiện có; dừng tại lỗi đầu và giữ lựa chọn/bản nháp
+  trong màn, có nhập nghĩa tay. Gắn ngữ cảnh gốc quanh từ vào ví dụ đầu.
+  Lưu từng thẻ, giữ những thẻ chưa lưu khi lỗi một phần; backend tiếp tục
+  chặn trùng trong bộ. Bản nháp chưa được lưu qua các lần rời màn.
+- Luyện nói dùng câu ví dụ đã lưu và TTS của thiết bị, thu âm, nghe lại,
+  thu lại, giới hạn 60 giây. Cũng mở từ ví dụ trong chi tiết thẻ EN.
+  Web dùng MediaRecorder, blob trong bộ nhớ và tải file khi chủ động;
+  mobile dùng expo-av và thư mục bản thu riêng theo tài khoản, xuất/xóa
+  bản lưu từ màn Luyện nói. Cleanup micro/audio khi rời màn/ra nền;
+  bỏ qua kết quả xin quyền hoặc chuẩn bị recorder về trễ sau cleanup.
+- Logic mining/hook batch/hook recorder được canh parity web/mobile.
+  Không thêm dịch vụ trả phí, dependency hoặc migration, không sửa SRS.
+  **Mục 5 (offline) hoãn theo yêu cầu, không triển khai trong đợt này.**

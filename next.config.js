@@ -20,10 +20,10 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains",
   },
-  // App không dùng camera/mic/vị trí — tắt hẳn để script lạ cũng không xin được.
+  // Microphone chỉ cho chính origin để người dùng chủ động thu âm luyện nói.
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+    value: "camera=(), microphone=(self), geolocation=(), interest-cohort=()",
   },
 ];
 
