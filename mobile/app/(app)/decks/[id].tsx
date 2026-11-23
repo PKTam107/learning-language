@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from "react-native";
 import {
   Stack,
@@ -17,8 +18,10 @@ import {
   useRouter,
 } from "expo-router";
 import { Upload, Download, FileDown } from "lucide-react-native";
-import type { Card, CardStatus, CardWithProgress, Deck } from "@/types";
+import type { Card, CardStatus, CardWithProgress, Deck, DraftCard } from "@/types";
 import {
+  updateCard,
+  cardToDraft,
   fetchCardsWithProgress,
   fetchDeck,
   deleteCard,
@@ -46,6 +49,7 @@ import { isLeech } from "@/lib/srs";
 import { resolvePolicy } from "@/lib/policy";
 import { useSettings } from "@/lib/settings";
 import { CardRow } from "@/components/card/CardRow";
+import { DraftEditor } from "@/components/flashcard/DraftEditor";
 import { CardDetail } from "@/components/flashcard/CardDetail";
 import { EnrichBackfillButton } from "@/components/EnrichBackfillButton";
 import { StatusBar } from "@/components/status/StatusBar";
@@ -67,6 +71,7 @@ const leechOf = (c: CardWithProgress) => isLeech(c.progress?.lapses ?? 0);
 type CardFilter = CardStatus | "all" | "suspended";
 
 export default function DeckDetailScreen() {
+  const { height } = useWindowDimensions();
   const colors = useThemeColors();
   const styles = useStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -87,6 +92,9 @@ export default function DeckDetailScreen() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [importing, setImporting] = useState(false);
   const [detailCard, setDetailCard] = useState<CardWithProgress | null>(null);
+  const [editDraft, setEditDraft] = useState<DraftCard | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [policy, setPolicy] = useState<QueuePolicy>(UNLIMITED);
   const { settings, ready } = useSettings();
 
@@ -138,6 +146,29 @@ export default function DeckDetailScreen() {
     });
   }, [cards, query, statusFilter]);
 
+  function closeDetail() {
+    if (saving) return;
+    setDetailCard(null);
+    setEditDraft(null);
+    setSaveError(null);
+  }
+
+  async function handleSave() {
+    if (!detailCard || !editDraft || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await updateCard(detailCard.id, detailCard.deck_id, editDraft);
+      setDetailCard(null);
+      setEditDraft(null);
+      await load();
+    } catch (e) {
+      setSaveError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function handleDelete(card: { id: string; term: string }) {
     Alert.alert(
       "Xóa từ",
@@ -161,7 +192,7 @@ export default function DeckDetailScreen() {
 
   /**
    * Tạm treo / bỏ treo. Lời xác nhận cố tình nêu **lối thoát khác** cho thẻ hay
-   * quên: sửa nghĩa cho ngắn gọn hơn (bản web) hoặc thêm mẹo nhớ. Treo là biện
+   * quên: sửa nghĩa cho ngắn gọn hơn hoặc thêm mẹo nhớ. Treo là biện
    * pháp cuối, không phải biện pháp đầu.
    */
   function handleToggleSuspend(card: Card) {
@@ -614,8 +645,24 @@ export default function DeckDetailScreen() {
         </Text>
       </Modal>
 
-      <Modal open={!!detailCard} onClose={() => setDetailCard(null)}>
-        {detailCard && <CardDetail card={detailCard} />}
+      <Modal open={!!detailCard} onClose={closeDetail} title={editDraft ? "Chỉnh sửa từ" : "Chi tiết từ"} bodyDrag={!editDraft}>
+        {detailCard && (editDraft ? (
+          <>
+            <ScrollView style={{ maxHeight: height * 0.5 }} contentContainerStyle={styles.editContent} keyboardShouldPersistTaps="handled">
+              <DraftEditor draft={editDraft} onChange={setEditDraft} editableTerm />
+            </ScrollView>
+            {!!saveError && <Text accessibilityRole="alert" style={styles.error}>{saveError}</Text>}
+            <View style={styles.headerBtns}>
+              <Button title="Hủy" variant="secondary" disabled={saving} onPress={() => { setEditDraft(null); setSaveError(null); }} style={styles.flexBtn} />
+              <Button title="Lưu thay đổi" loading={saving} disabled={saving || !editDraft.term.trim()} onPress={() => void handleSave()} style={styles.flexBtn} />
+            </View>
+          </>
+        ) : (
+          <>
+            <CardDetail card={detailCard} />
+            <Button title="Chỉnh sửa từ / thêm ảnh" onPress={() => setEditDraft(cardToDraft(detailCard))} />
+          </>
+        ))}
       </Modal>
 
       {!selectMode && <QuickCreator deckId={deck.id} onSaved={load} />}
@@ -657,6 +704,7 @@ function FilterChip({
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    editContent: { paddingBottom: spacing.md },
     flex: { flex: 1, backgroundColor: colors.bg },
     center: {
       flex: 1,

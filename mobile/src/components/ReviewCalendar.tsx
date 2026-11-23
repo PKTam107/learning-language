@@ -37,7 +37,7 @@ function toneOf(
   colors: ThemeColors,
   scheme: "light" | "dark"
 ): Tone {
-  if (count === 0) return { bg: colors.card, fg: colors.textSubtle };
+  if (count === 0) return { bg: colors.card, fg: colors.textMuted };
   const ramp = TONE_RAMP[scheme];
   if (count <= 3) return ramp[0];
   if (count <= 10) return ramp[1];
@@ -145,7 +145,7 @@ export function ReviewCalendar({ due }: { due: DueCalendarData }) {
           const past = key < todayKey;
           // Ngày đã qua mà không có thẻ nào: làm chìm hẳn cho lịch đỡ rối.
           const tone = past && count === 0
-            ? { bg: colors.bg, fg: colors.statusNew }
+            ? { bg: colors.bg, fg: colors.textMuted }
             : toneOf(count, colors, scheme);
           return (
             <View key={key} style={styles.cellWrap}>
@@ -236,6 +236,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     head: {
       flexDirection: "row",
+      flexWrap: "wrap",
       alignItems: "center",
       justifyContent: "space-between",
       gap: spacing.sm,
@@ -243,7 +244,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     headLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
     title: { fontSize: 16, fontWeight: "700", color: colors.text },
-    headMeta: { fontSize: 11, color: colors.textSubtle },
+    headMeta: { fontSize: 11, color: colors.textMuted },
     monthBar: {
       flexDirection: "row",
       alignItems: "center",
@@ -257,14 +258,14 @@ const makeStyles = (colors: ThemeColors) =>
       textAlign: "center",
       fontSize: 10,
       fontWeight: "600",
-      color: colors.textSubtle,
+      color: colors.textMuted,
       paddingBottom: 2,
     },
     day: {
       aspectRatio: 1,
       borderRadius: radius.md,
       borderWidth: 1,
-      borderColor: "#f1f5f9",
+      borderColor: colors.border,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -279,7 +280,7 @@ const makeStyles = (colors: ThemeColors) =>
       borderTopWidth: 1,
       borderTopColor: colors.border,
     },
-    detailEmpty: { fontSize: 13, color: colors.textSubtle },
+    detailEmpty: { fontSize: 13, color: colors.textMuted },
     detailTitle: {
       fontSize: 13,
       fontWeight: "600",
@@ -291,10 +292,10 @@ const makeStyles = (colors: ThemeColors) =>
       paddingHorizontal: 10,
       paddingVertical: 3,
       borderRadius: radius.full,
-      backgroundColor: "#f1f5f9",
+      backgroundColor: colors.sunken,
     },
     chipPressed: { backgroundColor: colors.brandLight },
     chipText: { fontSize: 13, color: colors.text },
-    more: { fontSize: 13, color: colors.textSubtle, paddingVertical: 3 },
-    footer: { marginTop: spacing.sm, fontSize: 11, color: colors.textSubtle },
+    more: { fontSize: 13, color: colors.textMuted, paddingVertical: 3 },
+    footer: { marginTop: spacing.sm, fontSize: 11, color: colors.textMuted },
   });

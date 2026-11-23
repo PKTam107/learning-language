@@ -10,10 +10,11 @@ import { useStyles } from "@/contexts/ThemeContext";
 interface Props {
   draft: DraftCard;
   onChange: (draft: DraftCard) => void;
+  editableTerm?: boolean;
 }
 
 /** Form sửa DraftCard trước khi lưu (mobile). */
-export function DraftEditor({ draft, onChange }: Props) {
+export function DraftEditor({ draft, onChange, editableTerm = false }: Props) {
   const styles = useStyles(makeStyles);
   const set = (patch: Partial<DraftCard>) => onChange({ ...draft, ...patch });
 
@@ -34,6 +35,12 @@ export function DraftEditor({ draft, onChange }: Props) {
           Chưa cấu hình AI dịch (hoặc dịch lỗi) — nghĩa đang để tiếng Anh, bạn
           có thể tự sửa.
         </Text>
+      )}
+
+      {editableTerm && (
+        <Field label="Từ / cụm từ">
+          <Input accessibilityLabel="Từ / cụm từ" value={draft.term} onChangeText={(term) => set({ term })} autoCapitalize="none" />
+        </Field>
       )}
 
       <View style={styles.row}>
