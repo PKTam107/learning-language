@@ -8,6 +8,8 @@ import {
   Home,
   Headphones,
   HeartPulse,
+  Mic,
+  TextSearch,
   BookOpen,
   Layers,
   BrainCircuit,
@@ -34,6 +36,8 @@ export const NAV_TABS: Tab[] = [
   { href: "/decks", label: "Bộ thẻ", desc: "Quản lý bộ từ vựng", Icon: Layers },
   { href: "/weak", label: "Hay quên", desc: "Từ hay đánh giá “Chưa thuộc”", Icon: BrainCircuit },
   { href: "/reading", label: "Đọc hiểu", desc: "Đọc với từ trong kho của bạn", Icon: BookOpen },
+  { href: "/mining", label: "Từ trong đoạn", desc: "Chọn từ mới và giữ ngữ cảnh gốc", Icon: TextSearch },
+  { href: "/speaking", label: "Luyện nói", desc: "Thu âm và nghe đối chiếu", Icon: Mic },
   { href: "/dictation", label: "Chép chính tả", desc: "Nghe câu ví dụ và gõ lại", Icon: Headphones },
   { href: "/health", label: "Sức khỏe thẻ", desc: "Tìm thẻ thiếu dữ liệu, hay quên", Icon: HeartPulse },
   { href: "/progress", label: "Tiến độ", desc: "Huy hiệu, heatmap, lịch ôn", Icon: TrendingUp },
@@ -84,7 +88,7 @@ export function MobileMenu() {
   }
 
   const panel = (
-    <div className="fixed inset-0 z-50 xl:hidden" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 2xl:hidden" role="dialog" aria-modal="true">
       {/* Nền mờ: chạm ra ngoài để đóng. */}
       <button
         onClick={() => setOpen(false)}
@@ -179,7 +183,7 @@ export function MobileMenu() {
         onClick={() => setOpen(true)}
         aria-label="Mở menu"
         aria-expanded={open}
-        className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 xl:hidden dark:text-slate-300 dark:hover:bg-slate-800"
+        className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 2xl:hidden dark:text-slate-300 dark:hover:bg-slate-800"
       >
         <Menu className="h-5 w-5" />
       </button>

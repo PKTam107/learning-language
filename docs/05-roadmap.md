@@ -103,3 +103,12 @@ Client thứ 2, dùng chung backend với web (chi tiết: [06-mobile.md](./06-m
       Chưa tự động điều chỉnh hạn mức; cần đủ mẫu để đánh giá.
 
 Chi tiết điều kiện tính và đường vào: [07 — Current State](./07-current-state.md#bổ-sung-2026-11-23--luyện-nghe-chất-lượng-thẻ-và-hiệu-quả-ôn).
+
+
+## Bổ sung — mục 4 và 6 (2026-11-23)
+
+- [x] Mining từ đoạn văn: đánh dấu từ có sẵn, lọc CEFR, chọn/tra/xem trước/lưu
+      từng lô nhỏ và giữ ngữ cảnh gốc (web + mobile).
+- [x] Thu âm nghe đối chiếu: TTS mẫu, thu/nghe lại, lưu/xuất bản thu cục bộ
+      và dọn micro/audio khi rời màn (web + mobile).
+- [ ] Mục 5 — Học offline: để sau theo yêu cầu của người dùng.

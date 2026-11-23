@@ -234,3 +234,32 @@ học offline thật sự, import Anki.
   cần migration `0013` đã có; nếu chưa chạy, vẫn đọc được nhật ký cũ nhưng không
   suy đoán tỷ lệ nhớ từ dữ liệu thiếu. Cần Internet để tải kho thẻ/nhật ký.
 - Mobile cần build APK mới để có các màn hình này.
+
+### Thêm từ từ đoạn văn và thu âm đối chiếu (web + mobile)
+
+- **Từ trong đoạn** (`/mining` trên web, từ màn **Đọc hiểu** trên mobile): dán
+  tối đa 20.000 ký tự, phân tích tối đa 200 từ khác nhau ngay trên thiết bị,
+  xem CEFR tham khảo và số lần xuất hiện. Đánh dấu từ đã có trong kho EN→VI,
+  lọc theo CEFR hoặc chỉ xem từ chưa có; khớp từ theo cách viết, không coi mọi
+  biến thể là cùng một từ. Chia sẻ cả đoạn từ app khác cũng vào luồng này.
+- Chọn tối đa 5 từ mỗi lượt, tra lần lượt bằng nguồn tra/dịch hiện có, xem và
+  sửa trước khi lưu vào bộ thẻ đã chọn. Giữ câu/ngữ cảnh gốc (tối đa 600 ký tự
+  quanh từ) làm ví dụ đầu tiên. Từ đã có trong bộ đích không được chọn trùng.
+  Khi tra lỗi/hết quota thì dừng lô, giữ lựa chọn và các bản nháp trong màn;
+  có thể tra lại hoặc nhập nghĩa thủ công. Lỗi lưu một phần không lưu lại
+  những thẻ đã thành công. Rời màn sẽ mất bản nháp chưa lưu.
+- **Luyện nói** (`/speaking` trên web, từ **Đọc hiểu** trên mobile): chọn bộ,
+  dùng các câu ví dụ như luyện chép chính tả. Nghe mẫu ở tốc độ chậm/bình thường,
+  bấm thu, dừng, nghe bản thu và nghe lại mẫu để tự đối chiếu. Cũng có nút
+  **Luyện nói câu này** trong chi tiết thẻ tiếng Anh. Không chấm phát âm tự động
+  và không thay đổi SRS. Tối đa 60 giây/bản thu.
+- Web dùng `getUserMedia`/`MediaRecorder` (cần HTTPS hoặc localhost), xin quyền
+  khi bấm thu; có nút tải file WebM/M4A tùy trình duyệt. Mobile dùng `expo-av`
+  đã có, thêm cấu hình quyền micro. Bản thu tạm bị dọn khi rời màn/ra nền.
+  Bấm **Lưu bản thu trên thiết bị** để giữ lại; danh sách **Bản thu đã lưu**
+  trong màn Luyện nói có nút tải lại danh sách, xuất file và xóa bản thu.
+  Dữ liệu tách theo tài khoản và chỉ nằm trên thiết bị, không upload/sync;
+  xóa dữ liệu/gỡ app sẽ xóa bản lưu trong ứng dụng.
+- Không thêm dependency, API trả phí, biến môi trường hoặc migration. Nguồn
+  tra/dịch vẫn chịu quota hiện có. Cần deploy web và build/cài APK mới để có
+  các màn hình và quyền micro. Học offline chưa nằm trong đợt này.

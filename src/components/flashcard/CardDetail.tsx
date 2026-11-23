@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { ShadowingExercise } from "@/components/ShadowingExercise";
 import { CardPhoto } from "./CardPhoto";
 import type { Card } from "@/types";
 import { AudioButton } from "./AudioButton";
@@ -7,6 +9,7 @@ import { CefrBadge, EnrichmentSections } from "./Enrichment";
 
 /** Xem chi tiết 1 card đã lưu (read-only): phiên âm, audio US/UK, mọi nghĩa & ví dụ. */
 export function CardDetail({ card }: { card: Card }) {
+  const [speaking, setSpeaking] = useState<number | null>(null);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -84,6 +87,8 @@ export function CardDetail({ card }: { card: Card }) {
             {card.examples.map((ex, i) => (
               <div key={i} className="rounded-lg bg-slate-50 dark:bg-slate-800 p-2 text-sm">
                 <p className="italic">“{ex.text}”</p>
+                {card.source_language === "en" && ex.text.trim() && <button type="button" onClick={() => setSpeaking(speaking === i ? null : i)} className="mt-2 text-sm text-brand underline">{speaking === i ? "Đóng luyện nói" : "Luyện nói câu này"}</button>}
+                {speaking === i && <ShadowingExercise key={`${card.id}-${i}`} sentence={ex.text} />}
                 {ex.textVi && (
                   <p className="mt-0.5 text-slate-500 dark:text-slate-400">→ {ex.textVi}</p>
                 )}
